@@ -1,0 +1,15 @@
+/*
+ * BOXZOOM
+ */
+
+.leaflet-control-boxzoom.leaflet-control-boxzoom-active {
+    background-color:#aaaaaa;
+}
+
+.leaflet-control-boxzoom.leaflet-control-boxzoom-active a {
+    background-color: lightgray;
+}
+
+.leaflet-container.leaflet-control-boxzoom-active {
+    cursor:crosshair !important;
+}

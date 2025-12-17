@@ -1,0 +1,55 @@
+<!-- override standard styles -->
+<style>
+    body {
+        background-color: white;
+    }
+
+    .leaflet-control-graphicscale {
+        box-shadow: none;
+        -webkit-box-shadow: none;
+        white-space: nowrap;
+    }
+
+    .leaflet-top.leaflet-right, .checkbox-material {
+        display: none;
+    }
+
+    #legend, #header, #date-time, #scale-box {
+        -webkit-box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+        box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
+    }
+</style>
+<!-- map -->
+<div id="pane1"
+     style="position: absolute; width: {{printWidth}}; height: {{printHeight}}; display: block; overflow: hidden; top: 30px; left:30px; border: 1px solid black">
+    <div id="container1"
+         style="position: relative; width: 200%; height: 200%; left:-50%; top:-50%; display: inline-block;">
+        <div id="map"></div>
+    </div>
+    <div id="header"
+         style="display: block; position: absolute; width: 100%; height: 100px; background-color: white; bottom: 0; right: 0; border-top: 1px solid gray;">
+        <div id="print-header-logo"
+             style="position: absolute;top: 0;left: 0;width: 140px;height: 100%;border-right: 1px solid;"></div>
+
+        <b id="title" style="position: absolute; top: 10px; left: 150px; white-space: nowrap"></b>
+        <p id="comment" style="position: absolute; top: 30px; left: 150px; width: 480px;"></p>
+
+        <div style="position: absolute; bottom: 0; right: 0; height: 100%; width: 120px">
+            <div id="scalebar" style="position: absolute; left: 40px; top: 43px"></div>
+            <div id="scale" style="position: absolute; left: 40px; top: 60px; font-size: 0.8em;"></div>
+            <div id="frame" style="position: absolute; right: 7px; top: 3px; font-size: 0.8em;">{{#showFrameNumber}}#{{printFrame}}{{/showFrameNumber}}</div>
+            <div id="date-time"
+                 style="position: absolute; bottom: 0; right: 2px; font-size: 0.8em; box-shadow: none">{{printDataTime}}</div>
+        </div>
+
+    </div>
+
+
+    <div style="position: absolute; top: 5px; left: 5px; padding: 10px; background-color:rgba(255, 255, 255, 0.5); -webkit-transform: scale(0.6); -webkit-transform-origin:left top;">
+        <div style='position: relative; display: block; top: 0; left: 0; width:100%; min-width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; background-position: 50% 50%; background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MS4wNiA5Ni42MiI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTEuNDM4IDMwLjc0NCkiPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMCI+PHBhdGggZD0ibTYxIDM1YzAgMTYuMDItMTIuOTg0IDI5LTI5IDI5LTE2LjAyIDAtMjktMTIuOTg0LTI5LTI5IDAtMTYuMDIgMTIuOTg0LTI5IDI5LTI5IDE2LjAyIDAgMjkgMTIuOTg0IDI5IDI5eiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0ibTU1IDM1YzAgMTIuOTc5LTEwLjUyMSAyMy41LTIzLjUgMjMuNS0xMi45NzkgMC0yMy41LTEwLjUyMS0yMy41LTIzLjUgMC0xMi45NzkgMTAuNTIxLTIzLjUgMjMuNS0yMy41IDEyLjk3OSAwIDIzLjUgMTAuNTIxIDIzLjUgMjMuNXoiIHRyYW5zZm9ybT0ibWF0cml4KDEuMDExNDggMCAwIC45OTk4OC0uMDg5LjAwNCkiIHN0cm9rZS13aWR0aD0iLjQ5NyIvPjxwYXRoIGQ9Im0zMiAzNXYtMzIiIHN0cm9rZS13aWR0aD0iLjI1Ii8+PC9nPjxwYXRoIGQ9Im0zMi05LjQ1M2wyOC45MzggNzMuODI2LTI5LTI5LTI5IDI5eiIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJtMzItOS40NTNsMjkgNzMuNDUtMjktMjktMjkgMjl6IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJzcXVhcmUiLz48dGV4dCB4PSIyMi43MSIgeT0iLTEwLjg1NCIgZm9udC1mYW1pbHk9Ik9QRU4gU0FOUyIgd29yZC1zcGFjaW5nPSIwIiBsaW5lLWhlaWdodD0iMTI1JSIgbGV0dGVyLXNwYWNpbmc9IjAiIGZvbnQtc2l6ZT0iNDAiPjx0c3BhbiB4PSIyMi43MSIgeT0iLTEwLjg1NCIgZm9udC1mYW1pbHk9IkFkb2JlIEhlaXRpIFN0ZCBSIiBmb250LXNpemU9IjI2Ij5OPC90c3Bhbj48L3RleHQ+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAtMy44MjkpIiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iLjI1Ij48cGF0aCBkPSJtNCA5Mi44Mmw2Ljc0LTMuODkxIi8+PHBhdGggZD0ibTQuNjAzIDkwLjdsMTAuMzk3LTYiLz48cGF0aCBkPSJtMyA5NS4xN2w0LTIuMzA5Ii8+PHBhdGggZD0ibTUuNDQyIDg4LjQ1bDEzLjg1Ni04Ii8+PHBhdGggZD0ibTEyIDcyLjI2bDE4LjY4Ni0xMC44MTIiLz48cGF0aCBkPSJtMTQuNTkzIDY1LjQ1bDE2LjA5LTkuMjkxIi8+PHBhdGggZD0ibTE1LjM0MyA2My4yNGwxNS4zNDMtOC44NTgiLz48cGF0aCBkPSJtMTYuODc3IDYwLjU4bDEzLjgwOS03Ljk3MiIvPjxwYXRoIGQ9Im0xNy41MTEgNTguNDVsMTMuMTc0LTcuNjA2Ii8+PHBhdGggZD0ibTE4LjQxMiA1Ni4xNWwxMi4yNzQtNy4wODciLz48cGF0aCBkPSJtMTkgNTQuMDRsMTEuNDI3LTYuNTk3Ii8+PHBhdGggZD0ibTIwIDUxLjc1N2wxMC44MjItNi4zMTEiLz48cGF0aCBkPSJtMjAuODI2IDQ5LjQ1bDkuODYtNS42OTMiLz48cGF0aCBkPSJtMjEuNDggNDcuM2w5LjIwNi01LjMxNSIvPjxwYXRoIGQ9Im0yMyA0NC42NDdsNy42ODYtNC40MzciLz48cGF0aCBkPSJtMjMuNzQ0IDQyLjQ1bDYuOTI4LTQiLz48cGF0aCBkPSJtMjQuNTQ5IDQwLjIxbDYuMTM3LTMuNTQzIi8+PHBhdGggZD0ibTI1IDM4LjE4bDUuNjg2LTMuMjgzIi8+PHBhdGggZD0ibTI2LjY2MyAzNS40NDZsNC4wMi0yLjMyMyIvPjxwYXRoIGQ9Im0yNy42MTcgMzMuMTJsMy4wNjktMS43NzIiLz48cGF0aCBkPSJtMjggMzEuMTNsMi42ODYtMS41NTEiLz48cGF0aCBkPSJtMjkuMTUgMjguNjk0bDEuNTM0LS44ODYiLz48cGF0aCBkPSJtMTMgNjkuOTA5bDE3LjY4Ni0xMC4yMTEiLz48cGF0aCBkPSJtOS4yMDYgNzkuMTlsMjEuNDgtMTIuNDAyIi8+PHBhdGggZD0ibTguMzYgODEuNDVsMjIuMzI2LTEyLjg5Ii8+PHBhdGggZD0ibTcuNjcxIDgzLjYybDE5Ljk0Ni0xMS41MTYiLz48cGF0aCBkPSJtNi4xMzcgODYuMjdsMTcuMDItOS44MjciLz48cGF0aCBkPSJtMTAgNzYuOTU2bDIwLjY4Ni0xMS45NDMiLz48cGF0aCBkPSJtMTEuMjc5IDc0LjQ1bDE5LjQwNy0xMS4yMDUiLz48cGF0aCBkPSJtMTQgNjcuNTZsMTYuNjg2LTkuNjM0Ii8+PHBhdGggZD0ibTMwLjU2MiA2NS43NDR2LTQzLjU2NiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAzLjgyOSkiLz48L2c+PC9zdmc+")'
+             ;></div>
+        <div style="position: relative; margin-top: 15px; background: none; box-shadow: none; display: {{_showLegend}}" id="legend" class="legend">
+        </div>
+    </div>
+
+</div>
