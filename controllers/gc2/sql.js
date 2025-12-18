@@ -1,4 +1,4 @@
-f/*
+/*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2018 MapCentia ApS
  * @copyright  2025 Geopartner Landinspektører A/S
