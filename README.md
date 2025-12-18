@@ -1,3 +1,24 @@
+
+    This software is based on the project "Vidi"
+    by MapCentia ApS
+    https://github.com/mapcentia/vidi
+
+    Original work:
+    Copyright (C) MapCentia ApS and contributors
+
+    Modifications:
+    Copyright (C) 2025 Geopartner
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, version 3.
+
+    This software is provided "as is", without warranty of any kind, express or
+    implied. See the GNU Affero General Public License for more details.
+
+    A copy of the GNU Affero General Public License should be included with this
+    distribution. If not, see <https://www.gnu.org/licenses/>.
+
 # What is Vidi?
 Vidi is a modern take on web GIS. It is the front-end for [GC2](https://github.com/mapcentia/geocloud2)
 
