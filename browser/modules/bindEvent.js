@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2021 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -170,9 +171,9 @@ module.exports = {
             $(this).on('change', function (e) {
                 let prefix = '';
                 let isChecked = $(e.target).prop(`checked`);
-                let subGroupName = $(this).data(`gc2-subgroup-name`);
-                let subGroupLevel = $(this).data(`gc2-subgroup-level`);
-                let layerGroup = $(this).closest('.card-body').data('gc2-group-id');
+                let subGroupName = $(this).data(`gc2-subgroup-name`).toString();
+                let subGroupLevel = $(this).data(`gc2-subgroup-level`).toString();
+                let layerGroup = $(this).closest('.card-body').data('gc2-group-id').toString();
                 meta.getMetaData().data.forEach(e => {
                     let parsedMeta = layerTree.parseLayerMeta(e);
                     if (parsedMeta?.vidi_sub_group?.split("|")[subGroupLevel] === subGroupName && e.layergroup === layerGroup) {
@@ -367,7 +368,7 @@ module.exports = {
 
         // Init some GUI stuff after modules are loaded
         // ============================================
-        $('[data-toggle=tooltip]').tooltip();
+        // $('[data-toggle=tooltip]').tooltip();
 
         touchScroll('.tab-pane');
         touchScroll('#info-modal-body-wrapper');
