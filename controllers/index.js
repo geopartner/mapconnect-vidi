@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2021 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -27,5 +28,6 @@ router.use(require('./template'));
 router.use(require('./css'));
 router.use(require('./mergePrint'));
 router.use(require('./df'));
+router.use(require('./datahub'));
 
 module.exports = router;
