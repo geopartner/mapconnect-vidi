@@ -1,16 +1,30 @@
-/*
+f/*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2018 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
 var express = require('express');
 var router = express.Router();
 var config = require('../../config/config.js').gc2;
+var metrics = require('../../modules/metrics');
 var request = require('request');
 var fs = require('fs');
 
 var query = function (req, response) {
+    // Get SQL metrics if enabled
+    const sqlMetrics = metrics.isEnabled() ? metrics.getSqlMetrics() : null;
+    
+    // Start timing the query
+    let startTime;
+    if (sqlMetrics) {
+        startTime = Date.now();
+    }
+    
+    // Track response size
+    let responseSize = 0;
+    
     req.setTimeout(0); // no timeout
     var db = req.params.db,
         q = req.body.q || req.query.q,
@@ -89,16 +103,36 @@ var query = function (req, response) {
         if (!store) {
             response.writeHead(res.statusCode, headers);
         }
+        
+        // Track query status in the counter
+        if (sqlMetrics) {
+            sqlMetrics.counter.inc({
+                db: db,
+                format: format,
+                status: res.statusCode >= 400 ? 'error' : 'success'
+            });
+        }
     });
 
     rem.on('data', function (chunk) {
+        responseSize += chunk.length;
         if (store) {
             writeStream.write(chunk, 'binary');
         } else {
             response.write(chunk);
         }
     });
+    
     rem.on('end', function () {
+        // End timer and record duration with labels
+        if (sqlMetrics) {
+            const durationMs = Date.now() - startTime;
+            sqlMetrics.duration.observe({ db: db, format: format }, durationMs);
+            
+            // Record response size
+            sqlMetrics.responseSize.observe({ db: db, format: format }, responseSize);
+        }
+        
         if (store) {
             console.log("Result saved");
             response.send({"success": true, "file": fileName});

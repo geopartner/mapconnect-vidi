@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2023 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -113,6 +114,7 @@ module.exports = {
         // If Vidi loads, the timeout will be cleared in State
         window.loadingTimeout = setTimeout(() => {
             console.log("Timeout reached. Sending 'Vidi is now loaded' message");
+            console.log('Vidi is now loaded')
         },  window.vidiConfig.loadingTimeout);
 
         // In a interval of x seconds, check if the app is still loading. If it is, send the 'still loading' message.
@@ -121,7 +123,7 @@ module.exports = {
                                          aria-atomic="true">
                                         <div class="d-flex">
                                             <div class="toast-body">
-                                                <p>Vidi takes a long time to load. Update to clear caches and refresh. Cancel to wait.</p>
+                                                <p>${__('Vidi takes a long time to load. Update to clear caches and refresh. Cancel to wait.')}</p>
                                                 <button class='btn btn-secondary' onclick="updateApp()" >${__('Update')}</button><button class='btn btn-primary close-info-toast'" >${__('Cancel')}</button>
                                             </div>
                                         </div>
@@ -202,6 +204,10 @@ module.exports = {
             }
             $.getJSON(configParam, function (data) {
                 for (let prop in defaults) {
+                    // if we are printing, skip the activelayers prop
+                    if (prop === "activeLayers" && (urlVars.px || urlVars.py)) {
+                        continue;
+                    }
                     window.vidiConfig[prop] = typeof data[prop] !== 'undefined' ? data[prop] : window.vidiConfig[prop];
                 }
             }).fail(function () {
@@ -382,6 +388,133 @@ module.exports = {
                 }
             });
         }
+
+        //
+        // Initialize user activity tracking
+        // =================================
+        
+        const initUserActivityTracking = () => {
+            const sessionId = crypto.randomUUID ? crypto.randomUUID() : 
+                'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            const db = urlparser.db || 'unknown';
+            const sessionStartTime = Date.now();
+            let lastActivityTime = Date.now();
+            let isCurrentlyActive = true;
+            let activityCheckInterval;
+            
+            const sendUserActivity = (eventType, additionalData = {}) => {
+                // Get username from session extension if available
+                let username = 'anonymous';
+                try {
+                    if (modules && modules.extensions && modules.extensions.session && modules.extensions.session.index) {
+                        if (modules.extensions.session.index.isAuthenticated()) {
+                            username = modules.extensions.session.index.getUserName() || 'authenticated';
+                        }
+                    }
+                } catch (e) {
+                    // Fallback to anonymous if session extension is not available or fails
+                    username = 'anonymous';
+                }
+                
+                const payload = {
+                    event_type: eventType,
+                    db: db,
+                    session_id: sessionId,
+                    timestamp: Date.now(),
+                    username: username,
+                    ...additionalData
+                };
+                
+                // Use sendBeacon with proper content type
+                if (navigator.sendBeacon) {
+                    // Create a Blob with JSON content type for sendBeacon
+                    const blob = new Blob([JSON.stringify(payload)], { 
+                        type: 'application/json' 
+                    });
+                    navigator.sendBeacon('/api/metrics/user-activity', blob);
+                } else {
+                    // Fallback to fetch
+                    fetch('/api/metrics/user-activity', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }).catch(err => console.debug('User activity tracking failed:', err));
+                }
+            };
+            
+            // Track user interactions to determine if they're actively using the app
+            const trackUserInteraction = () => {
+                lastActivityTime = Date.now();
+                if (!isCurrentlyActive && !document.hidden) {
+                    isCurrentlyActive = true;
+                    sendUserActivity('user_active');
+                }
+            };
+            
+            // Set up interaction listeners
+            const interactionEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            interactionEvents.forEach(event => {
+                document.addEventListener(event, trackUserInteraction, { passive: true });
+            });
+            
+            // Track session start
+            sendUserActivity('session_start');
+            
+            // Track visibility changes
+            document.addEventListener('visibilitychange', () => {
+                const now = Date.now();
+                
+                if (document.hidden) {
+                    sendUserActivity('visibility_hidden');
+                    isCurrentlyActive = false;
+                } else {
+                    sendUserActivity('visibility_visible');
+                    lastActivityTime = now;
+                    isCurrentlyActive = true;
+                }
+            });
+
+            // Track authentication changes
+            if (backboneEvents) {
+                backboneEvents.get().on('session:authChange', (isAuthenticated) => {
+                    sendUserActivity(isAuthenticated ? 'auth_login' : 'auth_logout');
+                });
+            }
+            
+            // Check for loitering users (visible but inactive)
+            activityCheckInterval = setInterval(() => {
+                const now = Date.now();
+                const timeSinceLastActivity = now - lastActivityTime;
+                const isVisible = !document.hidden;
+                
+                // User is loitering if tab is visible but no activity for 2 minutes
+                if (isVisible && isCurrentlyActive && timeSinceLastActivity > 2 * 60 * 1000) {
+                    isCurrentlyActive = false;
+                    sendUserActivity('user_loitering');
+                }
+                
+                // Send heartbeat for active users every 5 minutes
+                if (isVisible && isCurrentlyActive && timeSinceLastActivity < 30 * 1000) {
+                    sendUserActivity('heartbeat_active');
+                } else if (isVisible && !isCurrentlyActive) {
+                    sendUserActivity('heartbeat_loitering');
+                }
+                
+            }, 30 * 1000); // Check every 30 seconds
+            
+            // Track session end
+            const trackSessionEnd = () => {
+                clearInterval(activityCheckInterval);
+                const sessionDuration = Date.now() - sessionStartTime;
+                sendUserActivity('session_end', { session_duration: sessionDuration });
+            };
+            
+            window.addEventListener('beforeunload', trackSessionEnd);
+            window.addEventListener('pagehide', trackSessionEnd);
+        };
+        
+        setTimeout(initUserActivityTracking, 1000);
 
         if (humanUsedTemplate && window.vidiConfig.startUpModal) {
             if (!cookie.get("vidi-startup-message") || md5(window.vidiConfig.startUpModal) !== cookie.get("vidi-startup-message")) {

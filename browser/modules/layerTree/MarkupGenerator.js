@@ -1,6 +1,7 @@
 /*
  * @author     Alexander Shumilov
  * @copyright  2013-2018 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -115,6 +116,8 @@ class MarkupGenerator {
                                                                        ${lockedLayer}
                                                                        <span class="js-tiles-contain-data" style="display: ${moduleState.tileContentCache[layerKey] ? "inline" : "none"};" data-toggle="tooltip" data-bs-placement="right"
                                                                        title="${__("Layer is visible")}"><i class="bi bi-eye info-icon text-success"></i></span>
+                                                                       <span class="js-tiles-has-filter" style="display: none;" data-toggle="tooltip" data-bs-placement="right"
+                                                                       title="${__("Layer has filter")}"><i class="bi bi-filter text-success"></i></span>
                                                                        <span class="js-layer-is-disabled" style="display: ${disableCheckBox ? "inline" : "none"};" data-toggle="tooltip" data-bs-placement="right"
                                                                        title="${__("Locked")}"><i class="bi bi-lock text-danger"></i></span>
                                                                        <span class="js-layer-has-parents info-icon" style="display: ${parentLayerKeys.length > 0 ? "inline" : "none"};" data-toggle="tooltip" data-bs-placement="right"

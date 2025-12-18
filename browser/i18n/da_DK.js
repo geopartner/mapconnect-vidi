@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2019 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -236,6 +237,7 @@ module.exports = {
         "Reset filter": "Nulstil",
         "Filter editor": "Filter editor",
         "Layer is visible": "Laget er synligt",
+        "Layer has filter": "Laget har filter",
         "Parents": "Forældre",
         "Children": "Børn",
         "Back": "Tilbage",

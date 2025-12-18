@@ -1,15 +1,36 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2022 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
 const express = require('express');
 const router = express.Router();
 const config = require('../../config/config.js').gc2;
+const metrics = require('../../modules/metrics');
 const request = require('request');
 
 const proxifyRequest = (req, response) => {
+    // Get WMS metrics if enabled
+    const wmsMetrics = metrics.isEnabled() ? metrics.getWmsMetrics() : null;
+    
+    // Start timing the request
+    let startTime;
+    if (wmsMetrics) {
+        startTime = Date.now();
+    }
+    
+    // Track response size
+    let responseSize = 0;
+    
+    // Determine request type (WMS, mapcache, gmaps)
+    const requestType = req.url.includes('/mapcache/') ? 
+        (req.url.includes('/gmaps/') ? 'gmaps' : 'mapcache') : 'wms';
+    
+    // Get db from params
+    const db = req.params.db;
+    
     let requestURL = config.host + encodeURI(decodeURIComponent(req.url.substr(4)));
 
     // Rewrite URL in case of subUser
@@ -26,7 +47,35 @@ const proxifyRequest = (req, response) => {
         options.headers = {Cookie: "PHPSESSID=" + req.session.gc2SessionId + ";"}
     }
 
-    request(options).pipe(response);
+    const wmsRequest = request(options);
+    
+    wmsRequest.on('response', function(res) {
+        // Track request status in the counter
+        if (wmsMetrics) {
+            wmsMetrics.counter.inc({
+                db: db,
+                request_type: requestType,
+                status: res.statusCode >= 400 ? 'error' : 'success'
+            });
+        }
+    });
+    
+    wmsRequest.on('data', function(chunk) {
+        responseSize += chunk.length;
+    });
+    
+    wmsRequest.on('end', function() {
+        // End timer and record duration with labels
+        if (wmsMetrics) {
+            const durationMs = Date.now() - startTime;
+            wmsMetrics.duration.observe({ db: db, request_type: requestType }, durationMs);
+            
+            // Record response size
+            wmsMetrics.responseSize.observe({ db: db, request_type: requestType }, responseSize);
+        }
+    });
+    
+    wmsRequest.pipe(response);
 };
 
 router.all('/api/wms/:db/:schema', proxifyRequest);

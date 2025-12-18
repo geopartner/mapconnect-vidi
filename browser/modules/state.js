@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2018 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -518,6 +519,7 @@ module.exports = {
 
                                 if (`state` in response.data && response.data.state) {
                                     if (`modules` in response.data.state && `layerTree` in response.data.state.modules && `order` in response.data.state.modules.layerTree) {
+                                        console.log(response.data.state.modules.layerTree.activeLayers.length + ' active layers in saved state');
                                         layerTree.applyState(response.data.state.modules.layerTree);
                                     }
                                 }
