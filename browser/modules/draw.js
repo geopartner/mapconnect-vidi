@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2021 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -440,6 +441,13 @@ module.exports = {
     getState: () => {
         let drawnItems = serializeLayers.serializeDrawnItems(true);
         return {drawnItems};
+    },
+
+    /**
+     * Returns the selected drawing
+     */
+    getSelectedDrawing: () => {
+        return selectedDrawing;
     },
 
     /**

@@ -10,6 +10,8 @@
 let path = require('path');
 require('dotenv').config({path: path.join(__dirname, ".env")});
 
+
+const metrics = require('./modules/metrics');
 let express = require('express');
 let http = require('http');
 let cluster = require('cluster');
@@ -21,7 +23,12 @@ let session = require('express-session');
 let cors = require('cors');
 let config = require('./config/config.js');
 let store;
+
 let app = express();
+
+// Initialize Prometheus metrics if enabled
+metrics.initializeMetrics(app);
+
 
 const MAXAGE = (config.sessionMaxAge || 86400) * 1000;
 
@@ -123,8 +130,12 @@ if (!sticky.listen(server, port, {})) {
     // Master code
     server.once('listening', function () {
         console.log(`server started on port ${port}`);
+
+        // Initialize Prometheus metrics endpoint
+        metrics.startMetricsServer();
     });
 } else {
+    // Worker code
     console.log('worker: ' + cluster.worker.id);
 }
 
@@ -132,3 +143,6 @@ global.io = require('socket.io')(server);
 io.on('connection', function (socket) {
     console.log(socket.id);
 });
+
+// Set up socket.io error metrics
+metrics.setupSocketErrorMetrics(io, 'main');

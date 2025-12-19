@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2021 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -23,7 +24,35 @@ router.get('/api/dataforsyningen/*', (req, response) => {
     const userName = config?.df?.dataforsyningen?.username;
     const pwd = config?.df?.dataforsyningen?.password;
     const token = config?.df?.dataforsyningen?.token;
-    const host = 'https://api.dataforsyningen.dk';
+    let host = 'https://api.dataforsyningen.dk';
+
+    // Due to dataforsyningen modernization, these services change their url, prefixing wms or wmts.
+    // lists updated: 2021-08-21
+    // https://dataforsyningen.dk/news/5042
+    // Live change list: https://dataforsyningen.dk/asset/PDF/Mapningstabel/dataforsyningen_api_2025.xlsx
+    let changedWMSServices = [
+        'orto_sommer_1999',
+        'orto_sommer_2002',
+        'orto_sommer_2005',
+        'orto_sommer_2008',
+        'orto_foraar_temp',
+        'forvaltning2',
+        'kommunikation',
+        'orto_foraar',
+        'grid'
+    ];
+    let changedWMTSServices = [
+        'dhm_bluespot_ekstremregn'
+    ];
+
+    let serviceName = req.url.substring('/api/dataforsyningen/'.length).split('?')[0];
+    serviceName = serviceName.replace(/^\/|\/$/g, ''); // trim leading/trailing slash
+    if (changedWMSServices.includes(decodeURIComponent(serviceName))) {
+        host += '/wms';
+    } else if (changedWMTSServices.includes(decodeURIComponent(serviceName))) {
+        host += '/wmts';
+    }
+
     let creds = token ? `&token=${token}` : `&username=${userName}&password=${pwd}`;
     let requestURL = host + decodeURIComponent(req.url.substr(20)) + creds;
     requestURL = requestURL.replace('false', 'FALSE')
