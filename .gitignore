@@ -126,3 +126,7 @@ public/js/templates.*.js
 scss/main.css
 scss/main.css.map
 public/version*
+
+# MapConnect files
+config/gp
+.vscode/
