@@ -128,5 +128,5 @@ scss/main.css.map
 public/version*
 
 # MapConnect files
-config/gp
+config/gp/*.js
 .vscode/
