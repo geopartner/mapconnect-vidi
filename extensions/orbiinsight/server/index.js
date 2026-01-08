@@ -1,3 +1,9 @@
+/*
+ * @author     Rene Borella <rgb@geopartner.dk>
+ * @copyright  2025 Geopartner Landinspektører A/S
+ * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
+ */
+
 var express = require("express");
 var request = require("request");
 var router = express.Router();
