@@ -1,6 +1,7 @@
-/**
- * DataSyncStatus Component
- * Shows when data was last synced and provides a reload button
+/*
+ * @author     Rene Borella <rgb@geopartner.dk>
+ * @copyright  2025 Geopartner Landinspektører A/S
+ * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
 var React = require("react");

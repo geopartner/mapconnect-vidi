@@ -1,8 +1,15 @@
+/*
+ * @author     Rene Borella <rgb@geopartner.dk>
+ * @copyright  2025 Geopartner Landinspektører A/S
+ * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
+ */
+
 var express = require("express");
 var request = require("request");
 var router = express.Router();
 var moment = require("moment");
-var config = require("../../../config/config.js");
+var config = require("../../../config/config");
+var conf = require("../../../config/gp/config.orbiinsight");
 
 // SET GC2 HOST
 GC2_HOST = config.gc2.host;
@@ -12,9 +19,10 @@ moment.locale("da_DK");
 
 // Set secrets for this demo
 const outdateAfterMinutes = 10;
-const dv_uri = config.extensionConfig.orbiinsight.dv_uri;
-const publicAccessToken = config.extensionConfig.orbiinsight.accessToken;
-const rw_access = config.extensionConfig.orbiinsight.rw_access || [];
+const dv_user = "hardcoded_nonreal_user";
+const dv_uri = conf.users[dv_user].dv_uri || "";
+const publicAccessToken = conf.users[dv_user].accessToken || "";
+const rw_access = conf.users[dv_user].rw_access || [];
 const DV_origin = '30'
 
 // In-memory storage of data
