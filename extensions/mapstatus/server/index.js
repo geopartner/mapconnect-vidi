@@ -588,7 +588,7 @@ router.post(
     });
 
 async function getExcelFromLambda(projektInfo) {
-    const url = "https://d9evukzt7k.execute-api.eu-north-1.amazonaws.com/Prod/create-excel";
+    const url = config.extensionConfig.mapstatus.excelLambdaUrl;
     const argBody = (typeof projektInfo === 'string') ? projektInfo : JSON.stringify(projektInfo);
     return new Promise(async (resolve, reject) => {
         try {
