@@ -120,3 +120,13 @@ config/_variables.less
 
 # Ignore the docs build folder
 docs/_build
+
+# Generated files
+public/js/templates.*.js
+scss/main.css
+scss/main.css.map
+public/version*
+
+# MapConnect files
+config/gp/*.js
+.vscode/

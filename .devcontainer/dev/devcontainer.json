@@ -1,0 +1,26 @@
+{
+    "name": "MapConnect: Development",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "../.."
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash",
+                "debug.javascript.usePreview": false
+            },
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "ms-vscode.vscode-node-debug2"
+            ]
+        }
+    },
+    "postCreateCommand": "cd /root/vidi && grunt && grunt production",
+    "workspaceFolder": "/root/vidi",
+    "forwardPorts": [9229, 3000],
+    "runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"],
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/root/vidi/,type=bind"
+    ]
+}
