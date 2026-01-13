@@ -234,7 +234,7 @@ module.exports = {
       } else {
         showGeosag();
         setTimeout(() =>
-          geosagRef.current.queryAddresses(geojson), 200
+          geosagRef.current.markFromJson(geojson), 200
         );
       }
     };
@@ -257,7 +257,7 @@ module.exports = {
       } else {     
         showGeosag();
         setTimeout(() =>
-          geosagRef.current.queryAddresses(geojson), 200
+          geosagRef.current.markFromJson(geojson), 200
         );
       }
     };
@@ -974,6 +974,12 @@ module.exports = {
           });
       }
 
+      // This function adds matrikel from geometry
+      markFromJson(geojson) {
+        const _self = this;
+        console.log(geojson);
+      }
+
       addMatrikelToMap(feat) {
         const _self = this;
         return new Promise(function (resolve, reject) {
@@ -1327,7 +1333,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<GeoSag />, document.getElementById(exId));
+      ReactDOM.render(<GeoSag ref={geosagRef} />, document.getElementById(exId));
     } catch (e) {
       throw "Failed to load DOM";
     }
