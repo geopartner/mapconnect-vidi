@@ -262,6 +262,16 @@ module.exports = {
       }
     };
 
+    const showDraw = function() {
+      const e = document.querySelector('#main-tabs a[href="#draw-content"]');
+      if (e) {
+          bootstrap.Tab.getInstance(e).show();
+          e.click();
+      } else {
+          console.warn(`Unable to locate #draw-content`)
+      }
+    }
+
     const showGeosag = function() {
       const e = document.querySelector('#main-tabs a[href="#geosag-content"]');
       if (e) {
@@ -500,6 +510,7 @@ module.exports = {
           error: "",
           saveState: "",
           showForm: false,
+          isMapClickActive: false,
         };
 
         this.deleteMatrikel = this.deleteMatrikel.bind(this);
@@ -512,6 +523,7 @@ module.exports = {
         this.matrikelStyle = this.matrikelStyle.bind(this);
         this.zoomToMatrikel = this.zoomToMatrikel.bind(this);
         this.hasChanges = this.hasChanges.bind(this);
+        this.toggleMapClick = this.toggleMapClick.bind(this);
       }
 
       /**
@@ -548,11 +560,10 @@ module.exports = {
 
           // Click event - info
           mapObj.on("click", function (e) {
-            // TODO: Enable only if extension is active?!
-            me.findMatrikel(e);
+            if (me.state.isMapClickActive) {
+              me.findMatrikel(e);
+            }
           });
-
-          utils.cursorStyle().crosshair();
         });
 
         // Deactivates module
@@ -560,12 +571,27 @@ module.exports = {
           console.log(`Stopping ${exId}`);
           me.setState({
             active: false,
+            isMapClickActive: false,
           });
           utils.cursorStyle().reset();
 
           // Remove click handeler
           mapObj.off("click");
         });
+      }
+
+      toggleMapClick() {
+        const _self = this;
+        const newState = !_self.state.isMapClickActive;
+        _self.setState({
+          isMapClickActive: newState,
+        });
+        
+        if (newState) {
+          utils.cursorStyle().crosshair();
+        } else {
+          utils.cursorStyle().reset();
+        }
       }
 
       hasChanges() {
@@ -922,6 +948,20 @@ module.exports = {
         });
       }
 
+      toggleMapClick = () => {
+        const _self = this;
+        const newState = !_self.state.isMapClickActive;
+        _self.setState({
+          isMapClickActive: newState,
+        });
+        
+        if (newState) {
+          utils.cursorStyle().crosshair();
+        } else {
+          utils.cursorStyle().reset();
+        }
+      }
+
       findMatrikel(id) {
         const _self = this;
         _self
@@ -1225,6 +1265,23 @@ module.exports = {
                   {_self.hasChanges() && saveButton()}
                 </h4>
                 <p>{s.case.title}</p>
+                <div className="mb-3">
+                  <button
+                    className={`btn btn-sm ${s.isMapClickActive ? 'btn-success' : 'btn-outline-secondary'}`}
+                    onClick={_self.toggleMapClick}
+                    title={s.isMapClickActive ? 'Klik for at deaktivere' : 'Marker matrikel'}
+                  >
+                    <i className={`bi ${s.isMapClickActive ? 'bi-cursor-fill' : 'bi-cursor'}`}></i>
+                    {' '}{s.isMapClickActive ? 'Kortmarkering aktiv' : 'Aktivér kortmarkering'}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-secondary ms-2"
+                    onClick={showDraw}
+                    title="Gå til tegnefunktionen"
+                  >
+                    <i className="bi bi-pencil-square"></i> Tegnefunktion
+                  </button>
+                </div>
                 <div>
                   <div>
                     <DAWASearch
