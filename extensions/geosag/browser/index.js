@@ -495,6 +495,28 @@ module.exports = {
       });
     };
 
+    var getJordstykkerByGeojson = function (geojson) {
+      var hostName = "/api/datahub/jordstykker/geojson?";
+      var params = {
+        cache: "no-cache",
+      };
+
+      return new Promise(function (resolve, reject) {
+        fetch(hostName + new URLSearchParams(params), {
+          method: "POST",
+          body: JSON.stringify(geojson),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            resolve(d.features);
+          })
+          .catch((e) => {
+            console.log(e);
+            reject(e);
+          });
+      });
+    };
+
     /**
      *
      */
@@ -978,6 +1000,17 @@ module.exports = {
       markFromJson(geojson) {
         const _self = this;
         console.log(geojson);
+        
+        getJordstykkerByGeojson(geojson)
+          .then((features) => {
+            features.forEach((feat) => {
+              _self.addMatrikel({ type: "Feature", ...feat }, true);
+            });
+            _self.zoomToLayer();
+          })
+          .catch((e) => {
+            console.log(e);
+          });
       }
 
       addMatrikelToMap(feat) {
