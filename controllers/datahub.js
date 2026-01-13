@@ -280,10 +280,42 @@ const autocompleteSpoofer = async (req, res, next) => {
   }
 };
 
+const queryJordstykkeByGeojson = async (req, res, next) => {
+  // This endpoint takes a geojson in the body and returns the jordstykker intersecting it with the datahub
+
+  // Get the geojson from the body
+  var geojson = req.body;
+
+  // build the query
+  var sql = jordstykkeQuery;
+
+  // Add the intersection filter
+  sql +=
+    " WHERE ST_Intersects(the_geom, ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON('" +
+    JSON.stringify(geojson) +
+    "'), 4326), 25832)) ";
+
+  // Return the result of the query from datahub
+  try {
+    const result = await queryDatahub(sql);
+
+    // if no result, or result.success is false, return error
+    if (!result || !result._success) {
+      return res.status(500).json({ error: result._message, q: sql });
+    }
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error });
+  }
+};
+
 router.get("/api/datahub/jordstykker", queryJordstykker);
 router.post("/api/datahub/jordstykker", queryJordstykker);
 
 router.get("/api/datahub/:service/autocomplete", autocompleteSpoofer);
+
+router.post("/api/datahub/jordstykker/geojson", queryJordstykkeByGeojson);
 
 router.get(
   "/api/datahub/jordstykker/:ejerlavkode/:matr",
