@@ -9,6 +9,8 @@ import { isNull, isSet } from "lodash";
 import MatrikelTable from "./MatrikelTable";
 import DAWASearch from "./DAWASearch";
 
+const geosagRef = React.createRef();
+
 /**
  *
  * @type {*|exports|module.exports}
@@ -67,6 +69,11 @@ var clicktimer;
  */
 var mapObj;
 
+/**
+ * Draw module
+ */
+var draw;
+
 var config = require("../../../config/config.js");
 
 // Get URL vars
@@ -102,6 +109,7 @@ module.exports = {
   set: function (o) {
     cloud = o.cloud;
     utils = o.utils;
+    draw = o.draw;
     transformPoint = o.transformPoint;
     backboneEvents = o.backboneEvents;
     return this;
@@ -178,6 +186,107 @@ module.exports = {
 
       return true;
     };
+
+        // Set up draw module for blueIdea
+
+    // We inject the buttons and callbacks here
+    let draw_selector = "#draw-content > div.d-flex.justify-content-around.mb-3"
+    
+    // add the buttons
+    $(draw_selector).append(`
+      <div id="_draw_geosag_group" class="" role="group">
+        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        Matrikeludpegning
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="_draw_geosag_group">
+        <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_geosag_with_selected">Marker ud fra valgte</a></li>
+        <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_geosag_with_all">Marker ud fra alle</a></li>
+        </ul>
+      </div>
+    `);
+
+    // Define events
+
+    /*
+     * This function queries the matrikler with the selected drawings
+     * @param {*} _vidi_id of the selected drawing
+     */
+
+    const makeGeosagWithSelected = function (drawing) {
+      // get geojson from selected drawings
+      var geojson = {
+        type: "FeatureCollection",
+        features: [],
+      };
+
+      // for each layer in drawnItems, get geojson
+      let drawnItems = draw.getDrawItems();
+
+      for (const layer of drawnItems.getLayers()) {
+        if (layer._vidi_id === drawing) {
+          geojson.features.push(layer.toGeoJSON(GEOJSON_PRECISION));
+        }
+      };
+
+      // if no features, return
+      if (geojson.features.length == 0) {
+        return;
+      } else {
+        showGeosag();
+        setTimeout(() =>
+          geosagRef.current.queryAddresses(geojson), 200
+        );
+      }
+    };
+
+    const makeGeosagWithAll = function() {
+      // get geojson from all drawings
+      var geojson = {
+        type: "FeatureCollection",
+        features: [],
+      };
+      // for each layer in drawnItems, get geojson
+      let drawnItems = draw.getDrawItems();
+      drawnItems.eachLayer(function (layer) {
+          geojson.features.push(layer.toGeoJSON(GEOJSON_PRECISION));
+      });
+
+      // if no features, return
+      if (geojson.features.length == 0) {
+        return;
+      } else {     
+        showGeosag();
+        setTimeout(() =>
+          geosagRef.current.queryAddresses(geojson), 200
+        );
+      }
+    };
+
+    const showGeosag = function() {
+      const e = document.querySelector('#main-tabs a[href="#geosag-content"]');
+      if (e) {
+          bootstrap.Tab.getInstance(e).show();
+          e.click();
+      } else {
+          console.warn(`Unable to locate #geosag-content`)
+      }
+    }
+
+    // add the event listeners
+    $("#_draw_make_geosag_with_selected").on("click", function() {
+      let drawing = draw.getSelectedDrawing();
+      if (!drawing) {
+        alert("Vælg en tegning");
+        return;
+      }
+      makeGeosagWithSelected(drawing);
+    });
+
+    $("#_draw_make_geosag_with_all").on("click", function() {
+      makeGeosagWithAll();
+    });
+
+    // End draw module setup
 
     var getExistingMatr = function (sagsnr) {
       // Get Existing parts from Matrikelliste
