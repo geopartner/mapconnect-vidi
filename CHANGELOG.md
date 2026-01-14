@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
+## [unreleased]
+
+### Fixed
+- Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
+
+### Added
+- [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
+
+
 ## [2025.10.0] - 2025-2-10
 ### Added
 - New config option `mode` for setting different optimization modes with bitmask flags:
