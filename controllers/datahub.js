@@ -280,10 +280,56 @@ const autocompleteSpoofer = async (req, res, next) => {
   }
 };
 
+const queryJordstykkeByFeatureCollection = async (req, res, next) => {
+  // This endpoint takes a geojson in the body and returns the jordstykker intersecting it with the datahub
+
+  // Get the geojson from the body, and parse as a json object
+  try {
+    var geojson = JSON.parse(req.body);
+  } catch (error) {
+    return res.status(500).json({ error: "Invalid geojson in body" });
+  }
+
+  // build the query
+  var sql = jordstykkeQuery;
+
+  // The incomming geojson is a feature collection. We need to extract the geometry and use it in the query
+  if (geojson.type != "FeatureCollection") {
+    return res.status(500).json({ error: "Invalid geojson type, only FeatureCollection is supported" });
+  }
+
+  // Build array of individual geometry strings for ST_Collect
+  const geoms = geojson.features.map(f => 
+    `ST_GeomFromGeoJSON('${JSON.stringify(f.geometry)}')`
+  ).join(',');
+
+  // Add the intersection filter using ST_Collect to combine all geometries
+  sql +=
+    " WHERE ST_Intersects(the_geom, ST_Transform(ST_SetSRID(ST_Collect(ARRAY[" +
+    geoms +
+    "]), 4326), 25832)) ";
+
+  // Return the result of the query from datahub
+  try {
+    const result = await queryDatahub(sql);
+
+    // if no result, or result.success is false, return error
+    if (!result || !result._success) {
+      return res.status(500).json({ error: result._message, q: sql });
+    }
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error });
+  }
+};
+
 router.get("/api/datahub/jordstykker", queryJordstykker);
 router.post("/api/datahub/jordstykker", queryJordstykker);
 
 router.get("/api/datahub/:service/autocomplete", autocompleteSpoofer);
+
+router.post("/api/datahub/jordstykker/geojson", queryJordstykkeByFeatureCollection);
 
 router.get(
   "/api/datahub/jordstykker/:ejerlavkode/:matr",
