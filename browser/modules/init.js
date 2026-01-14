@@ -681,6 +681,9 @@ module.exports = {
             }
         }
 
+        // Check the current version on startup - periodically checked later
+        getVersion().then(() => checkVersion(window.vidiConfig.autoUpdate));
+
         /**
          * TODO remove if
          */
@@ -812,13 +815,10 @@ module.exports = {
             window.vidiConfig.crossMultiSelect = true;
         }
 
-        if (!window.vidiConfig.autoUpdate && !utils.isPWA()) {
-            getVersion().then(() => checkVersion(true));
-        } else {
-            intervalId = setInterval(() => {
-                getVersion().then(() => checkVersion());
-            }, 30000);
-        }
+        // Each 30 seconds, check for new version - if autoUpdate is enabled force update
+        intervalId = setInterval(() => {
+            getVersion().then(() => checkVersion(window.vidiConfig.autoUpdate));
+        }, 30000);
 
     },
 };
@@ -860,6 +860,7 @@ const checkVersion = function (autoUpdate = false) {
                         if (semver.gt(window.vidiConfig.appVersion, versionValue) ||
                             (window.vidiConfig.appVersion === versionValue && window.vidiConfig.appExtensionsBuild !== extensionsBuildValue)) {
                             if (autoUpdate) {
+                                console.info('Versioning: new application version is available, updating automatically');
                                 setTimeout(() => updateApp(), 1000);
                             } else {
                                 try {
