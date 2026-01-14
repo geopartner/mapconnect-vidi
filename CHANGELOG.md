@@ -13,6 +13,9 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Added
 - [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
 
+### Changed
+- Vidi now checks for update on launch, and every 30 seconds. If autoUpdate is set - the application will forcibly update.
+
 
 ## [2025.10.0] - 2025-2-10
 ### Added
