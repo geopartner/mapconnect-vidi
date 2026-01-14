@@ -134,7 +134,11 @@ let urlsIgnoredForCaching = [{
 }, {
     regExp: true,
     requested: 'socket\.io'
-}];
+}, {
+    regExp: true,
+    requested: "chrome-extension://",
+},
+];
 
 if (typeof CONFIG.urlsIgnoredForCaching === "object") {
     urlsIgnoredForCaching = urlsIgnoredForCaching.concat(CONFIG.urlsIgnoredForCaching);
