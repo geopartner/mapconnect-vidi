@@ -216,6 +216,7 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                     var vidiIsReady = false;
                     var layersAreLoaded = false;
                     var legendIsReady = false;
+                    var baselayerIsReady = false;
 
                     setTimeout(() => {
                         if (headless.isBorrowedResource(browser)) {
@@ -226,6 +227,28 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                     if (!outputPng) {
                         browser.newPage().then(async (page) => {
                             await page.emulateMedia('screen');
+                            
+                            // Listen for page errors
+                            page.on('pageerror', error => {
+                                console.error('PAGE ERROR:', error.message);
+                                console.error('Stack:', error.stack);
+                            });
+                            
+                            // Listen for request failures
+                            page.on('requestfailed', request => {
+                                console.error('REQUEST FAILED:', request.url());
+                                console.error('Failure text:', request.failure().errorText);
+                                console.error('Method:', request.method());
+                                console.error('Resource type:', request.resourceType());
+                            });
+                            
+                            // Listen for responses to catch HTTP errors
+                            page.on('response', response => {
+                                if (!response.ok()) {
+                                    console.error('HTTP ERROR:', response.status(), response.url());
+                                }
+                            });
+                            
                             page.on('console', async msg => {
 
                                 // Log error description
@@ -248,9 +271,11 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                     layersAreLoaded = true;
                                 // If no layers are active, we skip waiting for layers to load
                                 } else if (msg.text().indexOf(`0 active layers in saved state`) !== -1) {
-                                        layersAreLoaded = true;
+                                    layersAreLoaded = true;
                                 } else if (msg.text().indexOf(`Legend is ready`) !== -1) {
                                     legendIsReady = true;
+                                } else if (msg.text().indexOf(`Done loading base layer`) !== -1) {
+                                    baselayerIsReady = true;
                                 }
 
                                 // Make sure we dont wait forever
@@ -258,10 +283,11 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                     vidiIsReady = true;
                                     layersAreLoaded = true;
                                     legendIsReady = true;
+                                    baselayerIsReady = true;
                                 }
 
                                 // for each console line, check if all are ready - then print
-                                if (layersAreLoaded && legendIsReady && vidiIsReady) {
+                                if (layersAreLoaded && legendIsReady && vidiIsReady && baselayerIsReady) {
                                     if (!check) {
                                         check = true;
                                         console.log('App was loaded, generating PDF');
@@ -421,6 +447,27 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                 viewport: {width, height},
                                 userAgent: 'Puppeteer'
                             }).then(() => {
+                                // Listen for page errors
+                                page.on('pageerror', error => {
+                                    console.error('PAGE ERROR (PNG):', error.message);
+                                    console.error('Stack:', error.stack);
+                                });
+                                
+                                // Listen for request failures
+                                page.on('requestfailed', request => {
+                                    console.error('REQUEST FAILED (PNG):', request.url());
+                                    console.error('Failure text:', request.failure().errorText);
+                                    console.error('Method:', request.method());
+                                    console.error('Resource type:', request.resourceType());
+                                });
+                                
+                                // Listen for responses to catch HTTP errors
+                                page.on('response', response => {
+                                    if (!response.ok()) {
+                                        console.error('HTTP ERROR (PNG):', response.status(), response.url());
+                                    }
+                                });
+                                
                                 page.on('console', msg => {
                                     console.log(msg.text());
 
@@ -434,6 +481,8 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                         layersAreLoaded = true;
                                     } else if (msg.text().indexOf(`Legend is ready`) !== -1) {
                                         legendIsReady = true;
+                                    } else if (msg.text().indexOf(`Done loading base layer`) !== -1) {
+                                        baselayerIsReady = true;
                                     }
 
                                     // Make sure we dont wait forever
@@ -441,6 +490,7 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                         vidiIsReady = true;
                                         layersAreLoaded = true;
                                         legendIsReady = true;
+                                        baselayerIsReady = true;
                                     }
                                 
                                     // for each console line, check if all are ready - then print
