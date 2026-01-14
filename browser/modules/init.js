@@ -681,8 +681,10 @@ module.exports = {
             }
         }
 
-        // Check the current version on startup - periodically checked later
-        getVersion().then(() => checkVersion(window.vidiConfig.autoUpdate));
+        // If not printing, Check the current version on startup - periodically checked later
+        if (!urlVars.px && !urlVars.py) {
+            getVersion().then(() => checkVersion(window.vidiConfig.autoUpdate));
+        }
 
         /**
          * TODO remove if
