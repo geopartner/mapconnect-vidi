@@ -502,11 +502,11 @@ module.exports = {
           }
         });
         
-        backboneEvents.get().on(`${exId}:disableRecalcutlate`, () => {
+        backboneEvents.get().on(`${exId}:disableRecalculate`, () => {
             me.setState({retryIsDisabled: true})
         });
 
-        backboneEvents.get().on(`${exId}:enableRecalcutlate`, () => {
+        backboneEvents.get().on(`${exId}:enableRecalculate`, () => {
             me.setState({retryIsDisabled: false})
         });
 
@@ -1340,7 +1340,7 @@ module.exports = {
        */
       runWithoutSelected = async function () {
         let me = this;
-        me.disableRecalcutlate();
+        me.disableRecalculate();
         me.createSnack(__("Starting analysis"), true)
 
         // Because we already know stuff, send it again.
@@ -1383,7 +1383,7 @@ module.exports = {
         } else {
         // Here we handle data from the query-endpoint
         this.setState({selectedVentiler: []});
-        backboneEvents.get().trigger(`${exId}:enableRecalcutlate`);
+        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
         if (data.ledninger) {
           //console.debug("Got ledninger:", data.ledninger);
           me.addSelectedLedningerToMap(data.ledninger);
@@ -2064,9 +2064,9 @@ module.exports = {
           //const anySelected = Array.from(selected).length > 0;
           //if (theSame || !anySelected) { // det skal være muligt at kikke en ventil fra igen, og køre igen. Måske skal label på knappen bare gøres mere præcis
           if (theSame)  {
-            backboneEvents.get().trigger(`${exId}:disableRecalcutlate`);
+            backboneEvents.get().trigger(`${exId}:disableRecalculate`);
           } else {
-            backboneEvents.get().trigger(`${exId}:enableRecalcutlate`);
+            backboneEvents.get().trigger(`${exId}:enableRecalculate`);
           }
           return { selectedVentiler: Array.from(selected) };
         });
