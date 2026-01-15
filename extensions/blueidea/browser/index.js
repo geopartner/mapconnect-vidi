@@ -1,10 +1,16 @@
 /*
- * @author     Rene Borella <rgb@geopartner.dk>
- * @copyright  2025 Geopartner Landinspektører A/S
+ * @author     René Borella <rgb@geopartner.dk>
+ * @copyright  2020- Geoparntner A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
 "use strict";
+
+import proj4 from "proj4";
+import ProjectModel from "./ProjectModel.js";
+import ProjectComponent from "./ProjectComponent.js";
+import ProjectListComponent from "./ProjectListComponent.js";
+
 
 import {
   buffer as turfBuffer,
@@ -15,7 +21,9 @@ import {
   featureCollection as turfFeatureCollection,
   applyFilter,
 } from "@turf/turf";
-import { result } from "underscore";
+import _ from "underscore";
+import { AlternateEmail } from "@material-ui/icons";
+
 var React = require("react");
 
 const blueIdeaRef = React.createRef();
@@ -81,6 +89,8 @@ var queryMatrs = new L.FeatureGroup();
 var queryVentils = new L.FeatureGroup();
 var selectedPoint = new L.FeatureGroup();
 var seletedLedninger = new L.FeatureGroup();
+var selectedIndirekteLedninger = new L.FeatureGroup();
+var selectedForbrugspunkter = new L.FeatureGroup();
 var alarmPositions = new L.FeatureGroup();
 
 var _clearBuffer = function () {
@@ -98,8 +108,14 @@ var _clearSelectedPoint = function () {
 var _clearSeletedLedninger = function () {
   seletedLedninger.clearLayers();
 };
+var _clearSelectedIndirekteLedninger = function () {
+  selectedIndirekteLedninger.clearLayers();
+};
 var _clearAlarmPositions = function () {
   alarmPositions.clearLayers();
+};
+var _clearSelectedForbrugspunkter = function () {
+  selectedForbrugspunkter.clearLayers();
 };
 
 var _clearAll = function () {
@@ -109,6 +125,8 @@ var _clearAll = function () {
   _clearSelectedPoint();
   _clearSeletedLedninger();
   _clearAlarmPositions();
+  _clearSelectedIndirekteLedninger();
+  _clearSelectedForbrugspunkter();
 };
 
 const MAXPARCELS = 250;
@@ -249,7 +267,7 @@ module.exports = {
 
     // We inject the buttons and callbacks here
     let draw_selector = "#draw-content > div.d-flex.justify-content-around.mb-3"
-    
+
     // add the buttons
     $(draw_selector).append(`
       <div id="_draw_blueidea_group" class="" role="group">
@@ -312,7 +330,7 @@ module.exports = {
       // if no features, return
       if (geojson.features.length == 0) {
         return;
-      } else {     
+      } else {
         showBlueIdea();
         setTimeout(() =>
           blueIdeaRef.current.queryAddresses(geojson), 200
@@ -356,6 +374,8 @@ module.exports = {
     mapObj.addLayer(selectedPoint);
     mapObj.addLayer(seletedLedninger);
     mapObj.addLayer(alarmPositions);
+    mapObj.addLayer(selectedIndirekteLedninger);
+    mapObj.addLayer(selectedForbrugspunkter);
 
     /**
      *
@@ -399,14 +419,17 @@ module.exports = {
      */
     class BlueIdea extends React.Component {
       constructor(props) {
-        super(props);
-
+        super(props)
+     
         this.state = {
           active: false,
+          authed: false,
+          project: new ProjectModel(),
+          projects: [],
           done: false,
           loading: false,
-          authed: false,
           results_adresser: {},
+          results_ledninger: [],
           results_matrikler: [],
           results_ventiler: [],
           results_log: {},
@@ -430,10 +453,12 @@ module.exports = {
           alarm_skab_selected: '',
           alarm_skabe: null,
           results_alarmskabe: [],
-          forsyningsarter: [],
-          forsyningsart_selected: 0,
+          // forsyningsarter: [],
+          //forsyningsart_selected: 0, // todo
           layersOnStart: [],
-          selectedVentiler: []
+          retryIsDisabled: true,
+          selectedVentiler: [],
+          clickedTableVentil: ''
         };
 
         // Store bound event handlers as class properties to maintain consistent function references
@@ -470,11 +495,19 @@ module.exports = {
                 api.turnOn(layer);
               });
             }
-
+            this.listProjects();
             return this.getUser();
           } else {
             me.setState(resetObj);
           }
+        });
+        
+        backboneEvents.get().on(`${exId}:disableRecalculate`, () => {
+            me.setState({retryIsDisabled: true})
+        });
+
+        backboneEvents.get().on(`${exId}:enableRecalculate`, () => {
+            me.setState({retryIsDisabled: false})
         });
 
         // Deactivates module
@@ -500,7 +533,7 @@ module.exports = {
           // remove udpeg_layer
           if (me.state.user_udpeg_layer) {
             api.turnOff(me.state.user_udpeg_layer);
-          }          
+          }
 
           _clearAll();
           blocked = true;
@@ -635,8 +668,11 @@ module.exports = {
                 if (data.lukkestatus && data.lukkestatus.views_exists) {
                   lukkestatus = data.lukkestatus.views_exists;
                 }
+                me.setState(prev => ({ 
+                    project: prev.project.withChanges({forsyningsarter: data.forsyningsarter})
+                }));
 
-                me.setState({
+                me.setState(  {
                   user_lukkeliste: data.lukkeliste,
                   user_blueidea: data.blueidea,
                   user_id: config.extensionConfig.blueidea.userid,
@@ -647,15 +683,16 @@ module.exports = {
                   alarm_skabe: alarmskabe,
                   alarm_skab_selected: alarm_skab_selected,
                   lukkeliste_ready: lukkestatus,
-                  forsyningsarter: data.forsyningsarter,
                   forsyningsart_selected: 0,
                   user_udpeg_layer: data.forsyningsarter[0]?.udpeg_layer || null,
                   user_ventil_layer: data.forsyningsarter[0]?.ventil_layer || null,
                   user_ventil_layer_key: data.forsyningsarter[0]?.ventil_layer_key || null,
                   user_ventil_layer_name_key: data.forsyningsarter[0]?.ventil_layer_name_key || null,
                   user_ventil_export: data.forsyningsarter[0]?.ventil_export || null,
-                  layersOnStart: data.layersOnStart || [],
+                  layersOnStart: data.layersOnStart || []
                 });
+
+                
                 resolve(data);
               },
               error: function (e) {
@@ -678,20 +715,24 @@ module.exports = {
 
         // Clear results
         _clearAll();
-        
+
         me.setState({
           results_adresser: {},
           results_log: {},
           results_matrikler: [],
           edit_matr: false,
           TooManyFeatures: false,
-          selectedVentiler: []
+          selectedVentiler: [],
+          beregnuuid: null,
+          clickedTableVentil: ''
         });
 
         let body = point;
-        body.forsynings_id = me.state.forsyningsart_selected; // We use the order fra config to define the numbering
+        body.forsynings_id = me.state.project.forsyningsart_selected; // We use the order fra config to define the numbering
         body.ignore_ventiler = ignoreList;
-
+        body.gyldig_fra = me.state.project.projectStartDate;
+        body.gyldig_til = me.state.project.projectEndDate;
+        body.sagstekst = me.state.project?.projectName.trim() ?? '';
         try {
           let response = await $.ajax({
             url: "/api/extension/lukkeliste/" + me.state.user_id + "/query",
@@ -758,6 +799,42 @@ module.exports = {
         });
       }
 
+      listProjects = () => {
+        let me = this;
+        me.getActiveAndFutureBreakage()
+         .then((data) => {
+              me.setState({
+                  projects: data.features
+                });
+            return
+          })
+          .catch((error) => {
+            me.createSnack(__("Error in list") + ": " + error);
+            console.warn(error);
+            return
+          });
+      }
+      /**
+       * This function gets active and future breakage
+       * @returns geojson with breakages
+       */
+
+      getActiveAndFutureBreakage = () => {
+        let me = this;
+        return new Promise(function (resolve, reject) {
+          $.ajax({
+            url: "/api/extension/blueidea/" + me.state.user_id + "/activebreakages",
+            type: "GET",
+            success: function (data) {
+              resolve(data);
+            },
+            error: function (e) {
+              reject(e);
+            },
+          });
+        });
+      }
+
       /**
        * This function is what starts the process of finding relevant addresses, returns array with kvhx
        * @param {*} geojson
@@ -805,14 +882,14 @@ module.exports = {
               //console.debug("Got matrikler", results);
               // Merge all results into one array
               let merged = this.mergeMatrikler(results);
-              
+
               // if the number of matrs is larger than maxparcels, dont add to map
               if (merged.features.length < MAXPARCELS) {
                 this.addMatrsToMap(merged);
               } else {
                 me.createSnack(__("Large number of parcels found"));
               }
-                
+
               return merged;
             })
             .then((matrikler) => {
@@ -1028,6 +1105,14 @@ module.exports = {
         }
       }
 
+      addSelectedIndirekteLedningerToMap(geojson) {
+        try {
+          var l = L.geoJSON(geojson, {...styleObject.selectedIndirekteLedning, interactive: false}).addTo(selectedIndirekteLedninger);
+        } catch (error) {
+          console.warn(error, geojson);
+        }
+      }
+
       /**
        * Styles and adds the selected point to the map
        */
@@ -1039,6 +1124,21 @@ module.exports = {
               return new L.Marker(latlng, { icon: myIcon, interactive: false });
             },
           }).addTo(selectedPoint);
+        } catch (error) {
+          console.warn(error, geojson);
+        }
+      }
+
+      addSelectedForbrugspunkterToMap(geojson) {
+        try {
+          var myIcon = new L.DivIcon(styleObject.selectedForbrugspunkt);
+          var l = L.geoJSON(geojson, {
+            pointToLayer: function (feature, latlng) {
+              return new L.Marker(latlng, { icon: myIcon, interactive: false });
+
+            },
+          }).addTo(selectedForbrugspunkter);
+
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1120,6 +1220,7 @@ module.exports = {
           return { kvhx: kvhx };
         });
         body.addresses = adresser;
+        body.beregnuuid = this.state.beregnuuid;
 
         $.ajax({
           url:
@@ -1163,9 +1264,26 @@ module.exports = {
         }
       };
 
+      clearLukkeliste = () => {
+        let me = this;
+        me.setState({
+          results_adresser: {},
+          results_log: {},
+          results_matrikler: [],
+          results_ventiler: [],
+          results_adresser: [],
+          edit_matr: false,
+          TooManyFeatures: false,
+          selectedVentiler: [],
+          beregnuuid: null,
+          clickedTableVentil: '',
+          retryIsDisabled: true
+        });
+        _clearAll();
+      };
+
       readyPointLukkeliste = () => {
         let me = this;
-        let point = null;
         blocked = false;
 
         // if udpeg_layer is set, make sure it is turned on
@@ -1222,13 +1340,12 @@ module.exports = {
        */
       runWithoutSelected = async function () {
         let me = this;
-
+        me.disableRecalculate();
         me.createSnack(__("Starting analysis"), true)
 
         // Because we already know stuff, send it again.
         // send the point to the server
 
-        
         let point = {
           lat: me.state.results_log[0].geometry.coordinates[1],
           lng: me.state.results_log[0].geometry.coordinates[0]
@@ -1238,7 +1355,7 @@ module.exports = {
           .filter(n => !Number.isNaN(n));
 
         console.log(point, ignoreVentiler)
-        
+
         let data = {}
         try {
           data = await me.queryPointLukkeliste(point, ignoreVentiler)
@@ -1253,20 +1370,33 @@ module.exports = {
         me.handleQueryResults(data);
         return
       };
-      
+
       /**
        * Handle the results from the query
-       * @param {*} data 
+       * @param {*} data
        */
       handleQueryResults = async function (data) {
         let me = this;
-        // Here we handle data from the query-endpoint
 
+        if (data.log.features[0].properties.status == 1) {
+          me.createSnack(__("No utility lines found"));
+        } else {
+        // Here we handle data from the query-endpoint
+        this.setState({selectedVentiler: []});
+        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
         if (data.ledninger) {
           //console.debug("Got ledninger:", data.ledninger);
           me.addSelectedLedningerToMap(data.ledninger);
           me.setState({
             results_ledninger: data.ledninger.features,
+          });
+        }
+        // Add indirekteledninger to map
+        if (data.indirekteledninger) {
+          console.debug("Got indirekteledninger:", data.indirekteledninger);
+          me.addSelectedIndirekteLedningerToMap(data.indirekteledninger);
+          me.setState({
+            results_indirekteledninger: data.indirekteledninger.features,
           });
         }
         // Add the clicked point to the map
@@ -1275,8 +1405,18 @@ module.exports = {
           me.addSelectedPointToMap(data.log);
           me.setState({
             results_log: data.log.features,
+            beregnuuid: data.log.features[0].properties.beregnuuid,
           });
         }
+        // add forbrugere
+        if (data.forbrugere) {
+          //console.debug("Got forbrugere:", data.forbrugere);
+          me.addSelectedForbrugspunkterToMap(data.forbrugere);
+          me.setState({
+            results_forbrugere: data.forbrugere.features,
+          });
+        }
+
         if (data.ventiler) {
           //console.debug("Got ventiler:", data.ventiler);
           me.addVentilerToMap(data.ventiler);
@@ -1284,6 +1424,9 @@ module.exports = {
             results_ventiler: data.ventiler.features,
 
           });
+          const key = this.state.user_ventil_layer_key;
+          const selected = this.state.results_ventiler.filter(item => item.properties?.checked).map(item => item.properties[key]).filter(Boolean)
+          this.setState({ selectedVentiler : selected })
         }
 
         // Getting matrikler is another task, so we seperate it here in a try-catch to get errors to the frontend
@@ -1292,13 +1435,14 @@ module.exports = {
             let parcelcount = data.matrikler.features[0].properties.matr_count;
             if (parcelcount > MAXPARCELS) {
               me.createSnack(__("Large number of parcels found") + " (" + parcelcount + "/" + MAXPARCELS + ")");
-            } 
+            }
             me.queryAddresses(data.matrikler, true);
           }
         } catch (error) {
           console.warn(error);
           return
         }
+      }
       };
 
       /**
@@ -1330,7 +1474,7 @@ module.exports = {
             me.createSnack(__("Alarm found"))
             // if the server returns a result, show it
             if (data) {
-              // console.debug(data);                
+              // console.debug(data);
               me.addAlarmPositionToMap(data.alarm);
             }
 
@@ -1385,7 +1529,7 @@ module.exports = {
       /**
        * This function parses the alarmskabe results into a list of objects
        * @returns List of objects
-       * 
+       *
        */
       parseAlarmskabeResults = (features) => {
         let results = [];
@@ -1408,7 +1552,7 @@ module.exports = {
         });
         return results;
       };
-      
+
       /**
        * Handler for alarmskab click events
        */
@@ -1438,7 +1582,7 @@ module.exports = {
             me.createSnack(__("Alarm found"))
             // if the server returns a result, show it
             if (data) {
-              // console.debug(data);                
+              // console.debug(data);
               me.addAlarmPositionToMap(data.alarm);
 
               // Add the results to the list in state
@@ -1460,7 +1604,7 @@ module.exports = {
             return
           });
       }
-      
+
       /**
        * This function selects a point in the map for alarmkabel, based on a specific alarmskab
        * @returns Point
@@ -1470,7 +1614,7 @@ module.exports = {
         let point = null;
         blocked = false;
         _clearAll();
-        
+
         // Reset the results
         me.setState({
           results_alarmskabe: [],
@@ -1515,8 +1659,8 @@ module.exports = {
               feature = layer;
             }
           });
-        });      
-        
+        });
+
         // If we dit not hit a feature, we add it to the list, and query the addresses
         if (!hit) {
           // Add matrikel and adress to the list
@@ -1856,6 +2000,7 @@ module.exports = {
         this.downloadBlob(rows, "ventiler.csv", "text/csv;");
       };
 
+
       profileidOptions = () => {
         let options = [];
 
@@ -1871,25 +2016,13 @@ module.exports = {
         return options;
       }
 
-      forsyningsart_options = () => {
-        let options = [];
-        for (let i = 0; i < this.state.forsyningsarter.length; i++) {
-          options.push({
-            value: i,
-            label: this.state.forsyningsarter[i].value,
-          });
-        }
-
-        return options;
-      }
-
       setSelectedProfileid = (e) => {
         this.setState({ selected_profileid: e.target.value });
       }
 
       setSelectedForsyningsart = (e) => {
         // turn off the udpeg layer of the last forsyningsart
-        api.turnOff(this.state.forsyningsarter[this.state.forsyningsart_selected].udpeg_layer);
+        api.turnOff(this.state.project.forsyningsarter[this.state.project.forsyningsart_selected].udpeg_layer);
 
         // turn off previous selection action if active
         if (!blocked) {
@@ -1899,14 +2032,22 @@ module.exports = {
         }
 
         // set the new values based on the index in the list
-        this.setState({ 
+        this.setState({
           forsyningsart_selected: e.target.value,
-          user_udpeg_layer: this.state.forsyningsarter[e.target.value].udpeg_layer,
-          user_ventil_layer: this.state.forsyningsarter[e.target.value].ventil_layer,
-          user_ventil_layer_key: this.state.forsyningsarter[e.target.value].ventil_layer_key,
-          user_ventil_export: this.state.forsyningsarter[e.target.value].ventil_export,
+          user_udpeg_layer: this.state.project.forsyningsarter[e.target.value].udpeg_layer,
+          user_ventil_layer: this.state.project.forsyningsarter[e.target.value].ventil_layer,
+          user_ventil_layer_key: this.state.project.forsyningsarter[e.target.value].ventil_layer_key,
+          user_ventil_export: this.state.project.forsyningsarter[e.target.value].ventil_export,
         });
       }
+
+      haveIdenticalContents = (a, b) => {
+        if (a.length !== b.length) return false;
+        const sortedA = [...a].sort();
+        const sortedB = [...b].sort();
+       return sortedA.every((value, index) => value === sortedB[index]);
+      }
+
 
       handleVentilCheckbox = (e) => {
         const { checked, value } = e.target;
@@ -1914,11 +2055,56 @@ module.exports = {
           const selected = new Set((prev.selectedVentiler || []).map(String));
           if (checked) {
             selected.add(String(value));
+
           } else {
             selected.delete(String(value));
           }
+          //this.setState({ selectedVentiler: Array.from(selected) })
+          const theSame =  this.haveIdenticalContents(Array.from(selected), this.state.selectedVentiler);
+          //const anySelected = Array.from(selected).length > 0;
+          //if (theSame || !anySelected) { // det skal være muligt at kikke en ventil fra igen, og køre igen. Måske skal label på knappen bare gøres mere præcis
+          if (theSame)  {
+            backboneEvents.get().trigger(`${exId}:disableRecalculate`);
+          } else {
+            backboneEvents.get().trigger(`${exId}:enableRecalculate`);
+          }
           return { selectedVentiler: Array.from(selected) };
         });
+      };
+   
+      zoomToXY = (x, y) => {
+        const utm32 = "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs";
+        const wgs84 = "+proj=longlat +datum=WGS84 +no_defs";
+        const xf =parseFloat(x)
+        const yf =parseFloat(y)
+        const [lng, lat] = proj4(utm32, wgs84, [xf, yf]);
+        const padding = 0.0001;
+        const bounds = L.latLngBounds(
+          [lat - padding, lng - padding],
+          [lat + padding, lng + padding]
+        );
+        cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true  });
+      };
+
+      handleZoom (x, y, ventil_key) {
+        this.zoomToXY(x, y);
+        this.setState({ clickedTableVentil : ventil_key})
+      };
+      
+      handleZoomProject  = (x, y, layerName) => {
+        this.zoomToXY(x, y);
+        if (this.state?.user_udpeg_layer) {
+            this.turnOnLayer(this.state.user_udpeg_layer);
+        } 
+        else {
+          this.turnOnLayer(layerName);
+        } 
+      };
+
+      updateProject = (changes) => {
+        this.setState(prev => ({
+            project: prev.project.withChanges(changes),
+        }));
       };
 
       /**
@@ -1927,29 +2113,51 @@ module.exports = {
       render() {
         const _self = this;
         const s = _self.state;
-
-        // Checkbox list for ventiler (robust to missing keys and always string values)
-        const ventilOptions = (s.results_ventiler || [])
+        const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled, user_udpeg_layer  } = this.state
+        const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
+        const pipeSelected = results_ledninger.length > 0;
+        
+        let ventilOptions = (s.results_ventiler || [])
           .map((feature) => {
-            const key = s.user_ventil_layer_key;
+            const selectedVentilerAsStrings = selectedVentiler.map(String);
             const name_key = s.user_ventil_layer_name_key;
+            const key = s.user_ventil_layer_key;
             if (!feature.properties || feature.properties[key] == null) return null;
             return {
               value: String(feature.properties[key]),
               label: String(feature.properties[name_key]),
+              type: String(feature.properties['type']),
+              funktion: String(feature.properties['funktion']),
+              xkoord: String(feature.properties['xkoord']),
+              ykoord: String(feature.properties['ykoord']),
+              checked: Boolean(selectedVentilerAsStrings.includes(feature.properties[key].toString()))
             };
           })
           .filter(Boolean);
-
-        // If not logged in, show login button
+          // guard mod dubletter
+          if (ventilOptions.length > 1) {
+            ventilOptions = [...new Map(ventilOptions.map(feature => [feature.value, feature])).values()];
+          }
+       
         if (s.authed && s.user_id) {
           // Logged in
           return (
             <div role="tabpanel">
+              <div className="row mx-auto gap-0 my-3">
+               <details className="col-11">
+                <summary>Aktive lukkeprojekter</summary>
+                <ProjectListComponent
+                  projects={this.state.projects}
+                  onHandleZoomProject={this.handleZoomProject}
+                  layerName ={user_udpeg_layer}
+                ></ProjectListComponent>
+                </details>
+              </div>
+              
               <div>
                 <div style={{ alignSelf: "center" }}>
                   <h6>
-                    {__("Select area")} 
+                    {__("Select area")}
                     {
                     s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-success">{__("Lukkeliste is ready")}</span>
@@ -1959,7 +2167,8 @@ module.exports = {
                       <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
                     }
                   </h6>
-                  <div className="d-grid mx-auto gap-3">
+                  {false && (
+                   <div className="d-grid mx-auto gap-2">
                     <button
                       onClick={() => this.clickDraw()}
                       className="btn btn-outline-secondary"
@@ -1967,75 +2176,117 @@ module.exports = {
                     >
                       {__("Draw area")}
                     </button>
-                  </div>
-                  <div className="row mx-auto gap-3 my-3"> 
-                    <select
-                      onChange={this.setSelectedForsyningsart}
-                      value={s.forsyningsart_selected}
-                      placeholder={__("Select utility-type")}
-                      disabled={!this.allowLukkeliste() | s.edit_matr}
-                      className="col"
-                    >
-                      {this.forsyningsart_options().map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => this.readyPointLukkeliste()}
-                      className="btn btn-primary col-4"
-                      disabled={!this.allowLukkeliste() | s.edit_matr}
-                    >
-                      {__("Select point on map")}
-                    </button>
-                  </div>
+                  </div>)}
+                  
+                  <ProjectComponent
+                    project={this.state.project}
+                    onChange={this.updateProject}
+                    pipeSelected= {pipeSelected}
+                    onReadyPointLukkeliste={this.readyPointLukkeliste}
+                    onClearLukkeliste={this.clearLukkeliste}
+                  ></ProjectComponent>
+
+                  <hr style={{marginRight: "1.5em"}}></hr>
 
                   {/* Checkbox list for ventiler */}
                   {ventilOptions.length > 0 && (
-                    <div className="my-3">
-                      <label>{__("Select valves")}</label>
-                      <div style={{ maxHeight: '75px', overflowY: 'auto', border: '1px solid v#cccv', padding: '8px', borderRadius: '4px' }}>
-                        {ventilOptions.map((option) => (
-                          <div className="form-check" key={option.value}>
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              id={`ventil-checkbox-${option.value}`}
-                              value={option.value}
-                              checked={this.state.selectedVentiler.includes(option.value)}
-                              onChange={this.handleVentilCheckbox}
-                            />
-                            <label className="form-check-label" htmlFor={`ventil-checkbox-${option.value}`}>
-                              {option.label}
-                            </label>
-                          </div>
-                        ))}
+                    <>
+                      <div className="row mx-auto gap-0 my-3">
+                        <h6 className="col-11">{__("Valves")}</h6>
+                        <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
+                        <table className="table table-sm mb-0 col-11">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '10px' }}>
+                              </th>
+                              <th>Navn</th>
+                              <th>Type</th>
+                              <th>Funktion</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {ventilOptions.map((option) => {
+                               const bg =  clickedTableVentil === option.label? 'table-primary': 'table-light';
+                               return (<tr key={option.value} className={bg}>
+                                {/* 1 Checkbox */}
+                                <td>
+                                  <input
+                                   checked={option.checked }
+                                   className="form-check-input"
+                                   id={`ventil-checkbox-${option.value}`}
+                                   onChange={this.handleVentilCheckbox}
+                                   style={{ cursor: 'pointer' }}
+                                   title="Vælg for at ignorere ved ny kørsel"
+                                   type="checkbox"
+                                   value={option.value}
+                                  />
+                                </td>
+                                {/* 2 Label */}
+                                <td>
+                                  <label
+                                   className="form-check-label"
+                                   htmlFor={`ventil-checkbox-${option.value}`}
+                                   style={{ cursor: 'pointer' }}
+                                   >
+                                    {option.label}
+                                  </label>
+                                </td>
+                                {/* 3 Type */}
+                                <td>
+                                  <label>
+                                    {option.type}
+                                  </label>
+                                </td>
+                                {/* 4 Funtion */}
+                                <td>
+                                  <label>
+                                    {option.funktion}
+                                  </label>
+                                </td>
+
+                                {/* 5 Zoom icon */}
+                                <td style={{ textAlign: 'center' }}>
+                                  <i
+                                  className="bi bi-zoom-in"
+                                  onClick={() => this.handleZoom(option.xkoord, option.ykoord, option.label)}
+                                  style={{ cursor: 'pointer' }}
+                                  title="Zoom til ventil"
+                                  >
+                                  </i>
+                                </td>
+                              </tr>
+                            )})}
+                          </tbody>
+                        </table>
                       </div>
+
                       <div className="form-text">{__("Select one or more valves.")}</div>
                       <button
-                      onClick={() => this.runWithoutSelected()}
-                      className="btn btn-primary col-6"
-                    >
+                        className="btn btn-primary"
+                        disabled ={retryIsDisabled}
+                        onClick={() => this.runWithoutSelected()}
+                      >
                       {__("Retry with unaccessible valves")}
                     </button>
-                    </div>
+                      </div>
+                      <hr></hr>
+                    </>
                   )}
 
 
 
                 </div>
-
-                <div className="row">
+                <div className="row mx-auto gap-3 my-1">
                   <div className="col">
                     <h6>{__("Show results")}</h6>
                     <div className="d-flex align-items-center justify-content-between">
                     {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
-                                                  
-                      <button 
+
+                      <button
                         disabled={Object.keys(s.results_adresser).length == 0}
                         title={__("modify parcels")}
-                        className="btn btn-outline-secondary"
+                        className="btn btn-primary"
                         onClick={() => this.toggleEdit()}>
                           {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
                       </button>
@@ -2043,58 +2294,71 @@ module.exports = {
                   </div>
                 </div>
 
-                <div className="d-grid mx-auto gap-3">
+                <div className="row mx-auto gap-3 my-1">
                   <button
+                    className="col btn btn-primary"
                     onClick={() => this.downloadAdresser()}
-                    className="btn btn-outline-secondary"
                     disabled={!this.readyToSend()}
                     hidden={s.TooManyFeatures}
+                    style={{ marginRight: '8px' }}
                   >
                     {__("Download addresses")}
                   </button>
-
+                </div> 
+                <div className="row mx-auto gap-3 my-3">
+                
                   <button
                     onClick={() => this.getAdresser(s.results_matrikler)}
-                    className="btn btn-primary"
+                    className="col btn btn-primary"
                     hidden={!s.TooManyFeatures}
+                    style={{ marginRight: '8px' }}
                   >
                     {__("Get addresses")}
                   </button>
+                </div>
 
                   {s.user_profileid && this.profileidOptions().length > 1 &&
-                    <select
-                      onChange={this.setSelectedProfileid}
-                      value={s.selected_profileid}
-                      placeholder={__("Select profile")}
-                      disabled={!this.readyToBlueIdea()}
-                    >
-                      {this.profileidOptions().map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="row">
+                        <select
+                          className="col"
+                          style={{ marginRight: '18px', marginLeft: '14px' }}
+                          onChange={this.setSelectedProfileid}
+                          value={s.selected_profileid}
+                          placeholder={__("Select profile")}
+                          disabled={!this.readyToBlueIdea()}
+                        >
+                          {this.profileidOptions().map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                    </div>
                   }
-
-                  <button
-                    onClick={() => this.sendToBlueIdea()}
-                    className="btn btn-outline-secondary"
-                    disabled={!this.readyToBlueIdea()}
-                  >
-                    {__("Go to blueidea")}
-                  </button>
+                 <div className="row mx-auto gap-3 my-1">
+                    <button
+                      onClick={() => this.sendToBlueIdea()}
+                      className="col btn btn-primary"
+                      disabled={!this.readyToBlueIdea()}
+                      style={{ marginRight: '8px' }}
+                    >
+                      {__("Go to blueidea")}
+                    </button>
+                  </div>
                 </div>
 
                 <div
                   style={{ alignSelf: "center" }}
                   hidden={!s.user_lukkeliste}
                 >
-                  <h6>{__("Valve list")}</h6>
-                  <div className="d-grid mx-auto gap-3">
+                  {/* <h6 className="mt-3">{__("Valve list")}</h6> */}
+                  <div className="mt-3"> </div>
+                  <div className="row mx-auto gap-3 my-1">
                     <button
                       onClick={() => this.downloadVentiler()}
-                      className="btn btn-outline-secondary"
+                      className="col btn btn-primary"
                       disabled={!this.allowVentilDownload()}
+                      style={{ marginRight: '8px' }}
                     >
                       {__("Download valves")}
                     </button>
@@ -2117,11 +2381,11 @@ module.exports = {
                       <option value="Both">{__('Both')}</option>
                     </select>
                     <div className="form-text mb-3">Angiv søgeretning</div>
-                  
+
                   <div className="vertical-center col-auto">
                     {__("Distance from point")}
                   </div>
-                  
+
                   <div className="input-group">
                     <input
                       type="number"
@@ -2151,7 +2415,7 @@ module.exports = {
                   <div className="vertical-center col-auto">
                   {__("Distance from cabinet")}
                   </div>
-                  
+
                   <div className="input-group">
                     <select
                       className="form-select"
@@ -2175,12 +2439,12 @@ module.exports = {
                   </div>
                   <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
                 </div>
-              
+
                 <div
                   style={{ alignSelf: "center" }}
                   hidden={s.results_alarmskabe.length == 0}
                 >
-                  <div className='list-group'>
+                <div className='list-group'>
                     {s.results_alarmskabe.map((item, index) => (
                       <div className='list-group-item' key={index}>
                         <div className='d-flex w-100 justify-content-between'>
@@ -2189,9 +2453,8 @@ module.exports = {
                         </div>
                       </div>
                     ))}
-                  </div>
                 </div>
-              
+
               </div>
             </div>
 
@@ -2227,7 +2490,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<BlueIdea ref={blueIdeaRef}/>, document.getElementById(exId));
+      ReactDOM.render(<BlueIdea ref={blueIdeaRef} />, document.getElementById(exId));
     } catch (e) {
       throw "Failed to load DOM";
     }

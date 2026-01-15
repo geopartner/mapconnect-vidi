@@ -1,13 +1,11 @@
-/*
- * @author     Rene Borella <rgb@geopartner.dk>
- * @copyright  2025 Geopartner Landinspektører A/S
- * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
- */
-
 var dict = {
   "Select valves": {
     da_DK: "Vælg utilgængelige ventiler",
     en_US: "Select unaccessible valves",
+  },
+  "Valves": {
+    da_DK: "Ventiler",
+    en_US: "Valves",
   },
   "Select one or more valves.": {
     da_DK: "Vælg en eller flere ventiler og kør igen",
@@ -41,6 +39,18 @@ var dict = {
     da_DK: "Udpeg punkt",
     en_US: "Select point",
   },
+  "admin info": {
+    da_DK: "Projekt",
+    en_US: "Admin reg.",
+  },
+  "project description": {
+    da_DK: "Indtast projektbeskrivelse",
+    en_US: "Project description",
+  },
+  "Clear map": {
+    da_DK: "Nulstil",
+    en_US: "Clear",
+  },
   "Select point for alarmkabel": {
     da_DK: "Beregn alarm",
     en_US: "Calculate alarm",
@@ -57,6 +67,14 @@ var dict = {
     da_DK: "Fejl i søgning af matrikler",
     en_US: "Error in search for parcels",
   },
+  "projekt list":{
+    da_DK: "Aktive lukkeprojekter",
+    en_US: "Active projects",
+  },
+  "Error in list": {
+    da_DK: "Fejl ved hentning af projekter",
+    en_US: "Error in getting projects",
+  },
   "Draw area": {
     da_DK: "Tegn områder",
     en_US: "Draw area",
@@ -66,16 +84,16 @@ var dict = {
     en_US: "Select",
   },
   "Show results": {
-    da_DK: "Resultater",
-    en_US: "Results",
+    da_DK: "Resultat",
+    en_US: "Result",
   },
   "Waiting to start": {
     da_DK: "Henter jordstykker",
     en_US: "Fetching parcels",
   },
   "Go to blueidea": {
-    da_DK: "Opret, og gå til blueidea",
-    en_US: "Create and go to blueidea",
+    da_DK: "Gem, og gå til blueidea",
+    en_US: "Save and go to blueidea",
   },
   "Valve list": {
     da_DK: "Lukkeliste",
@@ -177,6 +195,44 @@ var dict = {
     da_DK: "Forsyningart for alarmkabel er ikke sat",
     en_US: "Utility type for alarm cable is not set",
   },
+  "Forsyningstype": {
+    da_DK: "Forsyningtype",
+    en_US: "Pipe",
+  },
+  "Break-type": {
+    da_DK: "Brudtype",
+    en_US: "Break type",
+  },
+  "Brudtype akut": {
+    da_DK: "Brudtype akut",
+    en_US: "Break type Current/ongoing",
+  },
+  "Brudtype planlagt": {
+    da_DK: "Brudtype planlagt",
+    en_US: "Break type Planned maintenance",
+  },
+  "Forventet-start": {
+    da_DK: "Start tidspunkt",
+    en_US: "Expected start time",
+  },
+  "Forventet-slut": {
+    da_DK: "Forventet afsluttet",
+    en_US: "Expected end time",
+  },
+  "Ikke-valid-datoer": {
+    da_DK: "Starttidspunktet skal ligge før sluttidspunktet",
+    en_US: "Start time must be before end time",
+  },
+  "missing-project-name": {
+    da_DK: "Mangler projektnavn",
+    en_US: "Projectname is missing",
+  },
+
+  "No utility lines found": {
+    da_DK: "Der er ikke fundet nogen ledninger i nærheden af det valgte punkt. Prøv at vælge et andet punkt.",
+    en_US: "No utility lines found near the selected point. Please try selecting a different point.",
+  }
+  
 };
 
 module.exports = dict;
