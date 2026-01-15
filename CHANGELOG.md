@@ -9,6 +9,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Fixed
 - Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
+- Fixes an issue with printing when using a layer from DF-controller. Somelayers failed the SSL-check. These layers are now printable.
 
 ### Added
 - [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
