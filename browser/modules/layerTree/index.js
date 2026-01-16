@@ -3050,7 +3050,7 @@ module.exports = {
         $(parentNode).append(markup);
         
         // Find the newly added subgroup container using its unique ID
-        let container = $(document.getElementById(base64SubgroupName));
+        let container = $(parentNode).find(`[id="${base64SubgroupName}"]`).last();
         if (container.length !== 1) {
             throw new Error(`Error while locating parent node for group children`);
         }
