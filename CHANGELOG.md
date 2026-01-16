@@ -11,12 +11,15 @@ and this project adheres to [CalVer](https://calver.org/).
 - Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
 - Fixed an issue with printing when using a layer from DF-controller. Somelayers failed the SSL-check. These layers are now printable.
 - Fixed an issue with nested subgroups and their activation. 
+- Fixed an issue where the linkprefix/linksuffix was not used in the table-view of the select tool.
 
 ### Added
 - [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
 
 ### Changed
 - Vidi now checks for update on launch, and every 30 seconds. If autoUpdate is set - the application will forcibly update. It does however, require the use to update once more to get this functionality in their browser.
+- Centralized the Handlebars-helpers and made them work inside the table-view of the select tool.
+
 
 
 ## [2025.10.0] - 2025-2-10
