@@ -67,14 +67,15 @@ class MarkupGenerator {
         </div>`);
     }
 
-    getSubgroupControlRecord(base64SubgroupName, name, level, addGroupCheckbox = false) {
+    getSubgroupControlRecord(base64SubgroupName, name, level, addGroupCheckbox = false, fullPath = '') {
         return (`<li
         class="layer-item list-group-item list-subgroup-item d-flex flex-column gap-1"
-        data-gc2-subgroup-id="${name}">
+        data-gc2-subgroup-id="${name}"
+        data-gc2-subgroup-path="${fullPath}">
             <div class="d-flex align-items-center gap-1">
                 <span style="display: ${addGroupCheckbox ? "inline" : "none"};" class="togglebutton">
                     <label>
-                        <input class="form-check-input" type="checkbox" data-gc2-subgroup-name="${name}" data-gc2-subgroup-level="${level}">
+                        <input class="form-check-input" type="checkbox" data-gc2-subgroup-name="${name}" data-gc2-subgroup-level="${level}" data-gc2-subgroup-path="${fullPath}">
                     </label>
                 </span>
                 <button type="button" class="btn btn-outline-secondary btn-sm js-subgroup-toggle-button">

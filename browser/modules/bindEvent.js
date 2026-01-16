@@ -169,18 +169,28 @@ module.exports = {
 
         $(document).arrive('[data-gc2-subgroup-name]', function () {
             $(this).on('change', function (e) {
-                let prefix = '';
                 let isChecked = $(e.target).prop(`checked`);
-                let subGroupName = $(this).data(`gc2-subgroup-name`).toString();
-                let subGroupLevel = $(this).data(`gc2-subgroup-level`).toString();
+                let subGroupPath = $(this).data(`gc2-subgroup-path`).toString();
                 let layerGroup = $(this).closest('.card-body').data('gc2-group-id').toString();
-                meta.getMetaData().data.forEach(e => {
-                    let parsedMeta = layerTree.parseLayerMeta(e);
-                    if (parsedMeta?.vidi_sub_group?.split("|")[subGroupLevel] === subGroupName && e.layergroup === layerGroup) {
-                        prefix = parsedMeta?.default_layer_type && parsedMeta.default_layer_type !== 't' ? parsedMeta.default_layer_type + ':' : '';
-                        switchLayer.init(prefix + e.f_table_schema + "." + e.f_table_name, isChecked, false);
+                
+                // Pre-filter by layer group first to reduce iterations
+                const layersInGroup = meta.getMetaData().data.filter(layer => layer.layergroup === layerGroup);
+                
+                // Build the subgroup path prefix once for startsWith comparison
+                const subGroupPrefix = subGroupPath + '|';
+                
+                // Collect all layers to toggle
+                layersInGroup.forEach(layer => {
+                    let parsedMeta = layerTree.parseLayerMeta(layer);
+                    const layerSubGroup = parsedMeta?.vidi_sub_group;
+                    
+                    // Match exact path or nested subgroups
+                    if (layerSubGroup && (layerSubGroup === subGroupPath || layerSubGroup.startsWith(subGroupPrefix))) {
+                        const prefix = parsedMeta?.default_layer_type && parsedMeta.default_layer_type !== 't' ? parsedMeta.default_layer_type + ':' : '';
+                        switchLayer.init(prefix + layer.f_table_schema + "." + layer.f_table_name, isChecked, false);
                     }
-                })
+                });
+                
                 e.stopPropagation();
                 backboneEvents.get().trigger(`layerTree:activeLayersChange`);
             });
