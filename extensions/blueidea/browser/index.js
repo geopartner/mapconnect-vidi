@@ -2145,7 +2145,7 @@ module.exports = {
             <div role="tabpanel">
               <div className="row mx-auto gap-0 my-3">
                <details className="col-11">
-                <summary>Aktive lukkeprojekter</summary>
+                <summary>Aktive brud</summary>
                 <ProjectListComponent
                   projects={this.state.projects}
                   onHandleZoomProject={this.handleZoomProject}
