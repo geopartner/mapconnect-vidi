@@ -475,7 +475,7 @@ module.exports = {
        */
       componentDidMount() {
         let me = this;
-
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is emitted
         backboneEvents.get().on("deactivate:all", () => {});
@@ -1340,7 +1340,8 @@ module.exports = {
        */
       runWithoutSelected = async function () {
         let me = this;
-        me.disableRecalculate();
+      
+        me.setState({retryIsDisabled: true})
         me.createSnack(__("Starting analysis"), true)
 
         // Because we already know stuff, send it again.
@@ -1358,7 +1359,12 @@ module.exports = {
 
         let data = {}
         try {
-          data = await me.queryPointLukkeliste(point, ignoreVentiler)
+          data = await me.queryPointLukkeliste(point, ignoreVentiler).
+          then((data) => data)
+          {
+            me.setState({retryIsDisabled: true})
+          }
+
         }
         catch (error) {
           me.createSnack(__("Error in search") + ": " + error.message);
