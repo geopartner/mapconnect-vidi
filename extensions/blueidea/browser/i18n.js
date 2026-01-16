@@ -68,8 +68,8 @@ var dict = {
     en_US: "Error in search for parcels",
   },
   "projekt list":{
-    da_DK: "Aktive lukkeprojekter",
-    en_US: "Active projects",
+    da_DK: "Aktive brud",
+    en_US: "Active breaks",
   },
   "Error in list": {
     da_DK: "Fejl ved hentning af projekter",
@@ -224,7 +224,7 @@ var dict = {
     en_US: "Start time must be before end time",
   },
   "missing-project-name": {
-    da_DK: "Mangler projektnavn",
+    da_DK: "Mangler navn",
     en_US: "Projectname is missing",
   },
 

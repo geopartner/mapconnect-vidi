@@ -418,9 +418,11 @@ module.exports = {
      *
      */
     class BlueIdea extends React.Component {
+      static get Aktive_brud_layeName() {  return 'lukkeliste.aktive_brud'}
+      
       constructor(props) {
         super(props)
-     
+        
         this.state = {
           active: false,
           authed: false,
@@ -542,6 +544,7 @@ module.exports = {
             user_lukkeliste: false,
             edit_matr: false,
           });
+          me.state.project.clearData();
         });
 
         // On auth change, handle Auth state
@@ -1289,6 +1292,7 @@ module.exports = {
         // if udpeg_layer is set, make sure it is turned on
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
+          me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         }
 
         // change the cursor to crosshair and wait for a click

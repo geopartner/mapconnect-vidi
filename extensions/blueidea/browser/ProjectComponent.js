@@ -96,7 +96,7 @@ class ProjectComponent extends React.Component {
                         <div className="row mx-auto gap-3 my-2">
                             <label className="col-4" >{this.__("Break-type")}</label>
                             <select
-                                onChange={(e) => { handleBreakTypeChange( e.target.value) }}
+                                onChange={(e) => { this.handleBreakTypeChange( e.target.value) }}
                                 value={project.brudtype}
                                 placeholder={this.__("Break-type")}
                                 // disabled={isDisabled}
@@ -135,7 +135,7 @@ class ProjectComponent extends React.Component {
                         </div>
                     </>
                 )}
-                <div className="row mx-auto gap-3 my-3">
+                <div className="row mx-auto gap-3 my-2">
                     <label className="col-4" >{this.__("admin info")}</label>
                     <input
                      className="col-7"
@@ -145,13 +145,6 @@ class ProjectComponent extends React.Component {
                      type="text"
                     />
                 </div>
-                  {!pipeSelected && (
-                    <div className="row mx-auto gap-3 my-3">
-                    <span className="col-11 mx-2 badge bg-success" >
-                        {project.statusMessage}
-                    </span>
-                    </div>
-                  )}
                 <div className="row mx-auto gap-2 my-3">
                     <button
                       onClick={onReadyPointLukkeliste}
@@ -169,7 +162,14 @@ class ProjectComponent extends React.Component {
                       {this.__("Clear map")}
                     </button>
                     <div className="col-1"></div>
-                  </div>
+                </div>
+                {!pipeSelected && (
+                   <div className="row mx-auto gap-3 my-3">
+                     <span className="col-11 mx-2 badge bg-success" >
+                      {project.statusMessage}
+                      </span>
+                   </div>
+                )}
             </>
         )
     }

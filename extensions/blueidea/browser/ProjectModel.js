@@ -43,6 +43,10 @@ class ProjectModel {
             ...changes,
         });
     }
+
+    clearData = () => {
+        this.projectName = '';
+    }
     
     get isDateRangeValid() {
       return (
@@ -60,17 +64,17 @@ class ProjectModel {
     }
 
     get statusMessage() {
-        let txt = ''
-        if (!this.isDateRangeValid) {
-             txt = `${this.__("Ikke-valid-datoer")} `;
+      const messages = [];
+      if (!this.isDateRangeValid) {
+        messages.push(this.__("Ikke-valid-datoer"));
+      }
+      if (!this.isProjectNameValid) {
+        if (messages.length) {
+          messages[0] += '.';
         }
-        if (!this.isProjectNameValid) {
-            txt += `${this.__("missing-project-name")} `;
-        }
-        if (this.isDateRangeValid && this.isProjectNameValid){
-            txt = '';
-        }
-        return txt;
+        messages.push(this.__("missing-project-name"));
+      }
+      return messages.join(" ");
     }
 
 }
