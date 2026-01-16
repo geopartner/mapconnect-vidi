@@ -1206,46 +1206,42 @@ module.exports = {
        * @returns SmsGroupId for redirecting to the correct page
        */
       sendToBlueIdea = () => {
-        let body = {
-          profileId: parseInt(this.state.selected_profileid) || null,
-        };
-
-        // if blueidea is false, return
+       // hvis blueidea er false, return
         if (!this.state.user_blueidea) {
-          // show error in snackbar
           this.createSnack(__("NotAllowedBlueIdea"));
           return;
         }
 
-        // take the curent list of addresses and create an array of objects containing the kvhx
-        let keys = Object.keys(this.state.results_adresser);
-        let adresser = keys.map((kvhx) => {
-          return { kvhx: kvhx };
-        });
-        body.addresses = adresser;
-        body.beregnuuid = this.state.beregnuuid;
+        const body = {
+          profileId: parseInt(this.state.selected_profileid) || null,
+          beregnuuid: this.state.beregnuuid,
+          addresses: Object.keys(this.state.results_adresser).map((kvhx) => ({
+           kvhx: kvhx,
+         })),
+        };
 
         $.ajax({
-          url:
-            "/api/extension/blueidea/" +
-            config.extensionConfig.blueidea.userid +
-            "/CreateMessage",
+          url:"/api/extension/blueidea/" + config.extensionConfig.blueidea.userid + "/CreateMessage",
           type: "POST",
           data: JSON.stringify(body),
           contentType: "application/json",
           dataType: "json",
-          success: function (data) {
+        })
+          .then((data) => {
             if (data.smsGroupId) {
               window.open(
-                "https://dk.sms-service.dk/message-wizard/write-message?smsGroupId=" +
-                  data.smsGroupId,
-                "_blank"
-              ); // open in new tab
+              "https://dk.sms-service.dk/message-wizard/write-message?smsGroupId=" +
+              data.smsGroupId,
+              "_blank");
             }
-          },
-          error: function (error) {
-            //console.debug(error);
-          },
+            // success snackbar
+            this.createSnack("Beskeden er oprettet korrekt.");
+            // list projects again to show the new one
+            this.listProjects();
+          })
+          .fail((error) => {
+            console.error(error);
+            this.createSnack("Der opstod en fejl ved afsendelse til BlueIdea.");
         });
       };
 
