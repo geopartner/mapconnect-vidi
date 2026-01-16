@@ -18,6 +18,12 @@ import {
 var debounce = require('lodash/debounce');
 const marked = require('marked');
 const mustache = require('mustache');
+const Handlebars = require('handlebars/dist/handlebars');
+const registerHandlebarsHelpers = require('./../../../browser/modules/handlebarsHelpers');
+
+// Register Handlebars helpers
+registerHandlebarsHelpers(Handlebars);
+
 var gc2table = (function () {
     "use strict";
     var isLoaded, object, init;
@@ -441,12 +447,12 @@ var gc2table = (function () {
                 let layerClone = jQuery.extend(true, {}, v.feature.properties);
                 $.each(layerClone, function (n, m) {
                     $.each(cm, function (j, k) {
-                        if (k.dataIndex === n && (k?.template && k?.template !== '') && (layerClone[n] && layerClone[n] !== '')) {
+                        if (k.dataIndex === n && (k?.template && k?.template !== '') && ((layerClone[n] && layerClone[n] !== '') || k?.template?.includes('replaceNull'))) {
                             const fieldTmpl = k.template;
-                            const fieldHtml = mustache.render(fieldTmpl, layerClone);
+                            const fieldHtml = Handlebars.compile(fieldTmpl)(layerClone);
                             layerClone[n] = fieldHtml;
                         } else if (k.dataIndex === n && (k?.link === true || typeof k?.link === "string") && (layerClone[n] && layerClone[n] !== '')) {
-                            layerClone[n] = "<a style='text-decoration: underline' target='_blank' rel='noopener' href='" + layerClone[n] + "'>" + (typeof k.link === "string" ? k.link : "Link") + "</a>";
+                            layerClone[n] = "<a style='text-decoration: underline' target='_blank' rel='noopener' href='" + (k.linkprefix ? k.linkprefix : "") + layerClone[n] + (k.linksuffix ? k.linksuffix : "") + "'>" + (typeof k.link === "string" ? k.link : "Link") + "</a>";
                         } else if (k.dataIndex === n && (k?.content === 'image' && (layerClone[n] && layerClone[n] !== ''))) {
                             layerClone[n] = `<div style="cursor: pointer" onclick="window.open().document.body.innerHTML = '<img src=\\'${layerClone[n]}\\' />';">
                                         <img style='width:25px' src='${layerClone[n]}'/>
