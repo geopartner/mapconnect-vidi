@@ -175,7 +175,10 @@ module.exports = {
                 let layerGroup = $(this).closest('.card-body').data('gc2-group-id').toString();
                 meta.getMetaData().data.forEach(e => {
                     let parsedMeta = layerTree.parseLayerMeta(e);
-                    if (parsedMeta?.vidi_sub_group === subGroupPath && e.layergroup === layerGroup) {
+                    // Match exact path or nested subgroups (paths that start with this path)
+                    const layerSubGroup = parsedMeta?.vidi_sub_group;
+                    const isInSubgroup = layerSubGroup === subGroupPath || layerSubGroup?.startsWith(subGroupPath + '|');
+                    if (isInSubgroup && e.layergroup === layerGroup) {
                         prefix = parsedMeta?.default_layer_type && parsedMeta.default_layer_type !== 't' ? parsedMeta.default_layer_type + ':' : '';
                         switchLayer.init(prefix + e.f_table_schema + "." + e.f_table_name, isChecked, false);
                     }
