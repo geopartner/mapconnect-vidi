@@ -171,12 +171,11 @@ module.exports = {
             $(this).on('change', function (e) {
                 let prefix = '';
                 let isChecked = $(e.target).prop(`checked`);
-                let subGroupName = $(this).data(`gc2-subgroup-name`).toString();
-                let subGroupLevel = $(this).data(`gc2-subgroup-level`).toString();
+                let subGroupPath = $(this).data(`gc2-subgroup-path`).toString();
                 let layerGroup = $(this).closest('.card-body').data('gc2-group-id').toString();
                 meta.getMetaData().data.forEach(e => {
                     let parsedMeta = layerTree.parseLayerMeta(e);
-                    if (parsedMeta?.vidi_sub_group?.split("|")[subGroupLevel] === subGroupName && e.layergroup === layerGroup) {
+                    if (parsedMeta?.vidi_sub_group === subGroupPath && e.layergroup === layerGroup) {
                         prefix = parsedMeta?.default_layer_type && parsedMeta.default_layer_type !== 't' ? parsedMeta.default_layer_type + ':' : '';
                         switchLayer.init(prefix + e.f_table_schema + "." + e.f_table_name, isChecked, false);
                     }

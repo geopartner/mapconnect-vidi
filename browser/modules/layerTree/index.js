@@ -3042,17 +3042,25 @@ module.exports = {
      *
      * @returns {Object}
      */
-    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true) => {
+    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true, parentPath = '') => {
         let base64SubgroupName = Base64.encode(`subgroup_${subgroup.id}_level_${level}_${uuidv4()}`).replace(/=/g, "");
-        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox);
+        const fullPath = parentPath ? `${parentPath}|${subgroup.id}` : subgroup.id;
+        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox, fullPath);
 
         $(parentNode).append(markup);
-        $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-id`).append(`
+        
+        // Find the newly added subgroup container using its unique ID
+        let container = $(document.getElementById(base64SubgroupName));
+        if (container.length !== 1) {
+            throw new Error(`Error while locating parent node for group children`);
+        }
+        
+        container.closest(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-id`).append(`
                 ${subgroup.id}
                 <i class="bi-grip-vertical layer-move-vert layer-move-vert-subgroup ms-auto"></i>
         `);
 
-        $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-toggle-button`).click((event) => {
+        container.closest(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-toggle-button`).click((event) => {
             // Checking if the subgroup was already drawn
             let subgroupRootElement = $(event.target).closest(`[data-gc2-subgroup-id]`).first();
             if (subgroupRootElement.find(`.js-subgroup-children`).children().length === 0) {
@@ -3068,12 +3076,7 @@ module.exports = {
             }
         });
 
-        $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-children[id="${base64SubgroupName}"]`).hide();
-
-        let container = $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-children[id="${base64SubgroupName}"]`);
-        if ($(container).length !== 1) {
-            throw new Error(`Error while locating parent node for group children`);
-        }
+        container.hide();
 
         const renderSubgroupChildren = () => {
             subgroup.children.map(child => {
@@ -3084,7 +3087,7 @@ module.exports = {
                     } = _self.checkIfLayerIsActive(forcedState, precheckedLayers, child.layer);
                     _self.createLayerRecord(child.layer, container, layerIsActive, activeLayerName, subgroup.id);
                 } else if (child.type === GROUP_CHILD_TYPE_GROUP) {
-                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel);
+                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel, initiallyClosed, fullPath);
                 } else {
                     throw new Error(`Invalid layer group`);
                 }
@@ -4177,8 +4180,8 @@ module.exports = {
                     return false;
                 }).length;
                 activeLayersInSubGroups += activeLayers.filter(e => JSON.parse(metaDataKeys[layerTreeUtils.stripPrefix(e)].meta)?.vidi_sub_group?.match(re) && metaDataKeys[layerTreeUtils.stripPrefix(e)].layergroup === layerGroup).length;
-                const searchPath = `[data-gc2-group-id="${layerGroup}"]` + ' ' + split.map(e => `[data-gc2-subgroup-id="${e}"]`).join(' ') + ` [data-gc2-subgroup-name="${split[split.length - 1]}"]`;
-                const el = document.querySelector(searchPath);
+                const fullPath = split.join('|');
+                const el = document.querySelector(`[data-gc2-group-id="${layerGroup}"] [data-gc2-subgroup-path="${fullPath}"] input[type="checkbox"]`);
                 if (el) {
                     el.indeterminate = activeLayersInSubGroups > 0 && !(activeLayersInSubGroups === layersInSubGroups);
                     el.checked = activeLayersInSubGroups > 0;
