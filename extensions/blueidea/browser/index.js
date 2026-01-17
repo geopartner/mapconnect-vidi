@@ -2116,6 +2116,7 @@ module.exports = {
         const pipeSelected = results_ledninger.length > 0;
         
         let ventilOptions = (s.results_ventiler || [])
+          .filter((feature) => feature && feature.properties && feature.properties['forbundet'] !== false   )
           .map((feature) => {
             const selectedVentilerAsStrings = selectedVentiler.map(String);
             const name_key = s.user_ventil_layer_name_key;
