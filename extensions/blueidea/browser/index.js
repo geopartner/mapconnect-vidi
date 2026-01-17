@@ -22,6 +22,7 @@ import {
   applyFilter,
 } from "@turf/turf";
 import _ from "underscore";
+import { retry } from "async";
 
 var React = require("react");
 
@@ -1324,7 +1325,7 @@ module.exports = {
         // send the point to the server
         let data = {}
         try {
-          data = await me.queryPointLukkeliste(point)
+          data = await me.queryPointLukkeliste(point);
         }
         catch (error) {
           me.createSnack(__("Error in search") + ": " + error.message);
@@ -1390,8 +1391,11 @@ module.exports = {
           me.createSnack(__("No utility lines found"));
         } else {
         // Here we handle data from the query-endpoint
-        this.setState({selectedVentiler: []});
-        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
+        this.setState({
+          selectedVentiler: [],
+          retryIsDisabled: true
+        });
+        
         if (data.ledninger) {
           //console.debug("Got ledninger:", data.ledninger);
           me.addSelectedLedningerToMap(data.ledninger);
@@ -1428,7 +1432,6 @@ module.exports = {
           me.addVentilerToMap(data.ventiler);
           me.setState({
             results_ventiler: data.ventiler.features,
-
           });
           const key = this.state.user_ventil_layer_key;
           const selected = this.state.results_ventiler.filter(item => item.properties?.checked).map(item => item.properties[key]).filter(Boolean)
@@ -2057,6 +2060,8 @@ module.exports = {
 
       handleVentilCheckbox = (e) => {
         const { checked, value } = e.target;
+///        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
+        this.setState({ retryIsDisabled: false   });
         this.setState(prev => {
           const selected = new Set((prev.selectedVentiler || []).map(String));
           if (checked) {
@@ -2064,15 +2069,6 @@ module.exports = {
 
           } else {
             selected.delete(String(value));
-          }
-          //this.setState({ selectedVentiler: Array.from(selected) })
-          const theSame =  this.haveIdenticalContents(Array.from(selected), this.state.selectedVentiler);
-          //const anySelected = Array.from(selected).length > 0;
-          //if (theSame || !anySelected) { // det skal være muligt at kikke en ventil fra igen, og køre igen. Måske skal label på knappen bare gøres mere præcis
-          if (theSame)  {
-            backboneEvents.get().trigger(`${exId}:disableRecalculate`);
-          } else {
-            backboneEvents.get().trigger(`${exId}:enableRecalculate`);
           }
           return { selectedVentiler: Array.from(selected) };
         });
@@ -2113,7 +2109,7 @@ module.exports = {
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled, user_udpeg_layer  } = this.state
+        const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         
@@ -2271,7 +2267,7 @@ module.exports = {
                       <div className="form-text">{__("Select one or more valves.")}</div>
                       <div className="row mx-auto gap-0 my-3">
                         <button
-                          className="btn btn-primary col-12"
+                          className="btn btn-primary col"
                           disabled ={retryIsDisabled}
                           onClick={() => this.runWithoutSelected()}
                         >
