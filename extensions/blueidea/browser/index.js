@@ -2267,15 +2267,17 @@ module.exports = {
                           </tbody>
                         </table>
                       </div>
+
                       <div className="form-text">{__("Select one or more valves.")}</div>
-                      <button
-                        className="btn btn-primary"
-                        disabled ={retryIsDisabled}
-                        onClick={() => this.runWithoutSelected()}
-                      >
+                      <div className="row mx-auto gap-0 my-3">
+                        <button
+                          className="btn btn-primary col-12"
+                          disabled ={retryIsDisabled}
+                          onClick={() => this.runWithoutSelected()}
+                        >
                         {__("Retry with unaccessible valves")}
-                      </button>
-                      
+                        </button>
+                      </div>
                       <hr></hr>
                     </>
                   )}

@@ -12,7 +12,7 @@ var dict = {
     en_US: "Select one or more valves and run again.",
   },
   "Retry with unaccessible valves": {
-    da_DK: "Beregn uden valgte",
+    da_DK: "Genberegn med valgte ventiler",
     en_US: "Calculate without selected",
   },
   "Info": {
