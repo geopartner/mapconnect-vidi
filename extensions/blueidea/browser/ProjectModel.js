@@ -6,20 +6,23 @@ class ProjectModel {
         brudtype = 1, 
         forsyningsarter = [],
         forsyningsart_selected = 0,
+        isReadOnly = false,
         projectEndDate,
         projectStartDate,
+        projectName = '',
         useBreakType= window.config.extensionConfig?.useBreakType ?? true,
-        projectName = ''
     } = {}) {
         const now = new Date()
         const plus2h = new Date(now.getTime() + 2 * 60 * 60 * 1000)
+
         this.brudtype = brudtype;
         this.forsyningsarter = forsyningsarter;
         this.forsyningsart_selected = forsyningsart_selected;
+        this.isReadOnly = isReadOnly;
         this.projectStartDate = projectStartDate ?? now;
         this.projectEndDate = projectEndDate ?? plus2h;
-        this.useBreakType = useBreakType;
         this.projectName = projectName;
+        this.useBreakType = useBreakType;
     }
 
      __ = (txt) => {
@@ -55,7 +58,7 @@ class ProjectModel {
         this.projectStartDate < this.projectEndDate
     )}
 
-    get isDisabled() {
+    get isNotValid() {
         return !this.isDateRangeValid || !this.isProjectNameValid
     }
 
@@ -69,12 +72,9 @@ class ProjectModel {
         messages.push(this.__("Ikke-valid-datoer"));
       }
       if (!this.isProjectNameValid) {
-        if (messages.length) {
-          messages[0] += '.';
-        }
         messages.push(this.__("missing-project-name"));
       }
-      return messages.join(" ");
+      return messages.join(". ");
     }
 
 }

@@ -63,15 +63,22 @@ class ProjectComponent extends React.Component {
       return value.replace(/[^a-zA-Z0-9æøåÆØÅ\s\-:]/g, '');
     } 
     handleProjectSagsr = (e) => {
-        const  sagsnr = this.sanitizeInput(e.target.value);
+        const sagsnr = this.sanitizeInput(e.target.value);
         this.props.onChange({ projectName: sagsnr });
     };
-
-
+    handleClearClick = () => {
+      this.props.onChange({ isReadOnly: false });
+      this.props.onChange({ projectName: '' });
+      this.props.onClearLukkeliste();
+   };
+   handlePointClick = () => {
+      this.props.onChange({ isReadOnly: true });
+      this.props.onReadyPointLukkeliste();
+   }
     render() {
-        const { onClearLukkeliste, onReadyPointLukkeliste, pipeSelected,  project  } = this.props;
-        const  isDisabled = project.isDisabled;
-        const  pipeSelectDisabled = !pipeSelected;
+        const {  pipeSelected,  project  } = this.props;
+        const  isReadOnly = project.isReadOnly || pipeSelected;
+        const isNotValid = project.isNotValid;
         const clearDisable = !pipeSelected;
         return (
             <>
@@ -81,7 +88,7 @@ class ProjectComponent extends React.Component {
                         onChange={(e) => { handleForsyningsart_selectedChange( e.target.value) }}
                         value={project.forsyningsart_selected}
                         placeholder={this.__("Select utility-type")}
-                        // disabled={isDisabled}
+                        disabled={isReadOnly}
                         className="col-7"
                     >
                         {this.forsyningsart_options().map((option) => (
@@ -99,7 +106,7 @@ class ProjectComponent extends React.Component {
                                 onChange={(e) => { this.handleBreakTypeChange( e.target.value) }}
                                 value={project.brudtype}
                                 placeholder={this.__("Break-type")}
-                                // disabled={isDisabled}
+                                disabled={isReadOnly}
                                 className="col-7"
                             >
                                 {project.breakTypeOptions().map((option) => (
@@ -114,7 +121,7 @@ class ProjectComponent extends React.Component {
                             <label className="col-4" >{this.__("Forventet-start")}</label>
                             <input
                                 className="col-7"
-                                // disabled={isDisabled}
+                                disabled={isReadOnly}
                                 onChange={ e => this.handleProjectStartChange(new Date(e.target.value))}
                                 placeholder={this.__("Forventet-start")}
                                 value={this.toDateTimeLocal(project.projectStartDate)}
@@ -126,7 +133,7 @@ class ProjectComponent extends React.Component {
                             <label className="col-4" >{this.__("Forventet-slut")}</label>
                             <input
                                 className="col-7"
-                                
+                                disabled={isReadOnly}
                                 onChange={ e => this.handleProjectEndChange(new Date(e.target.value))}
                                 placeholder={this.__("Forventet-slut")}
                                 value={this.toDateTimeLocal(project.projectEndDate)}
@@ -139,6 +146,7 @@ class ProjectComponent extends React.Component {
                     <label className="col-4" >{this.__("admin info")}</label>
                     <input
                      className="col-7"
+                     disabled={isReadOnly}
                      onChange={this.handleProjectSagsr}
                      placeholder={this.__("project description")}
                      value={project.projectName}
@@ -147,15 +155,15 @@ class ProjectComponent extends React.Component {
                 </div>
                 <div className="row mx-auto gap-2 my-3">
                     <button
-                      onClick={onReadyPointLukkeliste}
+                      onClick={this.handlePointClick}
                       className="btn btn-primary col-4"
-                      disabled={isDisabled}
+                      disabled={isNotValid} 
                     >
                       {this.__("Select point on map")}
                     </button>
                    <div className="col-3"></div>
                     <button
-                      onClick={onClearLukkeliste}
+                      onClick={this.handleClearClick}
                       className="btn btn-primary col-4"
                       disabled={clearDisable}
                     >

@@ -40,11 +40,11 @@ var dict = {
     en_US: "Select point",
   },
   "admin info": {
-    da_DK: "Projekt",
+    da_DK: "Navn / sagsnr.",
     en_US: "Admin reg.",
   },
   "project description": {
-    da_DK: "Indtast projektbeskrivelse",
+    da_DK: "Indtast navn / sagsnr.",
     en_US: "Project description",
   },
   "Clear map": {

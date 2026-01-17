@@ -22,7 +22,6 @@ import {
   applyFilter,
 } from "@turf/turf";
 import _ from "underscore";
-import { AlternateEmail } from "@material-ui/icons";
 
 var React = require("react");
 
@@ -1270,6 +1269,7 @@ module.exports = {
           results_log: {},
           results_matrikler: [],
           results_ventiler: [],
+          results_ledninger: [],
           results_adresser: [],
           edit_matr: false,
           TooManyFeatures: false,
@@ -1290,7 +1290,7 @@ module.exports = {
           me.turnOnLayer(me.state.user_udpeg_layer);
           me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         }
-
+        
         // change the cursor to crosshair and wait for a click
         utils.cursorStyle().crosshair();
         cloud.get().map.on("click", me.boundSelectPointLukkeliste);
@@ -1393,9 +1393,7 @@ module.exports = {
         if (data.ledninger) {
           //console.debug("Got ledninger:", data.ledninger);
           me.addSelectedLedningerToMap(data.ledninger);
-          me.setState({
-            results_ledninger: data.ledninger.features,
-          });
+          me.setState({results_ledninger: data.ledninger.features});
         }
         // Add indirekteledninger to map
         if (data.indirekteledninger) {
@@ -2097,14 +2095,8 @@ module.exports = {
         this.setState({ clickedTableVentil : ventil_key})
       };
       
-      handleZoomProject  = (x, y, layerName) => {
+      handleZoomProject  = (x, y) => {
         this.zoomToXY(x, y);
-        if (this.state?.user_udpeg_layer) {
-            this.turnOnLayer(this.state.user_udpeg_layer);
-        } 
-        else {
-          this.turnOnLayer(layerName);
-        } 
       };
 
       updateProject = (changes) => {
@@ -2155,7 +2147,6 @@ module.exports = {
                 <ProjectListComponent
                   projects={this.state.projects}
                   onHandleZoomProject={this.handleZoomProject}
-                  layerName ={user_udpeg_layer}
                 ></ProjectListComponent>
                 </details>
               </div>
