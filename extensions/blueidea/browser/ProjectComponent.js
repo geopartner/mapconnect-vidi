@@ -72,7 +72,7 @@ class ProjectComponent extends React.Component {
       this.props.onClearLukkeliste();
    };
    handlePointClick = () => {
-      this.props.onChange({ isReadOnly: true });
+      // this.props.onChange({ isReadOnly: true });
       this.props.onReadyPointLukkeliste();
    }
     render() {

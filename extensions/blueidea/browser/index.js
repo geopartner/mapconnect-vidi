@@ -505,10 +505,12 @@ module.exports = {
         
         backboneEvents.get().on(`${exId}:disableRecalculate`, () => {
             me.setState({retryIsDisabled: true})
+            me.setState({project: me.state.project.withChanges({isReadOnly: false })});
         });
 
         backboneEvents.get().on(`${exId}:enableRecalculate`, () => {
             me.setState({retryIsDisabled: false})
+            me.setState({project: me.state.project.withChanges({isReadOnly: true})});
         });
 
         // Deactivates module
@@ -2190,9 +2192,16 @@ module.exports = {
                   {ventilOptions.length > 0 && (
                     <>
                       <div className="row mx-auto gap-0 my-3">
-                        <h6 className="col-11">{__("Valves")}</h6>
-                        <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
-                        <table className="table table-sm mb-0 col-11">
+                        <h6 className="col-9">{__("Valves")}</h6>
+                        <div className="col-2" style={{ cursor: 'pointer' }}>
+                          <i className="bi bi-download float-end" 
+                           onClick={() => this.downloadVentiler()}
+                           title= {__("Download valves")}>
+                          </i>
+                        </div>
+                      </div>  
+                      <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
+                          <table className="table table-sm mb-0 col-11">
                           <thead>
                             <tr>
                               <th style={{ width: '10px' }}>
@@ -2258,21 +2267,18 @@ module.exports = {
                           </tbody>
                         </table>
                       </div>
-
                       <div className="form-text">{__("Select one or more valves.")}</div>
                       <button
                         className="btn btn-primary"
                         disabled ={retryIsDisabled}
                         onClick={() => this.runWithoutSelected()}
                       >
-                      {__("Retry with unaccessible valves")}
-                    </button>
-                      </div>
+                        {__("Retry with unaccessible valves")}
+                      </button>
+                      
                       <hr></hr>
                     </>
                   )}
-
-
 
                 </div>
                 <div className="row mx-auto gap-3 my-1">
@@ -2341,24 +2347,6 @@ module.exports = {
                       style={{ marginRight: '8px' }}
                     >
                       {__("Go to blueidea")}
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  style={{ alignSelf: "center" }}
-                  hidden={!s.user_lukkeliste}
-                >
-                  {/* <h6 className="mt-3">{__("Valve list")}</h6> */}
-                  <div className="mt-3"> </div>
-                  <div className="row mx-auto gap-3 my-1">
-                    <button
-                      onClick={() => this.downloadVentiler()}
-                      className="col btn btn-primary"
-                      disabled={!this.allowVentilDownload()}
-                      style={{ marginRight: '8px' }}
-                    >
-                      {__("Download valves")}
                     </button>
                   </div>
                 </div>
