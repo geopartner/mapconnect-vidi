@@ -2180,7 +2180,7 @@ module.exports = {
           // Logged in
           return (
             <div role="tabpanel">
-              <div className="row mx-auto gap-0 my-3">
+              {/* <div className="row mx-auto gap-0 my-3">
                <details className="col-11">
                 <summary>Aktive brud</summary>
                 <ProjectListComponent
@@ -2189,6 +2189,14 @@ module.exports = {
                   onHandleStopProject={this.handleStopProject}
                 ></ProjectListComponent>
                 </details>
+              </div> */}
+              <div className="row mx-auto gap-0 my-3">
+                <ProjectListComponent
+                   className="col"
+                  projects={this.state.projects}
+                  onHandleZoomProject={this.handleZoomProject}
+                  onHandleStopProject={this.handleStopProject}
+                ></ProjectListComponent>
               </div>
               
               <div>
@@ -2315,6 +2323,16 @@ module.exports = {
                         {__("Retry with unaccessible valves")}
                         </button>
                       </div>
+                      <div className="row mx-auto gap-3 my-1">
+                        <button
+                          onClick={() => this.sendToBlueIdea()}
+                          className="col btn btn-primary"
+                          disabled={!this.readyToBlueIdea()}
+                          style={{ marginRight: '8px' }}
+                        >
+                          {__("Go to blueidea")}
+                        </button>
+                      </div>
                       <hr></hr>
                     </>
                   )}
@@ -2378,16 +2396,6 @@ module.exports = {
                         </select>
                     </div>
                   }
-                 <div className="row mx-auto gap-3 my-1">
-                    <button
-                      onClick={() => this.sendToBlueIdea()}
-                      className="col btn btn-primary"
-                      disabled={!this.readyToBlueIdea()}
-                      style={{ marginRight: '8px' }}
-                    >
-                      {__("Go to blueidea")}
-                    </button>
-                  </div>
                 </div>
 
                 <div
