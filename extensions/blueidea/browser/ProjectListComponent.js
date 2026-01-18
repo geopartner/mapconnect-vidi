@@ -43,14 +43,14 @@ class ProjectListComponent extends React.Component {
         <>
           {noProjects && (
             <div className="row mx-auto gap-0 my-3">
-              <h6 className="col">Ingen aktive projekter</h6>       
+              <h6 className="col">Ingen aktive brud</h6>       
             </div>
           )}
 
           {!noProjects&& (
             <>
                <div className="row">
-                <h6 className="col">Aktive projekter</h6>       
+                <h6 className="col">Aktive brud</h6>       
               </div>
               <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
                 <table className="table table-sm mb-0 col">

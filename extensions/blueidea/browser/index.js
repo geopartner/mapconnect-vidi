@@ -2326,8 +2326,9 @@ module.exports = {
                       {
                         s.user_profileid && this.profileidOptions().length > 1 &&
                           <div className="row">
+                            <label class="col-4">SMS Profil</label>
                             <select
-                              className="col"
+                              className="col-7"
                               style={{ marginRight: '18px', marginLeft: '14px' }}
                               onChange={this.setSelectedProfileid}
                               value={s.selected_profileid}
@@ -2343,19 +2344,19 @@ module.exports = {
                         </div>
                       }
                       <div className="row mx-auto gap-3 my-1">
-                        <label class="col-4">SMS Profil</label>
                         <button
                           onClick={() => this.sendToBlueIdea()}
-                          className="col-7 btn btn-primary"
+                          className="col btn btn-primary"
                           disabled={!this.readyToBlueIdea()}
                           style={{ marginRight: '8px' }}
                         >
                           {__("Go to blueidea")}
                         </button>
                       </div>
+                      <hr></hr>
                     </>
                   )}
-                <hr></hr>
+                
                 </div>
                 <div className="row mx-auto gap-3 my-1">
                   <div className="col">
