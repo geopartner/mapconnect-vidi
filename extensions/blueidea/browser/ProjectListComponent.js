@@ -41,7 +41,7 @@ class ProjectListComponent extends React.Component {
       const noProjects = projects.length ===0;
       return (
         <>
-          {noProjects&& (
+          {noProjects && (
             <div className="row mx-auto gap-0 my-3">
               <h6 className="col">Ingen aktive projekter</h6>       
             </div>
@@ -49,14 +49,13 @@ class ProjectListComponent extends React.Component {
 
           {!noProjects&& (
             <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
-              <table className="table table-sm mb-0 col-11">
+              <table className="table table-sm mb-0 col">
                 <thead>
                   <tr>
-                    
+                    <th></th>                    
                     <th>Navn</th>
                     <th>Start</th>
                     <th>Slut</th>
-                    <th></th>
                     <th></th>
                     <th></th>
                 </tr>
@@ -66,8 +65,17 @@ class ProjectListComponent extends React.Component {
                       const bg =  clickedTableProjectIndex === rowIndex ? 'table-primary': 'table-light';
                       const fromDate = this.toDateTimeLocal(option.properties.gyldig_fra);
                       const toDate = this.toDateTimeLocal(option.properties.gyldig_til);
-                      return (<tr key={option.properties.beregnuuid} className={bg} onClick={() => this.handleRowClick(rowIndex)}
->
+                      return (<tr key={option.properties.beregnuuid} className={bg} onClick={() => this.handleRowClick(rowIndex)}>
+                        <td style={{ textAlign: 'center' }}>
+                          <i
+                            className="bi bi-zoom-in"
+                                  onClick={() => onHandleZoomProject(option.properties.x, option.properties.y )}
+                                  style={{ cursor: 'pointer' }}
+                                  title="Zoom til projekt"
+                          >
+                          </i>
+                        </td>
+
                         <td>
                           <label
                             className="form-check-label">
@@ -87,22 +95,12 @@ class ProjectListComponent extends React.Component {
                           </label>
                         </td>
 
-                        <td style={{ textAlign: 'center' }}>
-                          <i
-                            className="bi bi-zoom-in"
-                                  onClick={() => onHandleZoomProject(option.properties.x, option.properties.y )}
-                                  style={{ cursor: 'pointer' }}
-                                  title="Zoom til projekt"
-                          >
-                          </i>
-                        </td>
-
-                        <td style={{ textAlign: 'center' }}>
+                        <td disabled={true} style={{ textAlign: 'center' }}>
                           <i
                             className="bi bi-pencil"
                             disabled={true}
                             onClick={() => onHandleZoomProject(option.properties.x, option.properties.y, user_udpeg_layer )}
-                            style={{ cursor: 'pointer' }}
+                            // style={{ cursor: 'pointer' }}
                             title="Rediger projekt"
                           >
                           </i>
