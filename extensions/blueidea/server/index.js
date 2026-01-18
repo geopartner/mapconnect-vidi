@@ -234,6 +234,37 @@ router.post("/api/extension/blueidea/:userid/CreateMessage", function (req, resp
   }
 );
 
+// Set the project end date to a moment in the past, to close it
+router.post("/api/extension/blueidea/:userid/StopProject", function (req, response) {
+    guard(req, response);
+
+    // body must contain beregnuuids
+    const beregnuuid = req.body?.beregnuuid;
+    if (!beregnuuid) {
+      response.status(401).send("Missing beregnuuid");
+      return;
+    }
+    const sqlTxt = `UPDATE lukkeliste.beregnlog SET gyldig_til = now() - interval '1 minute' WHERE beregnuuid = '${beregnuuid}'`;
+
+    // If debug is set, add testMode to body
+    // if (bi.users[req.params.userid].debug) {
+    //   body.testMode = true;
+    // }
+
+    // update gyldig_til to now() - 1 minute
+    SQLAPI(sqlTxt, req)
+      .then((res) => {
+        console.log("Updated gyldig_til to to the paste for", beregnuuid);
+        response.json(res);
+      })
+      .catch((err) => {
+        console.error("Error updating gyldig_til for", beregnuuid, err);
+        response.status(500).json(err);
+      });
+    
+  }
+);
+
 // Query alarmkabel-plugin in database
 router.post("/api/extension/alarmkabel/:userid/query", function (req, response) {
     guard(req, response);

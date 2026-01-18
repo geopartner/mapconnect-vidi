@@ -227,11 +227,23 @@ var dict = {
     da_DK: "Mangler navn",
     en_US: "Projectname is missing",
   },
+  "Confirm stop project": {
+    da_DK: "Er du sikker på at du vil gøre bruddet inaktivt? Denne handling kan ikke fortrydes.",
+    en_US: "Are you sure you want to stop the project? This action cannot be undone.",
+  },
 
   "No utility lines found": {
     da_DK: "Der er ikke fundet nogen ledninger i nærheden af det valgte punkt. Prøv at vælge et andet punkt.",
     en_US: "No utility lines found near the selected point. Please try selecting a different point.",
-  }
+  },
+  "Project stopped successfully": {
+    da_DK: "Bruddet er inaktivt",
+    en_US: "Project stopped successfully",
+  },
+  "Error stopping project": {
+    da_DK: "Der opstod en fejl under forsøg på at gøre bruddet inaktivt.",
+    en_US: "An error occurred while trying to stop the project.",
+  },
   
 };
 

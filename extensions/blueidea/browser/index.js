@@ -514,6 +514,11 @@ module.exports = {
             me.setState({project: me.state.project.withChanges({isReadOnly: true})});
         });
 
+        backboneEvents.get().on(`${exId}:listProject`, () => {
+            me.listProjects();
+        });
+
+
         // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
           console.debug("Stopping blueidea");
@@ -2097,11 +2102,46 @@ module.exports = {
         this.zoomToXY(x, y);
       };
 
-      updateProject = (changes) => {
+      handleStopProject = (beregnuuid) => {
+        if (!window.confirm(__("Confirm stop project")))  {
+         return 
+        }
+        try{
+        const me = this;
+        const body = {
+          beregnuuid
+        }
+        alert(beregnuuid);
+        $.ajax({
+          url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
+          type: "POST",
+          data: JSON.stringify(body),
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then(() => {
+            backboneEvents.get().trigger(`${exId}:listProject`);
+            me.createSnack(__("Project stopped successfully"));
+            // Clear current project ? 
+            // me.setState({ project: Project.empty() });
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error stopping project") + ": " + error.message);
+          });
+        } catch (error) {
+          console.error(error);
+          this.createSnack(__("Error stopping project") + ": " + error.message);
+        } 
+      
+      };
+
+       updateProject = (changes) => {
         this.setState(prev => ({
             project: prev.project.withChanges(changes),
         }));
       };
+
 
       /**
        * Renders component
@@ -2146,6 +2186,7 @@ module.exports = {
                 <ProjectListComponent
                   projects={this.state.projects}
                   onHandleZoomProject={this.handleZoomProject}
+                  onHandleStopProject={this.handleStopProject}
                 ></ProjectListComponent>
                 </details>
               </div>
