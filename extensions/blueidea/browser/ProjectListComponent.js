@@ -48,20 +48,24 @@ class ProjectListComponent extends React.Component {
           )}
 
           {!noProjects&& (
-            <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
-              <table className="table table-sm mb-0 col">
-                <thead>
-                  <tr>
-                    <th></th>                    
-                    <th>Navn</th>
-                    <th>Type</th>
-                    <th>Start</th>
-                    <th>Slut</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
+            <>
+               <div className="row">
+                <h6 className="col">Aktive projekter</h6>       
+              </div>
+              <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <table className="table table-sm mb-0 col">
+                  <thead  style={{fontWeight: 'bold', position: 'sticky',top: 0}}>
+                    <tr>
+                      <th></th>                    
+                      <th><p style={{fontWeight:500}}>Navn</p></th>
+                      <th><p style={{fontWeight:500}}>Type</p> </th>
+                      <th ><p style={{fontWeight:500}}>Start</p></th>
+                      <th ><p style={{fontWeight:500}}>Slut</p></th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {projects.map((option, rowIndex) => {
                       const bg =  clickedTableProjectIndex === rowIndex ? 'table-primary': 'table-light';
                       const fromDate = this.toDateTimeLocal(option.properties.gyldig_fra);
@@ -125,10 +129,10 @@ class ProjectListComponent extends React.Component {
 
                       </tr>
                     )})}
-                </tbody>
-              </table> 
-            </div>
-         
+                  </tbody>
+                </table> 
+              </div>
+            </>
           )}
             
         </>

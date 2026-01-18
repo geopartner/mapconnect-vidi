@@ -2245,15 +2245,15 @@ module.exports = {
                           </i>
                         </div>
                       </div>  
-                      <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
+                      <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
                           <table className="table table-sm mb-0 col-11">
-                          <thead>
+                          <thead style={{fontWeight: 'bold', position: 'sticky',top: 0}}>
                             <tr>
                               <th style={{ width: '10px' }}>
                               </th>
-                              <th>Navn</th>
-                              <th>Type</th>
-                              <th>Funktion</th>
+                              <th><p style={{fontWeight:500}}>Navn</p></th>
+                              <th><p style={{fontWeight:500}}>Type</p></th>
+                              <th><p style={{fontWeight:500}}>Funktion</p></ th>
                               <th></th>
                             </tr>
                           </thead>
@@ -2323,20 +2323,39 @@ module.exports = {
                         {__("Retry with unaccessible valves")}
                         </button>
                       </div>
+                      {
+                        s.user_profileid && this.profileidOptions().length > 1 &&
+                          <div className="row">
+                            <select
+                              className="col"
+                              style={{ marginRight: '18px', marginLeft: '14px' }}
+                              onChange={this.setSelectedProfileid}
+                              value={s.selected_profileid}
+                              placeholder={__("Select profile")}
+                              disabled={!this.readyToBlueIdea()}
+                            >
+                              {this.profileidOptions().map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                          ))}
+                          </select>
+                        </div>
+                      }
                       <div className="row mx-auto gap-3 my-1">
+                        <label class="col-4">SMS Profil</label>
                         <button
                           onClick={() => this.sendToBlueIdea()}
-                          className="col btn btn-primary"
+                          className="col-7 btn btn-primary"
                           disabled={!this.readyToBlueIdea()}
                           style={{ marginRight: '8px' }}
                         >
                           {__("Go to blueidea")}
                         </button>
                       </div>
-                      <hr></hr>
                     </>
                   )}
-
+                <hr></hr>
                 </div>
                 <div className="row mx-auto gap-3 my-1">
                   <div className="col">
@@ -2378,24 +2397,7 @@ module.exports = {
                   </button>
                 </div>
 
-                  {s.user_profileid && this.profileidOptions().length > 1 &&
-                    <div className="row">
-                        <select
-                          className="col"
-                          style={{ marginRight: '18px', marginLeft: '14px' }}
-                          onChange={this.setSelectedProfileid}
-                          value={s.selected_profileid}
-                          placeholder={__("Select profile")}
-                          disabled={!this.readyToBlueIdea()}
-                        >
-                          {this.profileidOptions().map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                    </div>
-                  }
+
                 </div>
 
                 <div

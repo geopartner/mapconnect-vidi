@@ -80,7 +80,7 @@ var dict = {
     en_US: "Draw area",
   },
   "Select area": {
-    da_DK: "Udpeg",
+    da_DK: "Opret nyt brud", // tidligere "Udpeg"
     en_US: "Select",
   },
   "Show results": {
