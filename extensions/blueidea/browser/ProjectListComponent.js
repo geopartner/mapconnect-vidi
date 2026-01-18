@@ -54,6 +54,7 @@ class ProjectListComponent extends React.Component {
                   <tr>
                     <th></th>                    
                     <th>Navn</th>
+                    <th>Type</th>
                     <th>Start</th>
                     <th>Slut</th>
                     <th></th>
@@ -65,6 +66,7 @@ class ProjectListComponent extends React.Component {
                       const bg =  clickedTableProjectIndex === rowIndex ? 'table-primary': 'table-light';
                       const fromDate = this.toDateTimeLocal(option.properties.gyldig_fra);
                       const toDate = this.toDateTimeLocal(option.properties.gyldig_til);
+                      const brudType = option.properties.brudtype ==='Aktuel afbrydelse' ? 'Akut' :'Planlagt';
                       return (<tr key={option.properties.beregnuuid} className={bg} onClick={() => this.handleRowClick(rowIndex)}>
                         <td style={{ textAlign: 'center' }}>
                           <i
@@ -80,6 +82,12 @@ class ProjectListComponent extends React.Component {
                           <label
                             className="form-check-label">
                             {option.properties.sagstekst}
+                          </label>
+                        </td>
+                        <td>
+                          <label
+                            className="form-check-label">
+                            {brudType}
                           </label>
                         </td>
                                 
