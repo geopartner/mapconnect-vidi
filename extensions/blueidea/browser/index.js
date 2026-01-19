@@ -2203,9 +2203,9 @@ module.exports = {
                 </details>
               </div>
               <hr></hr>
-              <div>
-                <div style={{ alignSelf: "center" }}>
-                  <h6>
+              <div className="row mx-auto gap-0 my-3">
+                <details open className="col">
+                 <summary>  
                     {__("Select area")}
                     {
                     s.lukkeliste_ready && this.allowLukkeliste() &&
@@ -2215,7 +2215,10 @@ module.exports = {
                     !s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
                     }
-                  </h6>
+                   </summary>
+                
+                <div style={{ alignSelf: "center" }}>
+                 
                   {false && (
                    <div className="d-grid mx-auto gap-2">
                     <button
@@ -2398,7 +2401,9 @@ module.exports = {
                     {__("Get addresses")}
                   </button>
                 </div>
+                </details>
               </div>
+              
 
                 <div
                   style={{ alignSelf: "center" }}
