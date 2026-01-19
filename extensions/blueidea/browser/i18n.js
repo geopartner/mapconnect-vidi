@@ -12,7 +12,7 @@ var dict = {
     en_US: "Select one or more valves and run again.",
   },
   "Retry with unaccessible valves": {
-    da_DK: "Beregn uden valgte",
+    da_DK: "Genberegn med valgte ventiler",
     en_US: "Calculate without selected",
   },
   "Info": {
@@ -40,11 +40,11 @@ var dict = {
     en_US: "Select point",
   },
   "admin info": {
-    da_DK: "Projekt",
+    da_DK: "Navn / sagsnr.",
     en_US: "Admin reg.",
   },
   "project description": {
-    da_DK: "Indtast projektbeskrivelse",
+    da_DK: "Indtast navn / sagsnr.",
     en_US: "Project description",
   },
   "Clear map": {
@@ -68,8 +68,8 @@ var dict = {
     en_US: "Error in search for parcels",
   },
   "projekt list":{
-    da_DK: "Aktive lukkeprojekter",
-    en_US: "Active projects",
+    da_DK: "Aktive brud",
+    en_US: "Active breaks",
   },
   "Error in list": {
     da_DK: "Fejl ved hentning af projekter",
@@ -80,7 +80,7 @@ var dict = {
     en_US: "Draw area",
   },
   "Select area": {
-    da_DK: "Udpeg",
+    da_DK: "Opret nyt brud", // tidligere "Udpeg"
     en_US: "Select",
   },
   "Show results": {
@@ -224,14 +224,26 @@ var dict = {
     en_US: "Start time must be before end time",
   },
   "missing-project-name": {
-    da_DK: "Mangler projektnavn",
+    da_DK: "Mangler navn",
     en_US: "Projectname is missing",
+  },
+  "Confirm stop project": {
+    da_DK: "Er du sikker på at du vil gøre bruddet inaktivt? Denne handling kan ikke fortrydes.",
+    en_US: "Are you sure you want to stop the project? This action cannot be undone.",
   },
 
   "No utility lines found": {
     da_DK: "Der er ikke fundet nogen ledninger i nærheden af det valgte punkt. Prøv at vælge et andet punkt.",
     en_US: "No utility lines found near the selected point. Please try selecting a different point.",
-  }
+  },
+  "Project stopped successfully": {
+    da_DK: "Bruddet er inaktivt",
+    en_US: "Project stopped successfully",
+  },
+  "Error stopping project": {
+    da_DK: "Der opstod en fejl under forsøg på at gøre bruddet inaktivt.",
+    en_US: "An error occurred while trying to stop the project.",
+  },
   
 };
 

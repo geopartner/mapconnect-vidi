@@ -6,20 +6,23 @@ class ProjectModel {
         brudtype = 1, 
         forsyningsarter = [],
         forsyningsart_selected = 0,
+        isReadOnly = false,
         projectEndDate,
         projectStartDate,
+        projectName = '',
         useBreakType= window.config.extensionConfig?.useBreakType ?? true,
-        projectName = ''
     } = {}) {
         const now = new Date()
         const plus2h = new Date(now.getTime() + 2 * 60 * 60 * 1000)
+
         this.brudtype = brudtype;
         this.forsyningsarter = forsyningsarter;
         this.forsyningsart_selected = forsyningsart_selected;
+        this.isReadOnly = isReadOnly;
         this.projectStartDate = projectStartDate ?? now;
         this.projectEndDate = projectEndDate ?? plus2h;
-        this.useBreakType = useBreakType;
         this.projectName = projectName;
+        this.useBreakType = useBreakType;
     }
 
      __ = (txt) => {
@@ -43,6 +46,10 @@ class ProjectModel {
             ...changes,
         });
     }
+
+    clearData = () => {
+        this.projectName = '';
+    }
     
     get isDateRangeValid() {
       return (
@@ -51,7 +58,7 @@ class ProjectModel {
         this.projectStartDate < this.projectEndDate
     )}
 
-    get isDisabled() {
+    get isNotValid() {
         return !this.isDateRangeValid || !this.isProjectNameValid
     }
 
@@ -60,17 +67,14 @@ class ProjectModel {
     }
 
     get statusMessage() {
-        let txt = ''
-        if (!this.isDateRangeValid) {
-             txt = `${this.__("Ikke-valid-datoer")} `;
-        }
-        if (!this.isProjectNameValid) {
-            txt += `${this.__("missing-project-name")} `;
-        }
-        if (this.isDateRangeValid && this.isProjectNameValid){
-            txt = '';
-        }
-        return txt;
+      const messages = [];
+      if (!this.isDateRangeValid) {
+        messages.push(this.__("Ikke-valid-datoer"));
+      }
+      if (!this.isProjectNameValid) {
+        messages.push(this.__("missing-project-name"));
+      }
+      return messages.join(". ");
     }
 
 }

@@ -21,6 +21,7 @@ class ProjectListComponent extends React.Component {
     handleRowClick (rowIndex) {
       this.setState({clickedTableProjectIndex: rowIndex});
     }
+ 
     toDateTimeLocal(dateStr) {
       if (!dateStr) return '';
       const date = new Date(dateStr);
@@ -35,42 +36,62 @@ class ProjectListComponent extends React.Component {
       }
     }
     render() {
-      const {onHandleZoomProject, projects, user_udpeg_layer}   = this.props;
+      const {onHandleZoomProject,onHandleStopProject, projects, user_udpeg_layer}   = this.props;
       const {clickedTableProjectIndex} = this.state;
       const noProjects = projects.length ===0;
       return (
         <>
-          {noProjects&& (
+          {noProjects && (
             <div className="row mx-auto gap-0 my-3">
-              <h6 className="col-11">Ingen aktive projekter</h6>       
+              <h6 className="col">Ingen aktive brud</h6>       
             </div>
           )}
 
           {!noProjects&& (
-            <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
-              <table className="table table-sm mb-0 col-11">
-                <thead>
-                  <tr>
-                    
-                    <th>Navn</th>
-                    
-                    <th>Start</th>
-                    <th>Slut</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
+            <>
+               {/* <div className="row">
+                <h6 className="col">Aktive brud</h6>       
+              </div> */}
+              <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <table className="table table-sm mb-0 col">
+                  <thead  style={{fontWeight: 'bold', position: 'sticky',top: 0}}>
+                    <tr>
+                      <th></th>                    
+                      <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Navn</p></th>
+                      <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Type</p> </th>
+                      <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Start</p></th>
+                      <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Slut</p></th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {projects.map((option, rowIndex) => {
                       const bg =  clickedTableProjectIndex === rowIndex ? 'table-primary': 'table-light';
                       const fromDate = this.toDateTimeLocal(option.properties.gyldig_fra);
                       const toDate = this.toDateTimeLocal(option.properties.gyldig_til);
-                      return (<tr key={option.properties.beregnuuid} className={bg} onClick={() => this.handleRowClick(rowIndex)}
->
+                      const brudType = option.properties.brudtype ==='Aktuel afbrydelse' ? 'Akut' :'Planlagt';
+                      return (<tr key={option.properties.beregnuuid} className={bg} onClick={() => this.handleRowClick(rowIndex)}>
+                        <td style={{ textAlign: 'center' }}>
+                          <i
+                            className="bi bi-zoom-in"
+                                  onClick={() => onHandleZoomProject(option.properties.x, option.properties.y )}
+                                  style={{ cursor: 'pointer' }}
+                                  title="Zoom til projekt"
+                          >
+                          </i>
+                        </td>
+
                         <td>
                           <label
                             className="form-check-label">
                             {option.properties.sagstekst}
+                          </label>
+                        </td>
+                        <td>
+                          <label
+                            className="form-check-label">
+                            {brudType}
                           </label>
                         </td>
                                 
@@ -86,32 +107,32 @@ class ProjectListComponent extends React.Component {
                           </label>
                         </td>
 
-                        <td style={{ textAlign: 'center' }}>
+                        <td disabled={true} style={{ textAlign: 'center' }}>
                           <i
-                            className="bi bi-zoom-in"
-                                  onClick={() => onHandleZoomProject(option.properties.x, option.properties.y )}
-                                  style={{ cursor: 'pointer' }}
-                                  title="Zoom til projekt"
+                            className="bi bi-pencil"
+                            disabled={true}
+                            onClick={() => onHandleZoomProject(option.properties.x, option.properties.y, user_udpeg_layer )}
+                            // style={{ cursor: 'pointer' }}
+                            title="Rediger projekt"
                           >
                           </i>
                         </td>
-
                         <td style={{ textAlign: 'center' }}>
                           <i
-                            className="bi bi-pencil"
-                                  onClick={() => onHandleZoomProject(option.properties.x, option.properties.y, user_udpeg_layer )}
-                                  style={{ cursor: 'pointer' }}
-                                  title="Rediger projekt"
+                            className="bi bi-trash"
+                            onClick={() => onHandleStopProject(option.properties.beregnuuid )}
+                            style={{ cursor: 'pointer' }}
+                            title="Afslut brud"
                           >
                           </i>
                         </td>
 
                       </tr>
                     )})}
-                </tbody>
-              </table> 
-            </div>
-         
+                  </tbody>
+                </table> 
+              </div>
+            </>
           )}
             
         </>

@@ -22,7 +22,7 @@ import {
   applyFilter,
 } from "@turf/turf";
 import _ from "underscore";
-import { AlternateEmail } from "@material-ui/icons";
+import { retry } from "async";
 
 var React = require("react");
 
@@ -418,9 +418,11 @@ module.exports = {
      *
      */
     class BlueIdea extends React.Component {
+      static get Aktive_brud_layeName() {  return 'lukkeliste.aktive_brud'}
+      
       constructor(props) {
         super(props)
-     
+        
         this.state = {
           active: false,
           authed: false,
@@ -473,7 +475,7 @@ module.exports = {
        */
       componentDidMount() {
         let me = this;
-
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is emitted
         backboneEvents.get().on("deactivate:all", () => {});
@@ -504,11 +506,18 @@ module.exports = {
         
         backboneEvents.get().on(`${exId}:disableRecalculate`, () => {
             me.setState({retryIsDisabled: true})
+            me.setState({project: me.state.project.withChanges({isReadOnly: false })});
         });
 
         backboneEvents.get().on(`${exId}:enableRecalculate`, () => {
             me.setState({retryIsDisabled: false})
+            me.setState({project: me.state.project.withChanges({isReadOnly: true})});
         });
+
+        backboneEvents.get().on(`${exId}:listProject`, () => {
+            me.listProjects();
+        });
+
 
         // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
@@ -542,6 +551,7 @@ module.exports = {
             user_lukkeliste: false,
             edit_matr: false,
           });
+          me.state.project.clearData();
         });
 
         // On auth change, handle Auth state
@@ -1203,46 +1213,42 @@ module.exports = {
        * @returns SmsGroupId for redirecting to the correct page
        */
       sendToBlueIdea = () => {
-        let body = {
-          profileId: parseInt(this.state.selected_profileid) || null,
-        };
-
-        // if blueidea is false, return
+       // hvis blueidea er false, return
         if (!this.state.user_blueidea) {
-          // show error in snackbar
           this.createSnack(__("NotAllowedBlueIdea"));
           return;
         }
 
-        // take the curent list of addresses and create an array of objects containing the kvhx
-        let keys = Object.keys(this.state.results_adresser);
-        let adresser = keys.map((kvhx) => {
-          return { kvhx: kvhx };
-        });
-        body.addresses = adresser;
-        body.beregnuuid = this.state.beregnuuid;
+        const body = {
+          profileId: parseInt(this.state.selected_profileid) || null,
+          beregnuuid: this.state.beregnuuid,
+          addresses: Object.keys(this.state.results_adresser).map((kvhx) => ({
+           kvhx: kvhx,
+         })),
+        };
 
         $.ajax({
-          url:
-            "/api/extension/blueidea/" +
-            config.extensionConfig.blueidea.userid +
-            "/CreateMessage",
+          url:"/api/extension/blueidea/" + config.extensionConfig.blueidea.userid + "/CreateMessage",
           type: "POST",
           data: JSON.stringify(body),
           contentType: "application/json",
           dataType: "json",
-          success: function (data) {
+        })
+          .then((data) => {
             if (data.smsGroupId) {
               window.open(
-                "https://dk.sms-service.dk/message-wizard/write-message?smsGroupId=" +
-                  data.smsGroupId,
-                "_blank"
-              ); // open in new tab
+              "https://dk.sms-service.dk/message-wizard/write-message?smsGroupId=" +
+              data.smsGroupId,
+              "_blank");
             }
-          },
-          error: function (error) {
-            //console.debug(error);
-          },
+            // success snackbar
+            this.createSnack("Beskeden er oprettet korrekt.");
+            // list projects again to show the new one
+            this.listProjects();
+          })
+          .fail((error) => {
+            console.error(error);
+            this.createSnack("Der opstod en fejl ved afsendelse til BlueIdea.");
         });
       };
 
@@ -1271,6 +1277,7 @@ module.exports = {
           results_log: {},
           results_matrikler: [],
           results_ventiler: [],
+          results_ledninger: [],
           results_adresser: [],
           edit_matr: false,
           TooManyFeatures: false,
@@ -1289,8 +1296,9 @@ module.exports = {
         // if udpeg_layer is set, make sure it is turned on
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
+          me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         }
-
+        
         // change the cursor to crosshair and wait for a click
         utils.cursorStyle().crosshair();
         cloud.get().map.on("click", me.boundSelectPointLukkeliste);
@@ -1322,7 +1330,7 @@ module.exports = {
         // send the point to the server
         let data = {}
         try {
-          data = await me.queryPointLukkeliste(point)
+          data = await me.queryPointLukkeliste(point);
         }
         catch (error) {
           me.createSnack(__("Error in search") + ": " + error.message);
@@ -1340,7 +1348,8 @@ module.exports = {
        */
       runWithoutSelected = async function () {
         let me = this;
-        me.disableRecalculate();
+      
+        me.setState({retryIsDisabled: true})
         me.createSnack(__("Starting analysis"), true)
 
         // Because we already know stuff, send it again.
@@ -1358,7 +1367,12 @@ module.exports = {
 
         let data = {}
         try {
-          data = await me.queryPointLukkeliste(point, ignoreVentiler)
+          data = await me.queryPointLukkeliste(point, ignoreVentiler).
+          then((data) => data)
+          {
+            me.setState({retryIsDisabled: true})
+          }
+
         }
         catch (error) {
           me.createSnack(__("Error in search") + ": " + error.message);
@@ -1382,14 +1396,15 @@ module.exports = {
           me.createSnack(__("No utility lines found"));
         } else {
         // Here we handle data from the query-endpoint
-        this.setState({selectedVentiler: []});
-        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
+        this.setState({
+          selectedVentiler: [],
+          retryIsDisabled: true
+        });
+        
         if (data.ledninger) {
           //console.debug("Got ledninger:", data.ledninger);
           me.addSelectedLedningerToMap(data.ledninger);
-          me.setState({
-            results_ledninger: data.ledninger.features,
-          });
+          me.setState({results_ledninger: data.ledninger.features});
         }
         // Add indirekteledninger to map
         if (data.indirekteledninger) {
@@ -1422,7 +1437,6 @@ module.exports = {
           me.addVentilerToMap(data.ventiler);
           me.setState({
             results_ventiler: data.ventiler.features,
-
           });
           const key = this.state.user_ventil_layer_key;
           const selected = this.state.results_ventiler.filter(item => item.properties?.checked).map(item => item.properties[key]).filter(Boolean)
@@ -2051,6 +2065,8 @@ module.exports = {
 
       handleVentilCheckbox = (e) => {
         const { checked, value } = e.target;
+///        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
+        this.setState({ retryIsDisabled: false   });
         this.setState(prev => {
           const selected = new Set((prev.selectedVentiler || []).map(String));
           if (checked) {
@@ -2058,15 +2074,6 @@ module.exports = {
 
           } else {
             selected.delete(String(value));
-          }
-          //this.setState({ selectedVentiler: Array.from(selected) })
-          const theSame =  this.haveIdenticalContents(Array.from(selected), this.state.selectedVentiler);
-          //const anySelected = Array.from(selected).length > 0;
-          //if (theSame || !anySelected) { // det skal være muligt at kikke en ventil fra igen, og køre igen. Måske skal label på knappen bare gøres mere præcis
-          if (theSame)  {
-            backboneEvents.get().trigger(`${exId}:disableRecalculate`);
-          } else {
-            backboneEvents.get().trigger(`${exId}:enableRecalculate`);
           }
           return { selectedVentiler: Array.from(selected) };
         });
@@ -2091,21 +2098,50 @@ module.exports = {
         this.setState({ clickedTableVentil : ventil_key})
       };
       
-      handleZoomProject  = (x, y, layerName) => {
+      handleZoomProject  = (x, y) => {
         this.zoomToXY(x, y);
-        if (this.state?.user_udpeg_layer) {
-            this.turnOnLayer(this.state.user_udpeg_layer);
-        } 
-        else {
-          this.turnOnLayer(layerName);
-        } 
       };
 
-      updateProject = (changes) => {
+      handleStopProject = (beregnuuid) => {
+        if (!window.confirm(__("Confirm stop project")))  {
+         return 
+        }
+        try{
+        const me = this;
+        const body = {
+          beregnuuid
+        }
+        alert(beregnuuid);
+        $.ajax({
+          url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
+          type: "POST",
+          data: JSON.stringify(body),
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then(() => {
+            backboneEvents.get().trigger(`${exId}:listProject`);
+            me.createSnack(__("Project stopped successfully"));
+            // Clear current project ? 
+            // me.setState({ project: Project.empty() });
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error stopping project") + ": " + error.message);
+          });
+        } catch (error) {
+          console.error(error);
+          this.createSnack(__("Error stopping project") + ": " + error.message);
+        } 
+      
+      };
+
+       updateProject = (changes) => {
         this.setState(prev => ({
             project: prev.project.withChanges(changes),
         }));
       };
+
 
       /**
        * Renders component
@@ -2113,11 +2149,12 @@ module.exports = {
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled, user_udpeg_layer  } = this.state
+        const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         
         let ventilOptions = (s.results_ventiler || [])
+          .filter((feature) => feature && feature.properties && feature.properties['forbundet'] !== false   )
           .map((feature) => {
             const selectedVentilerAsStrings = selectedVentiler.map(String);
             const name_key = s.user_ventil_layer_name_key;
@@ -2143,17 +2180,28 @@ module.exports = {
           // Logged in
           return (
             <div role="tabpanel">
-              <div className="row mx-auto gap-0 my-3">
+              {/* <div className="row mx-auto gap-0 my-3">
                <details className="col-11">
-                <summary>Aktive lukkeprojekter</summary>
+                <summary>Aktive brud</summary>
                 <ProjectListComponent
                   projects={this.state.projects}
                   onHandleZoomProject={this.handleZoomProject}
-                  layerName ={user_udpeg_layer}
+                  onHandleStopProject={this.handleStopProject}
                 ></ProjectListComponent>
                 </details>
+              </div> */}
+              <div className="row mx-auto gap-0 my-3">
+                <details className="col">
+                  <summary>Aktive brud</summary>
+                  <ProjectListComponent
+                    className="col"
+                    projects={this.state.projects}
+                    onHandleZoomProject={this.handleZoomProject}
+                    onHandleStopProject={this.handleStopProject}>
+                  </ProjectListComponent>
+                </details>
               </div>
-              
+              <hr></hr>
               <div>
                 <div style={{ alignSelf: "center" }}>
                   <h6>
@@ -2192,16 +2240,23 @@ module.exports = {
                   {ventilOptions.length > 0 && (
                     <>
                       <div className="row mx-auto gap-0 my-3">
-                        <h6 className="col-11">{__("Valves")}</h6>
-                        <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', padding: '8px', borderRadius: '4px' }}>
-                        <table className="table table-sm mb-0 col-11">
-                          <thead>
+                        <h6 className="col-9">{__("Valves")}</h6>
+                        <div className="col-2" style={{ cursor: 'pointer' }}>
+                          <i className="bi bi-download float-end" 
+                           onClick={() => this.downloadVentiler()}
+                           title= {__("Download valves")}>
+                          </i>
+                        </div>
+                      </div>  
+                      <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
+                          <table className="table table-sm mb-0 col-11">
+                          <thead style={{fontWeight: 'bold', position: 'sticky',top: 0}}>
                             <tr>
                               <th style={{ width: '10px' }}>
                               </th>
-                              <th>Navn</th>
-                              <th>Type</th>
-                              <th>Funktion</th>
+                              <th><p style={{fontWeight:500}}>Navn</p></th>
+                              <th><p style={{fontWeight:500}}>Type</p></th>
+                              <th><p style={{fontWeight:500}}>Funktion</p></ th>
                               <th></th>
                             </tr>
                           </thead>
@@ -2262,49 +2317,74 @@ module.exports = {
                       </div>
 
                       <div className="form-text">{__("Select one or more valves.")}</div>
-                      <button
-                        className="btn btn-primary"
-                        disabled ={retryIsDisabled}
-                        onClick={() => this.runWithoutSelected()}
-                      >
-                      {__("Retry with unaccessible valves")}
-                    </button>
+                      <div className="row mx-auto gap-0 my-3">
+                        <button
+                          className="btn btn-primary col"
+                          disabled ={retryIsDisabled}
+                          onClick={() => this.runWithoutSelected()}
+                        >
+                        {__("Retry with unaccessible valves")}
+                        </button>
                       </div>
+
                       <hr></hr>
                     </>
                   )}
-
-
-
+                
                 </div>
-                <div className="row mx-auto gap-3 my-1">
-                  <div className="col">
-                    <h6>{__("Show results")}</h6>
-                    <div className="d-flex align-items-center justify-content-between">
-                    {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
-
-                      <button
-                        disabled={Object.keys(s.results_adresser).length == 0}
-                        title={__("modify parcels")}
-                        className="btn btn-primary"
-                        onClick={() => this.toggleEdit()}>
+                {
+                  s.user_profileid && this.profileidOptions().length > 1 &&
+                    <div className="row">
+                      <label class="col-4">SMS Profil</label>
+                      <select
+                       className="col-7"
+                       style={{ marginRight: '18px', marginLeft: '14px' }}
+                       onChange={this.setSelectedProfileid}
+                       value={s.selected_profileid}
+                       placeholder={__("Select profile")}
+                       disabled={!this.readyToBlueIdea()}
+                      >
+                      {this.profileidOptions().map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                          </select>
+                        </div>
+                      }
+                      <div className="row mx-auto gap-3 my-1">
+                        <button
+                          onClick={() => this.sendToBlueIdea()}
+                          className="col btn btn-primary"
+                          disabled={!this.readyToBlueIdea()}
+                          style={{ marginRight: '8px' }}
+                        >
+                          {__("Go to blueidea")}
+                        </button>
+                      </div>
+                     <div className="row mx-auto gap-3 my-1">
+                       <div className="col">
+                         <h6>{__("Show results")}</h6>
+                         <div className="d-flex align-items-center justify-content-between">
+                         {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
+                          <div className="col-2" style={{ cursor: 'pointer' }}>
+                            <i className="bi bi-download" 
+                              onClick={() => this.downloadAdresser()}
+                              title= {__("Download addresses")}
+                              hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
+                            </i>
+                          </div>
+                        <button
+                         disabled={Object.keys(s.results_adresser).length == 0}
+                         title={__("modify parcels")}
+                         className="btn btn-primary"
+                         onClick={() => this.toggleEdit()}>
                           {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
-                      </button>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="row mx-auto gap-3 my-1">
-                  <button
-                    className="col btn btn-primary"
-                    onClick={() => this.downloadAdresser()}
-                    disabled={!this.readyToSend()}
-                    hidden={s.TooManyFeatures}
-                    style={{ marginRight: '8px' }}
-                  >
-                    {__("Download addresses")}
-                  </button>
-                </div> 
                 <div className="row mx-auto gap-3 my-3">
                 
                   <button
@@ -2316,54 +2396,7 @@ module.exports = {
                     {__("Get addresses")}
                   </button>
                 </div>
-
-                  {s.user_profileid && this.profileidOptions().length > 1 &&
-                    <div className="row">
-                        <select
-                          className="col"
-                          style={{ marginRight: '18px', marginLeft: '14px' }}
-                          onChange={this.setSelectedProfileid}
-                          value={s.selected_profileid}
-                          placeholder={__("Select profile")}
-                          disabled={!this.readyToBlueIdea()}
-                        >
-                          {this.profileidOptions().map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                    </div>
-                  }
-                 <div className="row mx-auto gap-3 my-1">
-                    <button
-                      onClick={() => this.sendToBlueIdea()}
-                      className="col btn btn-primary"
-                      disabled={!this.readyToBlueIdea()}
-                      style={{ marginRight: '8px' }}
-                    >
-                      {__("Go to blueidea")}
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  style={{ alignSelf: "center" }}
-                  hidden={!s.user_lukkeliste}
-                >
-                  {/* <h6 className="mt-3">{__("Valve list")}</h6> */}
-                  <div className="mt-3"> </div>
-                  <div className="row mx-auto gap-3 my-1">
-                    <button
-                      onClick={() => this.downloadVentiler()}
-                      className="col btn btn-primary"
-                      disabled={!this.allowVentilDownload()}
-                      style={{ marginRight: '8px' }}
-                    >
-                      {__("Download valves")}
-                    </button>
-                  </div>
-                </div>
+              </div>
 
                 <div
                   style={{ alignSelf: "center" }}
