@@ -2192,7 +2192,7 @@ module.exports = {
               </div> */}
               <div className="row mx-auto gap-0 my-3">
                 <details className="col">
-                  <summary>Aktive brud</summary>
+                  <summary>Aktive brud ({this.state.projects.length})</summary>
                   <ProjectListComponent
                     className="col"
                     projects={this.state.projects}
@@ -2335,7 +2335,7 @@ module.exports = {
                 {
                   s.user_profileid && this.profileidOptions().length > 1 &&
                     <div className="row">
-                      <label class="col-4">SMS Profil</label>
+                      <label className="col-4">SMS Profil</label>
                       <select
                        className="col-7"
                        style={{ marginRight: '18px', marginLeft: '14px' }}
