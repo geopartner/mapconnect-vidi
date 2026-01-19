@@ -59,8 +59,8 @@ class ProjectListComponent extends React.Component {
                       <th></th>                    
                       <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Navn</p></th>
                       <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Type</p> </th>
-                      <th ><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Start</p></th>
-                      <th ><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Slut</p></th>
+                      <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Start</p></th>
+                      <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Slut</p></th>
                       <th></th>
                       <th></th>
                     </tr>
