@@ -2191,14 +2191,17 @@ module.exports = {
                 </details>
               </div> */}
               <div className="row mx-auto gap-0 my-3">
-                <ProjectListComponent
-                   className="col"
-                  projects={this.state.projects}
-                  onHandleZoomProject={this.handleZoomProject}
-                  onHandleStopProject={this.handleStopProject}
-                ></ProjectListComponent>
+                <details className="col">
+                  <summary>Aktive brud</summary>
+                  <ProjectListComponent
+                    className="col"
+                    projects={this.state.projects}
+                    onHandleZoomProject={this.handleZoomProject}
+                    onHandleStopProject={this.handleStopProject}>
+                  </ProjectListComponent>
+                </details>
               </div>
-              
+              <hr></hr>
               <div>
                 <div style={{ alignSelf: "center" }}>
                   <h6>
@@ -2323,23 +2326,29 @@ module.exports = {
                         {__("Retry with unaccessible valves")}
                         </button>
                       </div>
-                      {
-                        s.user_profileid && this.profileidOptions().length > 1 &&
-                          <div className="row">
-                            <label class="col-4">SMS Profil</label>
-                            <select
-                              className="col-7"
-                              style={{ marginRight: '18px', marginLeft: '14px' }}
-                              onChange={this.setSelectedProfileid}
-                              value={s.selected_profileid}
-                              placeholder={__("Select profile")}
-                              disabled={!this.readyToBlueIdea()}
-                            >
-                              {this.profileidOptions().map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                          ))}
+
+                      <hr></hr>
+                    </>
+                  )}
+                
+                </div>
+                {
+                  s.user_profileid && this.profileidOptions().length > 1 &&
+                    <div className="row">
+                      <label class="col-4">SMS Profil</label>
+                      <select
+                       className="col-7"
+                       style={{ marginRight: '18px', marginLeft: '14px' }}
+                       onChange={this.setSelectedProfileid}
+                       value={s.selected_profileid}
+                       placeholder={__("Select profile")}
+                       disabled={!this.readyToBlueIdea()}
+                      >
+                      {this.profileidOptions().map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
                           </select>
                         </div>
                       }
@@ -2353,39 +2362,29 @@ module.exports = {
                           {__("Go to blueidea")}
                         </button>
                       </div>
-                      <hr></hr>
-                    </>
-                  )}
-                
-                </div>
-                <div className="row mx-auto gap-3 my-1">
-                  <div className="col">
-                    <h6>{__("Show results")}</h6>
-                    <div className="d-flex align-items-center justify-content-between">
-                    {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
-
-                      <button
-                        disabled={Object.keys(s.results_adresser).length == 0}
-                        title={__("modify parcels")}
-                        className="btn btn-primary"
-                        onClick={() => this.toggleEdit()}>
+                     <div className="row mx-auto gap-3 my-1">
+                       <div className="col">
+                         <h6>{__("Show results")}</h6>
+                         <div className="d-flex align-items-center justify-content-between">
+                         {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
+                          <div className="col-2" style={{ cursor: 'pointer' }}>
+                            <i className="bi bi-download" 
+                              onClick={() => this.downloadVentiler()}
+                              title= {__("Download addresses")}
+                              hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
+                            </i>
+                          </div>
+                        <button
+                         disabled={Object.keys(s.results_adresser).length == 0}
+                         title={__("modify parcels")}
+                         className="btn btn-primary"
+                         onClick={() => this.toggleEdit()}>
                           {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
-                      </button>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="row mx-auto gap-3 my-1">
-                  <button
-                    className="col btn btn-primary"
-                    onClick={() => this.downloadAdresser()}
-                    disabled={!this.readyToSend()}
-                    hidden={s.TooManyFeatures}
-                    style={{ marginRight: '8px' }}
-                  >
-                    {__("Download addresses")}
-                  </button>
-                </div> 
                 <div className="row mx-auto gap-3 my-3">
                 
                   <button
@@ -2397,9 +2396,7 @@ module.exports = {
                     {__("Get addresses")}
                   </button>
                 </div>
-
-
-                </div>
+              </div>
 
                 <div
                   style={{ alignSelf: "center" }}

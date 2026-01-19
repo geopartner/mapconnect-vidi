@@ -49,9 +49,9 @@ class ProjectListComponent extends React.Component {
 
           {!noProjects&& (
             <>
-               <div className="row">
+               {/* <div className="row">
                 <h6 className="col">Aktive brud</h6>       
-              </div>
+              </div> */}
               <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
                 <table className="table table-sm mb-0 col">
                   <thead  style={{fontWeight: 'bold', position: 'sticky',top: 0}}>
