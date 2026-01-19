@@ -2369,7 +2369,7 @@ module.exports = {
                          {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
                           <div className="col-2" style={{ cursor: 'pointer' }}>
                             <i className="bi bi-download" 
-                              onClick={() => this.downloadVentiler()}
+                              onClick={() => this.downloadAdresser()}
                               title= {__("Download addresses")}
                               hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
                             </i>
