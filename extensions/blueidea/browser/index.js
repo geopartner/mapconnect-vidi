@@ -2111,7 +2111,7 @@ module.exports = {
         const body = {
           beregnuuid
         }
-        alert(beregnuuid);
+        
         $.ajax({
           url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
           type: "POST",
