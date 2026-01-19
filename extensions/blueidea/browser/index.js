@@ -2154,7 +2154,7 @@ module.exports = {
         const pipeSelected = results_ledninger.length > 0;
         
         let ventilOptions = (s.results_ventiler || [])
-          .filter((feature) => feature && feature.properties && feature.properties['forbundet'] !== false   )
+          // .filter((feature) => feature && feature.properties && feature.properties['forbundet'] !== false   )
           .map((feature) => {
             const selectedVentilerAsStrings = selectedVentiler.map(String);
             const name_key = s.user_ventil_layer_name_key;
@@ -2167,6 +2167,7 @@ module.exports = {
               funktion: String(feature.properties['funktion']),
               xkoord: String(feature.properties['xkoord']),
               ykoord: String(feature.properties['ykoord']),
+              forbundet: Boolean(feature.properties['forbundet']),
               checked: Boolean(selectedVentilerAsStrings.includes(feature.properties[key].toString()))
             };
           })
@@ -2263,7 +2264,8 @@ module.exports = {
                           <tbody>
                             {ventilOptions.map((option) => {
                                const bg =  clickedTableVentil === option.label? 'table-primary': 'table-light';
-                               return (<tr key={option.value} className={bg}>
+                               
+                               return (<tr key={option.value} className={bg} style={{backgroundColor: "option.forbundet" ? '#AA4A44' : '' }} >
                                 {/* 1 Checkbox */}
                                 <td>
                                   <input
