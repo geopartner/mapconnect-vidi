@@ -51,6 +51,10 @@ var dict = {
     da_DK: "Nulstil",
     en_US: "Clear",
   },
+  "Project created successfully": {
+    da_DK: "Lukkeplan gemt, du bliver viderestillet til Blue Idea",
+    en_US: "Project created successfully, you will be redirected to Blue Idea",
+  },
   "Select point for alarmkabel": {
     da_DK: "Beregn alarm",
     en_US: "Calculate alarm",

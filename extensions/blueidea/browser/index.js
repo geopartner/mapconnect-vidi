@@ -1242,7 +1242,7 @@ module.exports = {
               "_blank");
             }
             // success snackbar
-            this.createSnack("Beskeden er oprettet korrekt.");
+            this.createSnack( __("Project created successfully"));
             // list projects again to show the new one
             this.listProjects();
           })
