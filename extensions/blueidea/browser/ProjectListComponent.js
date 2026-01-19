@@ -61,7 +61,7 @@ class ProjectListComponent extends React.Component {
                       <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Type</p> </th>
                       <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Start</p></th>
                       <th><p style={{fontWeight:500, marginBottom: '4px', padding:'2px'}}>Slut</p></th>
-                      <th></th>
+                      {/* <th></th> */}
                       <th></th>
                     </tr>
                   </thead>
@@ -107,16 +107,16 @@ class ProjectListComponent extends React.Component {
                           </label>
                         </td>
 
-                        <td disabled={true} style={{ textAlign: 'center' }}>
+                        {/* <td style={{ textAlign: 'center' }}>
                           <i
                             className="bi bi-pencil"
                             disabled={true}
                             onClick={() => onHandleZoomProject(option.properties.x, option.properties.y, user_udpeg_layer )}
-                            // style={{ cursor: 'pointer' }}
+                            style={{ cursor: 'pointer' }}
                             title="Rediger projekt"
                           >
                           </i>
-                        </td>
+                        </td> */}
                         <td style={{ textAlign: 'center' }}>
                           <i
                             className="bi bi-trash"
