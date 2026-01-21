@@ -216,11 +216,11 @@ var dict = {
     en_US: "Break type Planned maintenance",
   },
   "Forventet-start": {
-    da_DK: "Start tidspunkt",
+    da_DK: "Startes",
     en_US: "Expected start time",
   },
   "Forventet-slut": {
-    da_DK: "Forventet afsluttet",
+    da_DK: "Afsluttes",
     en_US: "Expected end time",
   },
   "Ikke-valid-datoer": {
