@@ -2281,9 +2281,9 @@ module.exports = {
                           </thead>
                           <tbody>
                             {ventilOptions.map((option) => {
-                               const bg =  clickedTableVentil === option.label? 'table-primary': 'table-light';
-                               
-                               return (<tr key={option.value} className={bg} style={{backgroundColor: "option.forbundet" ? '#AA4A44' : '' }} >
+                               const bg = option.label === clickedTableVentil ? 'table-primary' : 'table-light';  
+                               const textColor = option.forbundet ? '' : '#AA4A44'; 
+                               return (<tr key={option.value} className={bg} >
                                 {/* 1 Checkbox */}
                                 <td>
                                   <input
@@ -2302,20 +2302,20 @@ module.exports = {
                                   <label
                                    className="form-check-label"
                                    htmlFor={`ventil-checkbox-${option.value}`}
-                                   style={{ cursor: 'pointer' }}
+                                   style={{ cursor: 'pointer', color: textColor }}
                                    >
                                     {option.label}
                                   </label>
                                 </td>
                                 {/* 3 Type */}
                                 <td>
-                                  <label>
+                                  <label style={{ color: textColor }}>
                                     {option.type}
                                   </label>
                                 </td>
                                 {/* 4 Funtion */}
                                 <td>
-                                  <label>
+                                  <label style={{ color: textColor }}>
                                     {option.funktion}
                                   </label>
                                 </td>
