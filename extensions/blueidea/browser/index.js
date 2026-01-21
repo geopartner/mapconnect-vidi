@@ -497,7 +497,7 @@ module.exports = {
                 api.turnOn(layer);
               });
             }
-            this.listProjects();
+            this.listProjects(false);
             return this.getUser();
           } else {
             me.setState(resetObj);
@@ -515,7 +515,7 @@ module.exports = {
         });
 
         backboneEvents.get().on(`${exId}:listProject`, () => {
-            me.listProjects();
+            me.listProjects(true);
         });
 
 
@@ -809,7 +809,16 @@ module.exports = {
         });
       }
 
-      listProjects = () => {
+      refreshProjectLayer() {
+        api.turnOff (BlueIdea.Aktive_brud_layeName);
+        console.log("Refreshing project layer off");
+        setTimeout(function () {
+          api.turnOn(BlueIdea.Aktive_brud_layeName);
+          console.log("Refreshing project layer on" );
+        }, 500);
+      }
+
+      listProjects = (refresh = false) => {
         let me = this;
         me.getActiveAndFutureBreakage()
          .then((data) => {
@@ -817,6 +826,11 @@ module.exports = {
                   projects: data.features
                 });
             return
+          })
+          .then(() => { {
+            if (refresh)
+              this.refreshProjectLayer();
+            }
           })
           .catch((error) => {
             me.createSnack(__("Error in list") + ": " + error);
@@ -1244,7 +1258,7 @@ module.exports = {
             // success snackbar
             this.createSnack( __("Project created successfully"));
             // list projects again to show the new one
-            this.listProjects();
+            this.listProjects(true);
           })
           .fail((error) => {
             console.error(error);
@@ -1287,6 +1301,7 @@ module.exports = {
           retryIsDisabled: true
         });
         _clearAll();
+        this.refreshProjectLayer();
       };
 
       readyPointLukkeliste = () => {
