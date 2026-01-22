@@ -173,7 +173,7 @@ class ProjectComponent extends React.Component {
                 </div>
                 {!pipeSelected && (
                    <div className="row mx-auto gap-3 my-3">
-                     <span className="col-11 mx-2 badge bg-success" >
+                     <span className="col" style={{ color: '#ee9b10' }}>
                       {project.statusMessage}
                       </span>
                    </div>

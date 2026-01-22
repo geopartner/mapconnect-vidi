@@ -2222,10 +2222,10 @@ module.exports = {
                 <details open className="col">
                  <summary>  
                     {__("Select area")}
-                    {
+                    {/* {
                     s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-success">{__("Lukkeliste is ready")}</span>
-                    }
+                    } */}
                     {
                     !s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
