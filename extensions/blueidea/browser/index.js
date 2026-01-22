@@ -2117,7 +2117,7 @@ module.exports = {
       
       handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
         let bounds = [[ymin, xmin],[ymax, xmax]];
-        cloud.get().map.fitBounds(bounds)
+        cloud.get().map.fitBounds(bounds);
       };
 
       handleStopProject = (beregnuuid) => {
@@ -2172,7 +2172,6 @@ module.exports = {
         const pipeSelected = results_ledninger.length > 0;
         
         let ventilOptions = (s.results_ventiler || [])
-          // .filter((feature) => feature && feature.properties && feature.properties['forbundet'] !== false   )
           .map((feature) => {
             const selectedVentilerAsStrings = selectedVentiler.map(String);
             const name_key = s.user_ventil_layer_name_key;
@@ -2215,10 +2214,6 @@ module.exports = {
                 <details open className="col">
                  <summary>  
                     {__("Select area")}
-                    {/* {
-                    s.lukkeliste_ready && this.allowLukkeliste() &&
-                      <span className="mx-2 badge bg-success">{__("Lukkeliste is ready")}</span>
-                    } */}
                     {
                     !s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
@@ -2276,16 +2271,21 @@ module.exports = {
                             {ventilOptions.map((option) => {
                                const bg = option.label === clickedTableVentil ? 'table-primary' : 'table-light';  
                                const textColor = option.forbundet ? '' : '#AA4A44'; 
-                               return (<tr key={option.value} className={bg} >
+                               const ventilIsDisabled = !option.forbundet && !option.checked;
+                               let ventilTitle = ventilIsDisabled ? 'Ventilen er medtaget men kan ikke påvirke den aktuelle lukkeplan': 'Vælg for at ignorere ved ny kørsel ';
+                               ventilTitle = !option.forbundet && option.checked ? 'Ventilen har været fravalgt i en genberegning og afbrydning af denne kan fortrydes' : ventilTitle; 
+                               const ventilCursor = ventilIsDisabled ? 'not-allowed' : 'pointer'; 
+                               return (<tr key={option.value} className={bg} title={ventilTitle} >
                                 {/* 1 Checkbox */}
                                 <td>
                                   <input
                                    checked={option.checked }
+                                   disabled={ventilIsDisabled}
                                    className="form-check-input"
                                    id={`ventil-checkbox-${option.value}`}
                                    onChange={this.handleVentilCheckbox}
-                                   style={{ cursor: 'pointer' }}
-                                   title="Vælg for at ignorere ved ny kørsel"
+                                   style={{ cursor: ventilCursor }}
+                                   title={ventilTitle}
                                    type="checkbox"
                                    value={option.value}
                                   />
