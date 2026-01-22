@@ -13,7 +13,7 @@ class ProjectModel {
         useBreakType= window.config.extensionConfig?.useBreakType ?? true,
     } = {}) {
         const now = new Date()
-        const plus2h = new Date(now.getTime() + 2 * 60 * 60 * 1000)
+        const plus2h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
         this.brudtype = brudtype;
         this.forsyningsarter = forsyningsarter;
@@ -52,11 +52,13 @@ class ProjectModel {
     }
     
     get isDateRangeValid() {
-      return (
+       
+      return 
         this.projectStartDate instanceof Date &&
         this.projectEndDate instanceof Date &&
         this.projectStartDate < this.projectEndDate
-    )}
+
+    }
 
     get isNotValid() {
         return !this.isDateRangeValid || !this.isProjectNameValid
