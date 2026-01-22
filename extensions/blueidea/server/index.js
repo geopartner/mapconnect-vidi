@@ -658,9 +658,15 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
 // Get active breakages for user
 router.get("/api/extension/blueidea/:userid/activebreakages", function (req, response) {
     guard(req, response);
-    let q = `
-      SELECT ST_X(ST_Centroid(the_geom)) as x,ST_Y(ST_Centroid(the_geom)) as y, * FROM lukkeliste.aktive_brud  order by gyldig_fra, gyldig_til   
-    `;
+    const buffer = 50; // buffer in meters
+    const q =`SELECT \ 
+               ST_XMin(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) xmin, \
+               ST_YMin(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) ymin, \
+               ST_XMax(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) xmax, \
+               ST_YMax(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) ymax, \
+               gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid \
+               FROM lukkeliste.aktive_brud \
+               GROUP BY gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid`
 
     SQLAPI(q, req, { format: "geojson", srs: 4326 })
       .then((data) => {

@@ -2108,13 +2108,16 @@ module.exports = {
         cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true  });
       };
 
+     
+
       handleZoom (x, y, ventil_key) {
         this.zoomToXY(x, y);
         this.setState({ clickedTableVentil : ventil_key})
       };
       
-      handleZoomProject  = (x, y) => {
-        this.zoomToXY(x, y);
+      handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
+        let bounds = [[ymin, xmin],[ymax, xmax]];
+        cloud.get().map.fitBounds(bounds)
       };
 
       handleStopProject = (beregnuuid) => {
@@ -2196,17 +2199,7 @@ module.exports = {
           // Logged in
           return (
             <div role="tabpanel">
-              {/* <div className="row mx-auto gap-0 my-3">
-               <details className="col-11">
-                <summary>Aktive brud</summary>
-                <ProjectListComponent
-                  projects={this.state.projects}
-                  onHandleZoomProject={this.handleZoomProject}
-                  onHandleStopProject={this.handleStopProject}
-                ></ProjectListComponent>
-                </details>
-              </div> */}
-              <div className="row mx-auto gap-0 my-3">
+                       <div className="row mx-auto gap-0 my-3">
                 <details className="col">
                   <summary>Aktive brud ({this.state.projects.length})</summary>
                   <ProjectListComponent

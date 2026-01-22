@@ -75,7 +75,7 @@ class ProjectListComponent extends React.Component {
                         <td style={{ textAlign: 'center' }}>
                           <i
                             className="bi bi-zoom-in"
-                                  onClick={() => onHandleZoomProject(option.properties.x, option.properties.y )}
+                                  onClick={() => onHandleZoomProject(option.properties.xmin, option.properties.ymin, option.properties.xmax, option.properties.ymax )}
                                   style={{ cursor: 'pointer' }}
                                   title="Zoom til projekt"
                           >
