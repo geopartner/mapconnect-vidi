@@ -1,5 +1,22 @@
-var dict = require("./i18n.js");
+/*
+ * @author     Gunnar Jul Jensen <gjj@geopartner.dk>
+ * @copyright  2020- Geoparntner A/S
+ * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
+ */
 
+/* Model for project data. 
+   * Project represents a project in the BlueIdea extension for a break in a network.
+  *  A project has the following properties:
+  * brudtype: 1 = akut, 2 = planlagt 
+  * forsyningsarter: list of supply types 
+  * forsyningsart_selected: selected supply type index
+  * isReadOnly: boolean indicating if the project is read-only
+  * projectStartDate: start date of the project
+  * projectEndDate: end date of the project
+  * projectName: name of the project
+  * useBreakType: boolean indicating if break type is used   
+ */ 
+var dict = require("./i18n.js");
 class ProjectModel {
     
     constructor({
@@ -52,12 +69,10 @@ class ProjectModel {
     }
     
     get isDateRangeValid() {
-       
-      return 
+      return (
         this.projectStartDate instanceof Date &&
         this.projectEndDate instanceof Date &&
-        this.projectStartDate < this.projectEndDate
-
+        this.projectStartDate < this.projectEndDate)
     }
 
     get isNotValid() {

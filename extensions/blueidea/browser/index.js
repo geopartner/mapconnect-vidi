@@ -10,6 +10,10 @@ import proj4 from "proj4";
 import ProjectModel from "./ProjectModel.js";
 import ProjectComponent from "./ProjectComponent.js";
 import ProjectListComponent from "./ProjectListComponent.js";
+import VentilListComponent  from "./VentilListComponent.js";
+import {VentilModel, VentilProperties } from "./VentilModel.js";
+
+
 
 
 import {
@@ -22,7 +26,6 @@ import {
   applyFilter,
 } from "@turf/turf";
 import _ from "underscore";
-import { retry } from "async";
 
 var React = require("react");
 
@@ -82,7 +85,6 @@ var config = require("../../../config/config.js");
  */
 var draw;
 var cloud;
-var state;
 
 var bufferItems = new L.FeatureGroup();
 var queryMatrs = new L.FeatureGroup();
@@ -2078,17 +2080,17 @@ module.exports = {
       }
 
 
-      handleVentilCheckbox = (e) => {
-        const { checked, value } = e.target;
+      handleVentilCheckbox = (e, ventil) => {
+        const { checked } = e.target;
 ///        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
         this.setState({ retryIsDisabled: false   });
         this.setState(prev => {
           const selected = new Set((prev.selectedVentiler || []).map(String));
           if (checked) {
-            selected.add(String(value));
+            selected.add(String(e.value));
 
           } else {
-            selected.delete(String(value));
+            selected.delete(String(e.value));
           }
           return { selectedVentiler: Array.from(selected) };
         });
@@ -2110,9 +2112,9 @@ module.exports = {
 
      
 
-      handleZoom (x, y, ventil_key) {
-        this.zoomToXY(x, y);
-        this.setState({ clickedTableVentil : ventil_key})
+      handleZoom (ventil) {
+        this.zoomToXY(ventil.xkoordinat, ventil.ykoordinat);
+        this.setState({ clickedTableVentil : ventil.label})
       };
       
       handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
@@ -2154,13 +2156,33 @@ module.exports = {
       
       };
 
-       updateProject = (changes) => {
+      updateProject = (changes) => {
         this.setState(prev => ({
             project: prev.project.withChanges(changes),
         }));
       };
+      
+      getVentilProperties (forsyningsart)  {
+        // her kan man komme med tilpassede ventil egenskaber - så varme nemmere kan implementeres
+        try {
+          const ventilProperties =new VentilProperties({ 
+            key: this.state?.user_ventil_layer_key ?? '',
+            name_key: this.state?.user_ventil_layer_name_key ?? '',
+            xkoordinat_key: 'xkoord',
+            ykoordinat_key: 'ykoord',
+            type_key: 'type',
+            funktion_key: 'funktion',
+            forbundet_key: 'forbundet'
+          })
+          return ventilProperties;
+        }
+        catch (error) {
+          console.error("Error getting ventil properties:", error);
 
-
+          return new VentilProperties();
+        }
+      }
+       
       /**
        * Renders component
        */
@@ -2170,7 +2192,17 @@ module.exports = {
         const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
+        const ventilProperties = this.getVentilProperties('vand');
+        const ventilList =   Array.
         
+        isArray(this.state.results_ventiler) 
+         ? VentilModel.fromFeaturesFactory(
+          this.state.results_ventiler, 
+          ventilProperties,  
+          Array.isArray(this.state.selectedVentiler) ? this.state.selectedVentiler : []) 
+         : []; 
+        const ventilCount = ventilList.length;
+
         let ventilOptions = (s.results_ventiler || [])
           .map((feature) => {
             const selectedVentilerAsStrings = selectedVentiler.map(String);
@@ -2242,7 +2274,22 @@ module.exports = {
                   ></ProjectComponent>
 
                   <hr style={{marginRight: "1.5em"}}></hr>
+                  
+		              { ventilCount > 0 && (
+                    <VentilListComponent 
+                      ventilList={ventilList}
+                      onDownloadVentiler={this.downloadVentiler.bind(this)}
+                      onVentilZoom={this.handleZoom.bind(this)}
+                      onHandleVentilCheckbox={this.handleVentilCheckbox.bind(this)}
+                      onRunWithoutSelected={this.runWithoutSelected.bind(this)}
+                      retryIsDisabled={retryIsDisabled}
+                      clickedTableVentil  = {clickedTableVentil}
+                    >
+                    </VentilListComponent>
+                   )
+                  }
 
+                  <hr style={{marginRight: "1.5em"}}></hr>
                   {/* Checkbox list for ventiler */}
                   {ventilOptions.length > 0 && (
                     <>
