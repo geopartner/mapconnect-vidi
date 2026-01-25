@@ -2191,9 +2191,7 @@ module.exports = {
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
-        const ventilList =   Array.
-        
-        isArray(this.state.results_ventiler) 
+        const ventilList =   Array.isArray(this.state.results_ventiler) 
          ? VentilModel.fromFeaturesFactory(
           this.state.results_ventiler, 
           ventilProperties,  
@@ -2201,34 +2199,12 @@ module.exports = {
          : []; 
         const ventilCount = ventilList.length;
 
-        let ventilOptions = (s.results_ventiler || [])
-          .map((feature) => {
-            const selectedVentilerAsStrings = selectedVentiler.map(String);
-            const name_key = s.user_ventil_layer_name_key;
-            const key = s.user_ventil_layer_key;
-            if (!feature.properties || feature.properties[key] == null) return null;
-            return {
-              value: String(feature.properties[key]),
-              label: String(feature.properties[name_key]),
-              type: String(feature.properties['type']),
-              funktion: String(feature.properties['funktion']),
-              xkoord: String(feature.properties['xkoord']),
-              ykoord: String(feature.properties['ykoord']),
-              forbundet: Boolean(feature.properties['forbundet']),
-              checked: Boolean(selectedVentilerAsStrings.includes(feature.properties[key].toString()))
-            };
-          })
-          .filter(Boolean);
-          // guard mod dubletter
-          if (ventilOptions.length > 1) {
-            ventilOptions = [...new Map(ventilOptions.map(feature => [feature.value, feature])).values()];
-          }
-       
+      
         if (s.authed && s.user_id) {
           // Logged in
           return (
             <div role="tabpanel">
-                       <div className="row mx-auto gap-0 my-3">
+              <div className="row mx-auto gap-0 my-3">
                 <details className="col">
                   <summary>Aktive brud ({this.state.projects.length})</summary>
                   <ProjectListComponent
@@ -2242,15 +2218,15 @@ module.exports = {
               <hr></hr>
               <div className="row mx-auto gap-0 my-3">
                 <details open className="col">
-                 <summary>  
+                  <summary>  
                     {__("Select area")}
                     {
                     !s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
                     }
-                   </summary>
+                  </summary>
                 
-                <div style={{ alignSelf: "center" }}>
+                  <div style={{ alignSelf: "center" }}>
                  
                   {false && (
                    <div className="d-grid mx-auto gap-2">
@@ -2272,126 +2248,32 @@ module.exports = {
                   ></ProjectComponent>
 
                   <hr style={{marginRight: "1.5em"}}></hr>
-                  
-		              { ventilCount > 0 && (
-                    <VentilListComponent 
-                      ventilList={ventilList}
-                      onDownloadVentiler={this.downloadVentiler.bind(this)}
-                      onVentilZoom={this.handleZoom.bind(this)}
-                      onHandleVentilCheckbox={this.handleVentilCheckbox.bind(this)}
-                      onRunWithoutSelected={this.runWithoutSelected.bind(this)}
-                      retryIsDisabled={retryIsDisabled}
-                      clickedTableVentil  = {clickedTableVentil}
-                    >
-                    </VentilListComponent>
-                   )
-                  }
-
-                  <hr style={{marginRight: "1.5em"}}></hr>
-                  {/* Checkbox list for ventiler */}
-                  {ventilOptions.length > 0 && (
-                    <>
-                      <div className="row mx-auto gap-0 my-3">
-                        <h6 className="col-9">{__("Valves")}</h6>
-                        <div className="col-2" style={{ cursor: 'pointer' }}>
-                          <i className="bi bi-download float-end" 
-                           onClick={() => this.downloadVentiler()}
-                           title= {__("Download valves")}>
-                          </i>
-                        </div>
-                      </div>  
-                      <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
-                          <table className="table table-sm mb-0 col-11">
-                          <thead style={{fontWeight: 'bold', position: 'sticky',top: 0}}>
-                            <tr>
-                              <th style={{ width: '10px' }}>
-                              </th>
-                              <th><p style={{fontWeight:500}}>Navn</p></th>
-                              <th><p style={{fontWeight:500}}>Type</p></th>
-                              <th><p style={{fontWeight:500}}>Funktion</p></ th>
-                              <th></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {ventilOptions.map((option) => {
-                               const bg = option.label === clickedTableVentil ? 'table-primary' : 'table-light';  
-                               const textColor = option.forbundet ? '' : '#AA4A44'; 
-                               const ventilIsDisabled = !option.forbundet && !option.checked;
-                               let ventilTitle = ventilIsDisabled ? 'Ventilen er medtaget men kan ikke påvirke den aktuelle lukkeplan': 'Vælg for at ignorere ved ny kørsel ';
-                               ventilTitle = !option.forbundet && option.checked ? 'Ventilen har været fravalgt i en genberegning og afbrydning af denne kan fortrydes' : ventilTitle; 
-                               const ventilCursor = ventilIsDisabled ? 'not-allowed' : 'pointer'; 
-                               return (<tr key={option.value} className={bg} title={ventilTitle} >
-                                {/* 1 Checkbox */}
-                                <td>
-                                  <input
-                                   checked={option.checked }
-                                   disabled={ventilIsDisabled}
-                                   className="form-check-input"
-                                   id={`ventil-checkbox-${option.value}`}
-                                   onChange={this.handleVentilCheckbox}
-                                   style={{ cursor: ventilCursor }}
-                                   title={ventilTitle}
-                                   type="checkbox"
-                                   value={option.value}
-                                  />
-                                </td>
-                                {/* 2 Label */}
-                                <td>
-                                  <label
-                                   className="form-check-label"
-                                   htmlFor={`ventil-checkbox-${option.value}`}
-                                   style={{ cursor: 'pointer', color: textColor }}
-                                   >
-                                    {option.label}
-                                  </label>
-                                </td>
-                                {/* 3 Type */}
-                                <td>
-                                  <label style={{ color: textColor }}>
-                                    {option.type}
-                                  </label>
-                                </td>
-                                {/* 4 Funtion */}
-                                <td>
-                                  <label style={{ color: textColor }}>
-                                    {option.funktion}
-                                  </label>
-                                </td>
-
-                                {/* 5 Zoom icon */}
-                                <td style={{ textAlign: 'center' }}>
-                                  <i
-                                  className="bi bi-zoom-in"
-                                  onClick={() => this.handleZoom(option.xkoord, option.ykoord, option.label)}
-                                  style={{ cursor: 'pointer' }}
-                                  title="Zoom til ventil"
-                                  >
-                                  </i>
-                                </td>
-                              </tr>
-                            )})}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="form-text">{__("Select one or more valves.")}</div>
-                      <div className="row mx-auto gap-0 my-3">
-                        <button
-                          className="btn btn-primary col"
-                          disabled ={retryIsDisabled}
-                          onClick={() => this.runWithoutSelected()}
-                        >
-                        {__("Retry with unaccessible valves")}
-                        </button>
-                      </div>
-
-                      <hr></hr>
-                    </>
-                  )}
+  
                 
                 </div>
-                {
-                  s.user_profileid && this.profileidOptions().length > 1 &&
+                </details>             
+              </div>
+              { ventilCount > 0 && (
+                <>
+                  <VentilListComponent 
+                    ventilList={ventilList}
+                    onDownloadVentiler={this.downloadVentiler.bind(this)}
+                    onVentilZoom={this.handleZoom.bind(this)}
+                    onHandleVentilCheckbox={this.handleVentilCheckbox.bind(this)}
+                    onRunWithoutSelected={this.runWithoutSelected.bind(this)}
+                    retryIsDisabled={retryIsDisabled}
+                    clickedTableVentil  = {clickedTableVentil}
+                    >
+                    </VentilListComponent>
+                  <hr style={{marginRight: "1.5em"}}></hr>
+                </>
+              )}
+              
+
+              <div className="row mx-auto gap-0 my-3">
+                <details open className="col">
+                  <summary>BlueIdea</summary>
+                  { s.user_profileid && this.profileidOptions().length > 1 &&
                     <div className="row">
                       <label className="col-4">SMS Profil</label>
                       <select
@@ -2408,129 +2290,127 @@ module.exports = {
                           </option>
                         ))}
                           </select>
-                        </div>
-                      }
-                      <div className="row mx-auto gap-3 my-1">
-                        <button
-                          onClick={() => this.sendToBlueIdea()}
-                          className="col btn btn-primary"
-                          disabled={!this.readyToBlueIdea()}
-                          style={{ marginRight: '8px' }}
-                        >
-                          {__("Go to blueidea")}
-                        </button>
+                    </div>
+                  }
+                  <div className="row mx-auto gap-3 my-1">
+                    <button
+                      onClick={() => this.sendToBlueIdea()}
+                      className="col btn btn-primary"
+                      disabled={!this.readyToBlueIdea()}
+                      style={{ marginRight: '8px' }}
+                    >
+                      {__("Go to blueidea")}
+                    </button>
+                  </div>
+
+                  <div className="row mx-auto gap-3 my-1">
+                    <div className="col">
+                      <div className="d-flex align-items-center justify-content-between">
+                        {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
+                      <div className="col-2" style={{ cursor: 'pointer' }}>
+                        <i className="bi bi-download" 
+                          onClick={() => this.downloadAdresser()}
+                          title= {__("Download addresses")}
+                          hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
+                        </i>
                       </div>
-                     <div className="row mx-auto gap-3 my-1">
-                       <div className="col">
-                         {/* <h6>{__("Show results")}</h6> */}
-                         <div className="d-flex align-items-center justify-content-between">
-                         {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
-                          <div className="col-2" style={{ cursor: 'pointer' }}>
-                            <i className="bi bi-download" 
-                              onClick={() => this.downloadAdresser()}
-                              title= {__("Download addresses")}
-                              hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
-                            </i>
-                          </div>
-                        <button
-                         disabled={Object.keys(s.results_adresser).length == 0}
-                         title={__("modify parcels")}
-                         className="btn btn-primary"
-                         onClick={() => this.toggleEdit()}>
-                          {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
-                        </button>
-                      </div>
+                       <button
+                        disabled={Object.keys(s.results_adresser).length == 0}
+                        title={__("modify parcels")}
+                        className="btn btn-primary"
+                        onClick={() => this.toggleEdit()}>
+                        {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
+                      </button>
+                    </div>
                     </div>
                   </div>
 
-                <div className="row mx-auto gap-3 my-3">
-                
-                  <button
-                    onClick={() => this.getAdresser(s.results_matrikler)}
-                    className="col btn btn-primary"
-                    hidden={!s.TooManyFeatures}
-                    style={{ marginRight: '8px' }}
-                  >
-                    {__("Get addresses")}
-                  </button>
-                </div>
+                  <div className="row mx-auto gap-3 my-3">
+                    <button
+                      onClick={() => this.getAdresser(s.results_matrikler)}
+                      className="col btn btn-primary"
+                      hidden={!s.TooManyFeatures}
+                      style={{ marginRight: '8px' }}
+                    >
+                      {__("Get addresses")}
+                    </button>
+                  </div>
+          
                 </details>
               </div>
+
               
-
-                <div
-                  style={{ alignSelf: "center" }}
-                  hidden={!s.user_alarmkabel}
+              <div
+                style={{ alignSelf: "center" }}
+                hidden={!s.user_alarmkabel}
+              >
+                <h6>{__("Alarm cable")}</h6>
+                <select
+                  className="form-select"
+                  value={s.alarm_direction_selected}
+                  onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
                 >
-                  <h6>{__("Alarm cable")}</h6>
-
-                  <select
-                      className="form-select"
-                      value={s.alarm_direction_selected}
-                      onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
-                    >
-                      <option value="FT">{__('From-To')}</option>
-                      <option value="TF">{__('To-From')}</option>
-                      <option value="Both">{__('Both')}</option>
-                    </select>
-                    <div className="form-text mb-3">Angiv søgeretning</div>
-
-                  <div className="vertical-center col-auto">
-                    {__("Distance from point")}
-                  </div>
-
-                  <div className="input-group">
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={s.user_alarmkabel_distance}
-                      onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
-                      min={0}
-                      max={2000}
-                      style={{ width: "35%" }}
-                    />
-                    <button
-                      onClick={() => this.selectPointAlarmkabel()}
-                      className="btn btn-primary col-auto"
-                      disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
-                    >
-                      {__("Select point for alarmkabel")}
-                    </button>
-                  </div>
-                  <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
+                  <option value="FT">{__('From-To')}</option>
+                  <option value="TF">{__('To-From')}</option>
+                  <option value="Both">{__('Both')}</option>
+                </select>
+                <div className="form-text mb-3">Angiv søgeretning</div>
+                <div className="vertical-center col-auto">
+                  {__("Distance from point")}
                 </div>
 
-                <div
-                  style={{ alignSelf: "center" }}
-                  //hidden={!s.user_alarmkabel}
-                  hidden
-                >
-                  <div className="vertical-center col-auto">
-                  {__("Distance from cabinet")}
-                  </div>
+                <div className="input-group">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={s.user_alarmkabel_distance}
+                    onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
+                    min={0}
+                    max={2000}
+                    style={{ width: "35%" }}
+                  />
+                  <button
+                    onClick={() => this.selectPointAlarmkabel()}
+                    className="btn btn-primary col-auto"
+                    disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
+                  >
+                    {__("Select point for alarmkabel")}
+                  </button>
+                </div>
+                <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
+              </div>
 
-                  <div className="input-group">
-                    <select
-                      className="form-select"
-                      value={s.alarm_skab_selected}
-                      onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
-                    >
+              <div
+                style={{ alignSelf: "center" }}
+                //hidden={!s.user_alarmkabel}
+                hidden
+              >
+                <div className="vertical-center col-auto">
+                  {__("Distance from cabinet")}
+                </div>
+
+                <div className="input-group">
+                  <select
+                    className="form-select"
+                    value={s.alarm_skab_selected}
+                    onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
+                  >
                     // for each option in s.alarm_skabe, create an option
-                    {s.alarm_skabe.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                    </select>
-                    <button
-                      onClick={() => this.selectPointAlarmskab()}
-                      className="btn btn-primary col-auto"
-                      disabled={!this.allowAlarmkabel()}
-                    >
-                      {__("Select point for cabinet")}
-                    </button>
-                  </div>
-                  <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
+                   {s.alarm_skabe.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                   ))}
+                  </select>
+                  <button
+                    onClick={() => this.selectPointAlarmskab()}
+                    className="btn btn-primary col-auto"
+                    disabled={!this.allowAlarmkabel()}
+                  >
+                    {__("Select point for cabinet")}
+                  </button>
+                </div>
+                <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
                 </div>
 
                 <div

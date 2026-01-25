@@ -153,6 +153,13 @@ class ProjectComponent extends React.Component {
                      type="text"
                     />
                 </div>
+                {!pipeSelected && (
+                   <div className="row mx-auto gap-3 my-2">
+                     <span className="col" style={{ color: '#ee9b10' }}>
+                      {project.statusMessage}
+                      </span>
+                   </div>
+                )}
                 <div className="row mx-auto gap-2 my-3">
                     <button
                       onClick={this.handlePointClick}
@@ -161,7 +168,9 @@ class ProjectComponent extends React.Component {
                     >
                       {this.__("Select point on map")}
                     </button>
-                   <div className="col-3"></div>
+                    <div className="col-3">
+
+                    </div>
                     <button
                       onClick={this.handleClearClick}
                       className="btn btn-primary col-4"
@@ -171,13 +180,7 @@ class ProjectComponent extends React.Component {
                     </button>
                     <div className="col-1"></div>
                 </div>
-                {!pipeSelected && (
-                   <div className="row mx-auto gap-3 my-3">
-                     <span className="col" style={{ color: '#ee9b10' }}>
-                      {project.statusMessage}
-                      </span>
-                   </div>
-                )}
+
             </>
         )
     }

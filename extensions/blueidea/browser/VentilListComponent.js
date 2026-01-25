@@ -8,25 +8,23 @@ class VentilListComponent extends React.Component {
     }
 
     componentDidMount() {
-
     }
 
     componentWillUnmount() {
-
     }
     __ = (txt) => {
-      if (dict[txt][window._vidiLocale]) {
-        return dict[txt][window._vidiLocale];
-      } else {
-        return txt;
-      }
+        if (dict[txt][window._vidiLocale]) {
+            return dict[txt][window._vidiLocale];
+        } else {
+            return txt;
+        }
     }
 
     render() {
         const {
             clickedTableVentil,
-            onDownloadVentiler, 
-            onVentilZoom, 
+            onDownloadVentiler,
+            onVentilZoom,
             ventilList,
             onRunWithoutSelected,
             onHandleVentilCheckbox,
@@ -36,7 +34,7 @@ class VentilListComponent extends React.Component {
         return (
             <>
                 <div className="row mx-auto gap-0 my-3">
-                    <h6 className="col-9">{this.__("Valves")}</h6>
+                    <h6 className="col-9">{this.__("Valves")} ({ventilList.length})</h6>
                     <div className="col-2" style={{ cursor: 'pointer' }}>
                         <i className="bi bi-download float-end"
                             onClick={onDownloadVentiler}
@@ -44,7 +42,7 @@ class VentilListComponent extends React.Component {
                         </i>
                     </div>
                 </div>
-                <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <div className="row mx-auto gap-1" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
                     <table className="table table-sm mb-0 col-11">
                         <thead style={{ fontWeight: 'bold', position: 'sticky', top: 0 }}>
                             <tr>
@@ -61,7 +59,7 @@ class VentilListComponent extends React.Component {
                                 const bg = ventil.label === clickedTableVentil ? 'table-primary' : 'table-light';
                                 const textColor = ventil.textColor;
                                 const ventilIsDisabled = ventil.ventilIsDisabled;
-                                const ventilTitle =ventil.ventilTooltip
+                                const ventilTitle = ventil.ventilTooltip
                                 const ventilCursor = ventil.ventilCursor;
                                 return (<tr key={ventil.value} className={bg} title={ventilTitle} >
                                     {/* 1 Checkbox */}
@@ -105,7 +103,7 @@ class VentilListComponent extends React.Component {
                                     <td style={{ textAlign: 'center' }}>
                                         <i
                                             className="bi bi-zoom-in"
-                                            onClick= {onVentilZoom.bind(this, ventil)}
+                                            onClick={onVentilZoom.bind(this, ventil)}
                                             style={{ cursor: 'pointer' }}
                                             title="Zoom til ventil"
                                         >
