@@ -4,6 +4,7 @@
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
+
 /* Model for project data. 
    * Project represents a project in the BlueIdea extension for a break in a network.
   *  A project has the following properties:
@@ -30,14 +31,16 @@ class ProjectModel {
         useBreakType= window.config.extensionConfig?.useBreakType ?? true,
     } = {}) {
         const now = new Date()
-        const plus2h = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+        if (!projectEndDate && brudtype !== 1 ){  
+            projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        }
 
         this.brudtype = brudtype;
         this.forsyningsarter = forsyningsarter;
         this.forsyningsart_selected = forsyningsart_selected;
         this.isReadOnly = isReadOnly;
         this.projectStartDate = projectStartDate ?? now;
-        this.projectEndDate = projectEndDate ?? plus2h;
+        this.projectEndDate = projectEndDate ;
         this.projectName = projectName;
         this.useBreakType = useBreakType;
     }
@@ -69,6 +72,9 @@ class ProjectModel {
     }
     
     get isDateRangeValid() {
+      if (this.brudtype === 1) {
+        return this.projectStartDate instanceof Date 
+      }
       return (
         this.projectStartDate instanceof Date &&
         this.projectEndDate instanceof Date &&
