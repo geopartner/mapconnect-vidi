@@ -28,6 +28,7 @@ class ProjectListComponent extends React.Component {
       const pad = n => String(n).padStart(2, '0');
       return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
+    
     __ = (txt) => {
       if (dict[txt][window._vidiLocale]) {
         return dict[txt][window._vidiLocale];
@@ -35,6 +36,7 @@ class ProjectListComponent extends React.Component {
         return txt;
       }
     }
+
     render() {
       const {onHandleZoomProject,onHandleStopProject, projects, user_udpeg_layer}   = this.props;
       const {clickedTableProjectIndex} = this.state;

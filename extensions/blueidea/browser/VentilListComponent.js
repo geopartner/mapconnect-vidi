@@ -36,11 +36,11 @@ class VentilListComponent extends React.Component {
         return (
             <>
                 <div className="row mx-auto gap-0 my-3">
-                    <h6 className="col-9">{__("Valves")}</h6>
+                    <h6 className="col-9">{this.__("Valves")}</h6>
                     <div className="col-2" style={{ cursor: 'pointer' }}>
                         <i className="bi bi-download float-end"
                             onClick={onDownloadVentiler}
-                            title={__("Download valves")}>
+                            title={this.__("Download valves")}>
                         </i>
                     </div>
                 </div>
@@ -118,14 +118,14 @@ class VentilListComponent extends React.Component {
                     </table>
                 </div>
 
-                <div className="form-text">{__("Select one or more valves.")}</div>
+                <div className="form-text">{this.__("Select one or more valves.")}</div>
                 <div className="row mx-auto gap-0 my-3">
                     <button
                         className="btn btn-primary col"
                         disabled={retryIsDisabled}
                         onClick={onRunWithoutSelected.bind(this)}
                     >
-                        {__("Retry with unaccessible valves")}
+                        {this.__("Retry with unaccessible valves")}
                     </button>
                 </div>
 
