@@ -97,7 +97,7 @@ class VentilModel {
             xkoordinat: properties[ventilProperties.xkoordinat_key],
             ykoordinat: properties[ventilProperties.ykoordinat_key],
             forbundet: properties[ventilProperties.forbundet_key],
-            checked: Boolean(selectedVentilValues.includes(properties[ventilProperties.key])),
+            checked: Boolean(selectedVentilValues.includes(String(properties[ventilProperties.key]))),
         });
     }
     /** Create an array of VentilModel instances from an array of GeoJSON features.

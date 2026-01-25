@@ -2005,8 +2005,6 @@ module.exports = {
       downloadVentiler = () => {
         let me = this;
 
-        //console.log(me.state.results_ventiler, me.state.user_ventil_export);
-
         // Use keys as headers
         let csvRows = [];
         csvRows.push(Object.keys(me.state.user_ventil_export));
@@ -2087,10 +2085,10 @@ module.exports = {
         this.setState(prev => {
           const selected = new Set((prev.selectedVentiler || []).map(String));
           if (checked) {
-            selected.add(String(e.value));
+            selected.add(String(ventil.value));
 
           } else {
-            selected.delete(String(e.value));
+            selected.delete(String(ventil.value));
           }
           return { selectedVentiler: Array.from(selected) };
         });
