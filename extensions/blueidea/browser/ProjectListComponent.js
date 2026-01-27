@@ -18,8 +18,9 @@ class ProjectListComponent extends React.Component {
   componentWillUnmount() {
 
   }
-  handleRowClick(rowIndex) {
+  handleRowClick(rowIndex, properties) {
     this.setState({ clickedTableProjectIndex: rowIndex });
+    this.props.onHandleZoomProject(properties.xmin, properties.ymin, properties.xmax, properties.ymax );
   }
 
   toDateTimeLocal(dateStr) {
@@ -70,7 +71,7 @@ class ProjectListComponent extends React.Component {
                     const fromDate = this.toDateTimeLocal(option.properties.gyldig_fra);
                     const toDate = this.toDateTimeLocal(option.properties.gyldig_til);
                     const brudType = option.properties.brudtype === 'Aktuel afbrydelse' ? 'Akut' : 'Planlagt';
-                    return (<tr key={option.properties.beregnuuid} className={bg} onClick={() => this.handleRowClick(rowIndex)}>
+                    return (<tr key={option.properties.beregnuuid} className={bg} style={{ cursor: 'pointer' }} onClick={() => this.handleRowClick(rowIndex, option.properties)}>
                       <td style={{ textAlign: 'center' }}>
                         <i
                           className="bi bi-zoom-in"
