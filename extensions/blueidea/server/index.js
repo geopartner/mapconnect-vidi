@@ -655,6 +655,31 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
   }
 );
 
+router.get("/api/extension/blueidea/:userid/getproject/:beregnuuid", function (req, response) {
+    guard(req, response);
+    const beregnuuid = req.params.beregnuuid;
+    const query = ` SELECT 
+    beregnuuid,
+    forsyningsart,
+    to_char(gyldig_fra AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_fra,
+    to_char(gyldig_til AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_til,
+    beregnaarsag,
+    brud_status,
+    sagstekst 
+    FROM lukkeliste.beregnlog 
+    WHERE beregnuuid = '${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json(err);
+      });
+  }
+);
+
 // Get active breakages for user
 router.get("/api/extension/blueidea/:userid/activebreakages", function (req, response) {
     guard(req, response);

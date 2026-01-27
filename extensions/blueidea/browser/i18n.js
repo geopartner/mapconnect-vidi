@@ -87,6 +87,14 @@ var dict = {
     da_DK: "Opret nyt brud", // tidligere "Udpeg"
     en_US: "Select",
   },
+  "Edit project": {
+    da_DK: "Rediger brud",
+    en_US: "Edit break",
+  },  
+  "Save": {
+    da_DK: "Gem",
+    en_US: "Save",
+  },
   "Show results": {
     da_DK: "Resultat",
     en_US: "Result",

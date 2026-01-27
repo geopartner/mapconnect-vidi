@@ -70,7 +70,16 @@ class ProjectModel {
   clearData = () => {
     this.projectName = '';
   }
+  static fromFeature(feature) {
 
+    return new ProjectModel({
+      forsyningsart_selected: 0,
+      brudtype: Number(feature.properties.beregnaarsags),
+      projectEndDate: feature.properties.gyldig_til ? new Date(feature.properties.gyldig_til) : null,
+      projectStartDate: feature.properties.gyldig_fra ? new Date(feature.properties.gyldig_fra) : null,
+      projectName:  feature.properties.sagstekst
+    });
+  }   
   get isDateRangeValid() {
     if (this.brudtype === '1') {
       return this.projectStartDate instanceof Date

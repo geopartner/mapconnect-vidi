@@ -39,7 +39,7 @@ class ProjectListComponent extends React.Component {
   }
 
   render() {
-    const { onHandleZoomProject, onHandleStopProject, projects, user_udpeg_layer } = this.props;
+    const { onHandleEditProject, onHandleStopProject, projects, user_udpeg_layer } = this.props;
     const { clickedTableProjectIndex } = this.state;
     const noProjects = projects.length === 0;
     return (
@@ -74,10 +74,10 @@ class ProjectListComponent extends React.Component {
                     return (<tr key={option.properties.beregnuuid} className={bg} style={{ cursor: 'pointer' }} onClick={() => this.handleRowClick(rowIndex, option.properties)}>
                       <td style={{ textAlign: 'center' }}>
                         <i
-                          className="bi bi-zoom-in"
-                          onClick={() => onHandleZoomProject(option.properties.xmin, option.properties.ymin, option.properties.xmax, option.properties.ymax)}
+                          className="bi bi-pencil"
+                          onClick={() => onHandleEditProject(option.properties.beregnuuid )}
                           style={{ cursor: 'pointer' }}
-                          title="Zoom til projekt"
+                          title="Rediger brud"
                         >
                         </i>
                       </td>

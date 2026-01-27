@@ -13,9 +13,6 @@ import ProjectListComponent from "./ProjectListComponent.js";
 import VentilListComponent  from "./VentilListComponent.js";
 import {VentilModel, VentilProperties } from "./VentilModel.js";
 
-
-
-
 import {
   buffer as turfBuffer,
   point as turfPoint,
@@ -429,6 +426,7 @@ module.exports = {
           active: false,
           authed: false,
           project: new ProjectModel(),
+          editProject: false,
           projects: [],
           done: false,
           loading: false,
@@ -1296,6 +1294,7 @@ module.exports = {
           results_ledninger: [],
           results_adresser: [],
           edit_matr: false,
+          editProject: false,
           TooManyFeatures: false,
           selectedVentiler: [],
           beregnuuid: null,
@@ -2108,7 +2107,34 @@ module.exports = {
         cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true  });
       };
 
-     
+      handleEditProject = (beregnuuid) => {
+        const me = this;
+        $.ajax({
+          url: `/api/extension/blueidea/${me.state.user_id}/getproject/${beregnuuid}`,
+          type: "GET",
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then((data) => {
+            if (!data || data.features.length == 0) {
+              me.createSnack(__("Project not found"));
+              return;
+            }
+            const feature = data.features[0];
+            const editProject = ProjectModel.fromFeature(feature);
+            me.setState(prev => ({
+              project: editProject.withChanges({
+              forsyningsarter: prev.project.forsyningsarter}),
+              editProject: true
+            }));
+            
+            me.createSnack(__("Project loaded for editing"));       
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error loading project") + ": " + error.message);
+          });
+      };
 
       handleZoom (ventil) {
         this.zoomToXY(ventil.xkoordinat, ventil.ykoordinat);
@@ -2119,7 +2145,8 @@ module.exports = {
         let bounds = [[ymin, xmin],[ymax, xmax]];
         cloud.get().map.fitBounds(bounds);
       };
-
+      
+  
       handleStopProject = (beregnuuid) => {
         if (!window.confirm(__("Confirm stop project")))  {
          return 
@@ -2191,6 +2218,7 @@ module.exports = {
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
+        const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
         const openBlueidea = this.allowBlueIdea() && Object.keys(s.results_adresser).length > 0;  
         const ventilList =   Array.isArray(this.state.results_ventiler)
          ? VentilModel.fromFeaturesFactory(
@@ -2211,6 +2239,7 @@ module.exports = {
                   <ProjectListComponent
                     className="col"
                     projects={this.state.projects}
+                    onHandleEditProject={this.handleEditProject}
                     onHandleZoomProject={this.handleZoomProject}
                     onHandleStopProject={this.handleStopProject}>
                   </ProjectListComponent>
@@ -2220,7 +2249,7 @@ module.exports = {
               <div className="row mx-auto gap-0 my-3">
                 <details open className="col">
                   <summary>  
-                    {__("Select area")}
+                    {breakHeader}
                     {
                     !s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
@@ -2242,6 +2271,7 @@ module.exports = {
                   
                   <ProjectComponent
                     project={this.state.project}
+                    editProject={this.state.editProject}
                     onChange={this.updateProject}
                     pipeSelected= {pipeSelected}
                     onReadyPointLukkeliste={this.readyPointLukkeliste}
