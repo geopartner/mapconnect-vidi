@@ -80,6 +80,7 @@ class ProjectComponent extends React.Component {
         const  isReadOnly = project.isReadOnly || pipeSelected;
         const isNotValid = project.isNotValid;
         const clearDisable = !pipeSelected;
+        const toDate  =  project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
         return (
             <>
                 <div className="row mx-auto gap-3 my-2">
@@ -136,7 +137,7 @@ class ProjectComponent extends React.Component {
                                 disabled={isReadOnly}
                                 onChange={ e => this.handleProjectEndChange(new Date(e.target.value))}
                                 placeholder={this.__("Forventet-slut")}
-                                value={this.toDateTimeLocal(project.projectEndDate)}
+                                value={toDate}
                                 type="datetime-local"
                             />
                         </div>

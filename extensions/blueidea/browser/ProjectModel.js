@@ -16,89 +16,100 @@
   * projectEndDate: end date of the project
   * projectName: name of the project
   * useBreakType: boolean indicating if break type is used   
- */ 
+ */
 var dict = require("./i18n.js");
 class ProjectModel {
-    
-    constructor({
-        brudtype = 1, 
-        forsyningsarter = [],
-        forsyningsart_selected = 0,
-        isReadOnly = false,
-        projectEndDate,
-        projectStartDate,
-        projectName = '',
-        useBreakType= window.config.extensionConfig?.useBreakType ?? true,
-    } = {}) {
-        const now = new Date()
-        if (!projectEndDate && brudtype !== 1 ){  
-            projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        }
 
-        this.brudtype = brudtype;
-        this.forsyningsarter = forsyningsarter;
-        this.forsyningsart_selected = forsyningsart_selected;
-        this.isReadOnly = isReadOnly;
-        this.projectStartDate = projectStartDate ?? now;
-        this.projectEndDate = projectEndDate ;
-        this.projectName = projectName;
-        this.useBreakType = useBreakType;
+  constructor({
+    brudtype = '1',
+    forsyningsarter = [],
+    forsyningsart_selected = 0,
+    isReadOnly = false,
+    projectEndDate,
+    projectStartDate,
+    projectName = '',
+    useBreakType = window.config.extensionConfig?.useBreakType ?? true,
+  } = {}) {
+    const now = new Date()
+    if (brudtype === '2' && !projectEndDate) {
+      projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     }
 
-     __ = (txt) => {
-      if (dict[txt][window._vidiLocale]) {
-        return dict[txt][window._vidiLocale];
-      } else {
-        return txt;
-      }
-    }
-    
-    breakTypeOptions = () => {
-        let options = [];
-        options.push({ value: 1, label: this.__("Brudtype akut") });
-        options.push({ value: 2, label: this.__("Brudtype planlagt") });
-        return options;
-    }
+    this.brudtype = brudtype;
+    this.forsyningsarter = forsyningsarter;
+    this.forsyningsart_selected = forsyningsart_selected;
+    this.isReadOnly = isReadOnly;
+    this.projectStartDate = projectStartDate ?? now;
+    this.projectEndDate = projectEndDate;
+    this.projectName = projectName;
+    this.useBreakType = useBreakType;
+  }
 
-    withChanges(changes) {
-        return new ProjectModel({
-            ...this,
-            ...changes,
-        });
+  __ = (txt) => {
+    if (dict[txt][window._vidiLocale]) {
+      return dict[txt][window._vidiLocale];
+    } else {
+      return txt;
     }
+  }
 
-    clearData = () => {
-        this.projectName = '';
-    }
-    
-    get isDateRangeValid() {
-      if (this.brudtype === 1) {
-        return this.projectStartDate instanceof Date 
-      }
-      return (
-        this.projectStartDate instanceof Date &&
-        this.projectEndDate instanceof Date &&
-        this.projectStartDate < this.projectEndDate)
-    }
+  breakTypeOptions = () => {
+    let options = [];
+    options.push({ value: 1, label: this.__("Brudtype akut") });
+    options.push({ value: 2, label: this.__("Brudtype planlagt") });
+    return options;
+  }
 
-    get isNotValid() {
-        return !this.isDateRangeValid || !this.isProjectNameValid
-    }
+  withChanges(changes) {
+    return new ProjectModel({
+      ...this,
+      ...changes,
+    });
+  }
 
-    get isProjectNameValid() {
-        return this.projectName.trim().length > 0;
-    }
+  clearData = () => {
+    this.projectName = '';
+  }
 
-    get statusMessage() {
-      const messages = [];
-      if (!this.isDateRangeValid) {
-        messages.push(this.__("Ikke-valid-datoer"));
-      }
-      if (!this.isProjectNameValid) {
-        messages.push(this.__("missing-project-name"));
-      }
-      return messages.join(". ");
+  get isDateRangeValid() {
+    if (this.brudtype === '1') {
+      return this.projectStartDate instanceof Date
     }
+    return (
+      this.projectStartDate instanceof Date &&
+      this.projectEndDate instanceof Date &&
+      this.projectStartDate < this.projectEndDate)
+  }
+
+  get isNotValid() {
+    return !this.isDateRangeValid || !this.isProjectNameValid
+  }
+
+  get isProjectNameValid() {
+    return this.projectName.trim().length > 0;
+  }
+
+  get statusMessage() {
+    const messages = [];
+    if (!this.isDateRangeValid) {
+      messages.push(this.__("Ikke-valid-datoer"));
+    }
+    if (!this.isProjectNameValid) {
+      messages.push(this.__("missing-project-name"));
+    }
+    return messages.join(". ");
+  }
+
+  set brudtype(value) {
+    this._brudtype = value;
+    if (value === '1') {
+      this.projectEndDate = null;
+    }
+  }
+
+  get brudtype() {
+    return this._brudtype;
+  }
 
 }
 

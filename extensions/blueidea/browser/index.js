@@ -2191,7 +2191,8 @@ module.exports = {
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
-        const ventilList =   Array.isArray(this.state.results_ventiler) 
+        const openBlueidea = this.allowBlueIdea() && Object.keys(s.results_adresser).length > 0;  
+        const ventilList =   Array.isArray(this.state.results_ventiler)
          ? VentilModel.fromFeaturesFactory(
           this.state.results_ventiler, 
           ventilProperties,  
@@ -2271,7 +2272,7 @@ module.exports = {
               
 
               <div className="row mx-auto gap-0 my-3">
-                <details open className="col">
+                <details open={openBlueidea} className="col">
                   <summary>BlueIdea</summary>
                   { s.user_profileid && this.profileidOptions().length > 1 &&
                     <div className="row">
