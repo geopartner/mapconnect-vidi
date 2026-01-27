@@ -75,6 +75,8 @@ class ProjectComponent extends React.Component {
         this.props.onReadyPointLukkeliste();
     }
     handleSaveProject = () => {
+        this.props.onChange({ isReadOnly: false });
+        this.props.onChange({ projectName: '' });
         this.props.onHandleSaveProject(this.props.project);
     }   
 

@@ -1299,12 +1299,14 @@ module.exports = {
           selectedVentiler: [],
           beregnuuid: null,
           clickedTableVentil: '',
-          retryIsDisabled: true
+          retryIsDisabled: true,
+          editProject: false
         });
         _clearAll();
         this.refreshProjectLayer();
       };
 
+     
       readyPointLukkeliste = () => {
         let me = this;
         blocked = false;
@@ -2148,8 +2150,8 @@ module.exports = {
         })
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
-            me.createSnack(__("Project saved successfully"));
             me.setState({ editProject: false });
+            me.createSnack(__("Project saved successfully"));
           })
           .catch((error) => {
             console.error(error);
@@ -2163,6 +2165,8 @@ module.exports = {
       };
       
       handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
+        const me = this;
+        me.setState({ editProject: false });
         let bounds = [[ymin, xmin],[ymax, xmax]];
         cloud.get().map.fitBounds(bounds);
       };
