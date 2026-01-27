@@ -91,7 +91,7 @@ class ProjectComponent extends React.Component {
                         onChange={(e) => { handleForsyningsart_selectedChange(e.target.value) }}
                         value={project.forsyningsart_selected}
                         placeholder={this.__("Select utility-type")}
-                        disabled={isReadOnly}
+                        disabled={isReadOnly || editProject}
                         className="col-7"
                     >
                         {this.forsyningsart_options().map((option) => (

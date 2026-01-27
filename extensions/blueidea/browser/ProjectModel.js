@@ -81,8 +81,8 @@ class ProjectModel {
     });
   }   
   get isDateRangeValid() {
-    if (this.brudtype === '1') {
-      return this.projectStartDate instanceof Date
+    if (this.brudtype === '1' && !this.projectEndDate) {
+        return this.projectStartDate instanceof Date ;
     }
     return (
       this.projectStartDate instanceof Date &&
