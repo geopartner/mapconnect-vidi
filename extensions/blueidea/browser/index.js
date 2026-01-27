@@ -2135,6 +2135,27 @@ module.exports = {
             me.createSnack(__("Error loading project") + ": " + error.message);
           });
       };
+      
+      handleSaveProject = (project) => {
+        const me = this;
+        
+        $.ajax({
+          url: `/api/extension/blueidea/${me.state.user_id}/saveproject`,
+          type: "POST",
+          data: JSON.stringify(project),
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then(() => {
+            backboneEvents.get().trigger(`${exId}:listProject`);
+            me.createSnack(__("Project saved successfully"));
+            me.setState({ editProject: false });
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error saving project") + ": " + error.message);
+          });
+      };
 
       handleZoom (ventil) {
         this.zoomToXY(ventil.xkoordinat, ventil.ykoordinat);
@@ -2274,6 +2295,7 @@ module.exports = {
                     editProject={this.state.editProject}
                     onChange={this.updateProject}
                     pipeSelected= {pipeSelected}
+                    onHandleSaveProject={this.handleSaveProject}
                     onReadyPointLukkeliste={this.readyPointLukkeliste}
                     onClearLukkeliste={this.clearLukkeliste}
                   ></ProjectComponent>

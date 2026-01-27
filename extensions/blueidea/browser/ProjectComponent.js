@@ -72,13 +72,17 @@ class ProjectComponent extends React.Component {
         this.props.onClearLukkeliste();
     };
     handlePointClick = () => {
-        // this.props.onChange({ isReadOnly: true });
         this.props.onReadyPointLukkeliste();
     }
+    handleSaveProject = () => {
+        this.props.onHandleSaveProject(this.props.project);
+    }   
+
     render() {
         const { pipeSelected, project } = this.props;
         const isReadOnly = project.isReadOnly || pipeSelected;
         const editProject = this.props.editProject;
+       
         const isNotValid = project.isNotValid;
         let clearDisable = !pipeSelected;
         if (editProject) clearDisable = false;
@@ -176,7 +180,7 @@ class ProjectComponent extends React.Component {
                     )}
                     {editProject && (
                         <button
-                            onClick={this.handlePointClick}
+                            onClick={this.handleSaveProject}
                             className="btn btn-primary col-3"
                             disabled={isNotValid}
                         >

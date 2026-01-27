@@ -21,6 +21,7 @@ var dict = require("./i18n.js");
 class ProjectModel {
 
   constructor({
+    beregnuuid = '',
     brudtype = '1',
     forsyningsarter = [],
     forsyningsart_selected = 0,
@@ -34,7 +35,7 @@ class ProjectModel {
     if (brudtype === '2' && !projectEndDate) {
       projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     }
-
+    this.beregnuuid = beregnuuid;
     this.brudtype = brudtype;
     this.forsyningsarter = forsyningsarter;
     this.forsyningsart_selected = forsyningsart_selected;
@@ -73,6 +74,7 @@ class ProjectModel {
   static fromFeature(feature) {
 
     return new ProjectModel({
+      beregnuuid: feature.properties.beregnuuid,  
       forsyningsart_selected: 0,
       brudtype: Number(feature.properties.beregnaarsags),
       projectEndDate: feature.properties.gyldig_til ? new Date(feature.properties.gyldig_til) : null,

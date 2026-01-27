@@ -95,6 +95,14 @@ var dict = {
     da_DK: "Gem",
     en_US: "Save",
   },
+  "Project saved successfully": {
+    da_DK: "Bruddet er gemt",
+    en_US: "Project saved successfully",
+  },
+  "Error saving project"  : {
+    da_DK: "Der opstod en fejl under gemning af bruddet",
+    en_US: "An error occurred while saving the project",
+  },   
   "Show results": {
     da_DK: "Resultat",
     en_US: "Result",
