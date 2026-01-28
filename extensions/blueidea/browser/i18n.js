@@ -72,7 +72,7 @@ var dict = {
     en_US: "Error in search for parcels",
   },
   "projekt list":{
-    da_DK: "Aktive brud",
+    da_DK: "Aktive brud og fremtige brud",
     en_US: "Active breaks",
   },
   "Error in list": {
