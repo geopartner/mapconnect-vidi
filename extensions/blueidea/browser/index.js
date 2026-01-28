@@ -2129,6 +2129,7 @@ module.exports = {
 
       handleEditProject = (beregnuuid) => {
         const me = this;
+        me.clearLukkeliste();
         $.ajax({
           url: `/api/extension/blueidea/${me.state.user_id}/getproject/${beregnuuid}`,
           type: "GET",
@@ -2148,7 +2149,6 @@ module.exports = {
               }),
               editProject: true
             }))
-            // me.state.project.brudtype = editProject.brudtype;
       
             
             me.createSnack(__("Project loaded for editing"));       
