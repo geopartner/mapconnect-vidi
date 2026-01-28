@@ -35,6 +35,7 @@ class ProjectModel {
     if (brudtype === '2' && !projectEndDate) {
       projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     }
+
     this.beregnuuid = beregnuuid;
     this.brudtype = brudtype;
     this.forsyningsarter = forsyningsarter;
@@ -113,9 +114,6 @@ class ProjectModel {
 
   set brudtype(value) {
     this._brudtype = value;
-    if (value === '1') {
-      this.projectEndDate = null;
-    }
   }
 
   get brudtype() {

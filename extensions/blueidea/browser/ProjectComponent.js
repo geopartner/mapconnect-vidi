@@ -43,9 +43,9 @@ class ProjectComponent extends React.Component {
         if (!date) return '';
         const pad = n => String(n).padStart(2, '0');
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    }
+        //return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
 
-      
     handleForsyningsart_selectedChange = (value) => {
         this.props.onChange({ forsyningsart_selected: value });
     };
@@ -60,6 +60,10 @@ class ProjectComponent extends React.Component {
 
     handleBreakTypeChange = (breakType) => {
         this.props.onChange({ brudtype: breakType });
+        
+        if( breakType === '1'   ){
+            this.props.onChange({ projectEndDate: null });
+        }
     }
     sanitizeInput = (value) => {
         return value.replace(/[^a-zA-Z0-9æøåÆØÅ\s\-:]/g, '');
@@ -91,6 +95,7 @@ class ProjectComponent extends React.Component {
         let clearDisable = !pipeSelected;
         if (editProject) clearDisable = false;
         const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
+        const hideDate = toDate === '' ? true : false;
         return (
             <>
                 <div className="row mx-auto gap-3 my-2">
@@ -144,6 +149,7 @@ class ProjectComponent extends React.Component {
                             <label className="col-4" >{this.__("Forventet-slut")}</label>
                             <input
                                 className="col-7"
+                                hide={hideDate} 
                                 disabled={isReadOnly}
                                 onChange={e => this.handleProjectEndChange(new Date(e.target.value))}
                                 placeholder={this.__("Forventet-slut")}
