@@ -102,6 +102,7 @@ class ProjectComponent extends React.Component {
         if (editProject) clearDisable = false;
         const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
         const hideDate = toDate === '' ? true : false;
+        const showNextStep = pipeSelected && !editProject;
         return (
             <>
                 <div className="row mx-auto gap-3 my-2">
@@ -193,6 +194,13 @@ class ProjectComponent extends React.Component {
                     <div className="row mx-auto gap-3 my-2">
                         <span className="col" style={{ color: '#ee9b10' }}>
                             {project.statusMessage}
+                        </span>
+                    </div>
+                )}
+                {showNextStep && (
+                    <div className="row mx-auto gap-3 my-2">
+                        <span className="col text-primary" >
+                            {this.__("project next step info")}
                         </span>
                     </div>
                 )}

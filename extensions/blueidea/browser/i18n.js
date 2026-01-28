@@ -111,6 +111,10 @@ var dict = {
     da_DK: "Henter jordstykker",
     en_US: "Fetching parcels",
   },
+  "project next step info": {
+    da_DK: "Genberegn, nulstil eller Gem",
+    en_US: "Recalculate, clear or Save ",
+  },
   "Go to blueidea": {
     da_DK: "Gem, og gå til blueidea",
     en_US: "Save and go to blueidea",
