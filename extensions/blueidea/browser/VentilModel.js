@@ -61,23 +61,23 @@ class VentilModel {
      * @param {Object} feature - The GeoJSON feature object.
       @param {VentilProperties} ventilProperties - An instance of VentilProperties defining the property keys.
     */
-    
+
     static fromFeatureFactory(
-       feature = {},
-       ventilProperties = new VentilProperties(),
-       selectedVentilValues = []
+        feature = {},
+        ventilProperties = new VentilProperties(),
+        selectedVentilValues = []
     ) {
         if (!feature || typeof feature !== 'object') {
             throw new Error('Feature skal være et objekt');
         }
         if (!feature.properties || typeof feature.properties !== 'object') {
             throw new Error('Feature.properties skal være et objekt');
-        }   
+        }
         if (!ventilProperties || !(ventilProperties instanceof VentilProperties)) {
             throw new Error('ventilProperties skal være en instans af VentilProperties');
         }
 
-        const properties = feature.properties; 
+        const properties = feature.properties;
 
         // const missing = ventilProperties.filter(
         //     prop => !(prop in properties)
@@ -112,8 +112,18 @@ class VentilModel {
             console.log('features skal være et array');
             return [];
         }
+
+        const seenKeys = new Set();
+
         return features
             .filter(Boolean)
+            .filter(feature => {
+                if (seenKeys.has(feature.properties[ventilProperties.key])) {
+                    return false;
+                }
+                seenKeys.add(feature.properties[ventilProperties.key]);
+                return true;
+            })
             .map(feature => VentilModel.fromFeatureFactory(feature, ventilProperties, selectedVentilValues));
     }
 
@@ -153,4 +163,4 @@ class VentilModel {
 
 }
 
-export  {VentilModel, VentilProperties };
+export { VentilModel, VentilProperties };

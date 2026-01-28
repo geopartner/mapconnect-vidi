@@ -32,17 +32,9 @@ class VentilListComponent extends React.Component {
 
 
         return (
-            <>
-                <div className="row mx-auto gap-0 my-3">
-                    <h6 className="col-9">{this.__("Valves")} ({ventilList.length})</h6>
-                    <div className="col-2" style={{ cursor: 'pointer' }}>
-                        <i className="bi bi-download float-end"
-                            onClick={onDownloadVentiler}
-                            title={this.__("Download valves")}>
-                        </i>
-                    </div>
-                </div>
-                <div className="row mx-auto gap-1" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
+             <details open  className="col">
+                <summary>{this.__("Valves")} ({ventilList.length})</summary>
+                <div className="row mx-auto gap-1 my-2" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
                     <table className="table table-sm mb-0 col-11">
                         <thead style={{ fontWeight: 'bold', position: 'sticky', top: 0 }}>
                             <tr>
@@ -51,7 +43,13 @@ class VentilListComponent extends React.Component {
                                 <th><p style={{ fontWeight: 500 }}>Navn</p></th>
                                 <th><p style={{ fontWeight: 500 }}>Type</p></th>
                                 <th><p style={{ fontWeight: 500 }}>Funktion</p></ th>
-                                <th></th>
+                                <th style={{ verticalAlign: 'text-top', pointer: 'cursor' }} onClick={onDownloadVentiler}>
+                                    <i className="bi bi-download "
+                                     onClick={onDownloadVentiler}
+                                     style={{ pointer: 'cursor' }}
+                                     title={this.__("Download valves")}>
+                                   </i>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -126,8 +124,8 @@ class VentilListComponent extends React.Component {
                         {this.__("Retry with unaccessible valves")}
                     </button>
                 </div>
-
-            </>
+           </details>
+            
         );
     }
 

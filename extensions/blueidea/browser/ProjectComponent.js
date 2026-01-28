@@ -101,7 +101,7 @@ class ProjectComponent extends React.Component {
         let clearDisable = !pipeSelected;
         if (editProject) clearDisable = false;
         const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
-        const hideDate = toDate === '' ? true : false;
+        // const hideDate = toDate === '' ? true : false;
         const showNextStep = pipeSelected && !editProject;
         return (
             <>
@@ -167,7 +167,6 @@ class ProjectComponent extends React.Component {
                             )}
                             <input
                                 className="col-7"
-                                hide={hideDate} 
                                 disabled={isReadOnly}
                                 onChange={e => this.handleProjectEndChange(new Date(e.target.value))}
                                 placeholder={this.__("Forventet-slut")}
