@@ -1441,13 +1441,30 @@ module.exports = {
             beregnuuid: data.log.features[0].properties.beregnuuid,
           });
         }
+        
         // add forbrugere
         if (data.forbrugere) {
           //console.debug("Got forbrugere:", data.forbrugere);
-          me.addSelectedForbrugspunkterToMap(data.forbrugere);
-          me.setState({
-            results_forbrugere: data.forbrugere.features,
-          });
+          try {
+            api.turnOn("lukkeliste.vw_forbrugere");
+            // add filter
+            api.filter("lukkeliste.vw_forbrugere", {
+              "match": "any",
+              "columns": [{
+                "fieldname": "beregnuuid",
+                "expression": "=",
+                "value": data.log.features[0].properties.beregnuuid,
+                "restriction": false
+              }]
+            });
+          } catch (error) {
+            console.warn("Could not turn on forbrugere layer or apply filter", error);
+          }
+
+          // me.addSelectedForbrugspunkterToMap(data.forbrugere);
+          // me.setState({
+          //   results_forbrugere: data.forbrugere.features,
+          // });
         }
 
         if (data.ventiler) {
