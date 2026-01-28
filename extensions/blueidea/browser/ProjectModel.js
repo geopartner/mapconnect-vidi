@@ -74,14 +74,15 @@ class ProjectModel {
   }
   static fromFeature(feature) {
 
-    return new ProjectModel({
+    const result = new ProjectModel({
       beregnuuid: feature.properties.beregnuuid,  
       forsyningsart_selected: 0,
-      brudtype: Number(feature.properties.beregnaarsags),
+      brudtype: String(feature.properties.beregnaarsag),  
       projectEndDate: feature.properties.gyldig_til ? new Date(feature.properties.gyldig_til) : null,
       projectStartDate: feature.properties.gyldig_fra ? new Date(feature.properties.gyldig_fra) : null,
       projectName:  feature.properties.sagstekst
     });
+    return result;
   }   
   get isDateRangeValid() {
     if (this.brudtype === '1' && !this.projectEndDate) {
@@ -101,6 +102,10 @@ class ProjectModel {
     return this.projectName.trim().length > 0;
   }
 
+  get allowDeleteEndDate() {
+    return this.brudtype === '1';
+  }
+
   get statusMessage() {
     const messages = [];
     if (!this.isDateRangeValid) {
@@ -110,14 +115,6 @@ class ProjectModel {
       messages.push(this.__("missing-project-name"));
     }
     return messages.join(". ");
-  }
-
-  set brudtype(value) {
-    this._brudtype = value;
-  }
-
-  get brudtype() {
-    return this._brudtype;
   }
 
 }

@@ -741,6 +741,7 @@ module.exports = {
         body.forsynings_id = me.state.project.forsyningsart_selected; // We use the order fra config to define the numbering
         body.ignore_ventiler = ignoreList;
         body.gyldig_fra = me.state.project.projectStartDate;
+        body.beregnaarsag = me.state.project.brudtype;
         body.gyldig_til = me.state.project.projectEndDate;
         body.sagstekst = me.state.project?.projectName.trim() ?? '';
         try {
@@ -2139,13 +2140,16 @@ module.exports = {
               me.createSnack(__("Project not found"));
               return;
             }
-            const feature = data.features[0];
+            const feature = data.features[0]; 
             const editProject = ProjectModel.fromFeature(feature);
             me.setState(prev => ({
               project: editProject.withChanges({
-              forsyningsarter: prev.project.forsyningsarter}),
+                forsyningsarter: prev.project.forsyningsarter,
+              }),
               editProject: true
-            }));
+            }))
+            // me.state.project.brudtype = editProject.brudtype;
+      
             
             me.createSnack(__("Project loaded for editing"));       
           })

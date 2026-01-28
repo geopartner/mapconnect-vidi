@@ -60,11 +60,16 @@ class ProjectComponent extends React.Component {
 
     handleBreakTypeChange = (breakType) => {
         this.props.onChange({ brudtype: breakType });
-        
+
         if( breakType === '1'   ){
             this.props.onChange({ projectEndDate: null });
         }
     }
+
+    onHandleDeleteProject = () => {
+        this.props.onChange({ projectEndDate: null });
+    }
+
     sanitizeInput = (value) => {
         return value.replace(/[^a-zA-Z0-9æøåÆØÅ\s\-:]/g, '');
     }
@@ -90,8 +95,9 @@ class ProjectComponent extends React.Component {
         const { pipeSelected, project } = this.props;
         const isReadOnly = project.isReadOnly || pipeSelected;
         const editProject = this.props.editProject;
-       
         const isNotValid = project.isNotValid;
+        const isAkut = project.brudtype === '1';    
+        const showTrash = editProject && project.allowDeleteEndDate;
         let clearDisable = !pipeSelected;
         if (editProject) clearDisable = false;
         const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
@@ -101,7 +107,7 @@ class ProjectComponent extends React.Component {
                 <div className="row mx-auto gap-3 my-2">
                     <label className="col-4" >{this.__("Forsyningstype")}</label>
                     <select
-                        onChange={(e) => { handleForsyningsart_selectedChange(e.target.value) }}
+                        onChange={(e) => { this.handleForsyningsart_selectedChange(e.target.value) }}
                         value={project.forsyningsart_selected}
                         placeholder={this.__("Select utility-type")}
                         disabled={isReadOnly || editProject}
@@ -145,8 +151,19 @@ class ProjectComponent extends React.Component {
                             />
                         </div>
 
-                        <div className="row mx-auto gap-3 my-2">
-                            <label className="col-4" >{this.__("Forventet-slut")}</label>
+                        <div className="row mx-auto gap-2 my-2">
+                            <label className="col-3" >{this.__("Forventet-slut")}</label>
+                            {showTrash  ? (
+                              <i 
+                              className="col-1 bi bi-trash"
+                               onClick={this.onHandleDeleteProject}
+                               style={{ cursor: 'pointer' }}
+                               title="Nulstil dato"
+                              ></i>
+                            ) :
+                            (!editProject ||  !isAkut)  && (
+                              <label className="col-1"></label>
+                            )}
                             <input
                                 className="col-7"
                                 hide={hideDate} 
@@ -156,7 +173,9 @@ class ProjectComponent extends React.Component {
                                 value={toDate}
                                 type="datetime-local"
                             />
+                            
                         </div>
+                        
                     </>
                 )}
                 <div className="row mx-auto gap-3 my-2">

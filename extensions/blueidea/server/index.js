@@ -714,7 +714,8 @@ router.get("/api/extension/blueidea/:userid/activebreakages", function (req, res
                ST_YMax(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) ymax, \
                gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid \
                FROM lukkeliste.aktive_brud \
-               GROUP BY gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid`
+               GROUP BY gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid \
+               ORDER BY gyldig_fra desc`;
 
     SQLAPI(q, req, { format: "geojson", srs: 4326 })
       .then((data) => {

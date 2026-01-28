@@ -70,7 +70,7 @@ class ProjectListComponent extends React.Component {
                     const bg = clickedTableProjectIndex === rowIndex ? 'table-primary' : 'table-light';
                     const fromDate = this.toDateTimeLocal(option.properties.gyldig_fra);
                     const toDate = this.toDateTimeLocal(option.properties.gyldig_til);
-                    const brudType = option.properties.brudtype === 'Aktuel afbrydelse' ? 'Akut' : 'Planlagt';
+                    const brudType = String(option.properties.beregnaarsag) === '1'  ? 'Akut' : 'Planlagt';
                     return (<tr key={option.properties.beregnuuid} className={bg} style={{ cursor: 'pointer' }} onClick={() => this.handleRowClick(rowIndex, option.properties)}>
                       <td style={{ textAlign: 'center' }}>
                         <i
