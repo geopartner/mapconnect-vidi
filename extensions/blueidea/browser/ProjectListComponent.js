@@ -27,7 +27,7 @@ class ProjectListComponent extends React.Component {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     const pad = n => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   __ = (txt) => {
