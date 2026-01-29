@@ -32,7 +32,7 @@ class ProjectModel {
     useBreakType = window.config.extensionConfig?.useBreakType ?? true,
   } = {}) {
     const now = new Date()
-    if (brudtype === '2' && !projectEndDate) {
+    if (!projectEndDate) {
       projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     }
 

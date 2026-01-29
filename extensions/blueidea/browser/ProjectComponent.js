@@ -60,10 +60,11 @@ class ProjectComponent extends React.Component {
 
     handleBreakTypeChange = (breakType) => {
         this.props.onChange({ brudtype: breakType });
-
-        if( breakType === '1'   ){
-            this.props.onChange({ projectEndDate: null });
-        }
+        
+        //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
+        // if( breakType === '1'   ){ 
+        //     this.props.onChange({ projectEndDate: null });
+        // }
     }
 
     onHandleDeleteProject = () => {
@@ -97,7 +98,7 @@ class ProjectComponent extends React.Component {
         const editProject = this.props.editProject;
         const isNotValid = project.isNotValid;
         const isAkut = project.brudtype === '1';    
-        const showTrash = project.allowDeleteEndDate && project.projectEndDate;
+        const showTrash = false; //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
         let clearDisable = !pipeSelected;
         if (editProject) clearDisable = false;
         const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
