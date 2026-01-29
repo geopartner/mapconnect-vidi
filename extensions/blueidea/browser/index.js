@@ -2178,11 +2178,12 @@ module.exports = {
       };
       handleSaveProject= () => {
         const me = this;
-        const project = me.state.project; 
+         const body = {beregnuuid: this.state.beregnuuid}
+
         $.ajax({
           url: `/api/extension/blueidea/${me.state.user_id}/saveproject`,
           type: "POST",
-          data: JSON.stringify(project),
+          data: JSON.stringify(body),
           contentType: "application/json",
           dataType: "json",
         })
