@@ -455,8 +455,6 @@ module.exports = {
           alarm_skab_selected: '',
           alarm_skabe: null,
           results_alarmskabe: [],
-          // forsyningsarter: [],
-          //forsyningsart_selected: 0, // todo
           layersOnStart: [],
           retryIsDisabled: true,
           selectedVentiler: [],
@@ -732,7 +730,7 @@ module.exports = {
           results_matrikler: [],
           edit_matr: false,
           TooManyFeatures: false,
-          selectedVentiler: [],
+          // selectedVentiler: [],
           beregnuuid: null,
           clickedTableVentil: ''
         });
@@ -1475,6 +1473,7 @@ module.exports = {
             results_ventiler: data.ventiler.features,
           });
           const key = this.state.user_ventil_layer_key;
+          
           const selected = this.state.results_ventiler.filter(item => item.properties?.checked).map(item => item.properties[key]).filter(Boolean)
           this.setState({ selectedVentiler : selected })
         }
@@ -2105,7 +2104,6 @@ module.exports = {
           const selected = new Set((prev.selectedVentiler || []).map(String));
           if (checked) {
             selected.add(String(ventil.value));
-
           } else {
             selected.delete(String(ventil.value));
           }
@@ -2260,7 +2258,7 @@ module.exports = {
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled } = this.state
+        const { clickedTableVentil, results_ledninger, retryIsDisabled } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
