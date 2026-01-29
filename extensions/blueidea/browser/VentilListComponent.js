@@ -43,7 +43,7 @@ class VentilListComponent extends React.Component {
                                 <th><p style={{ fontWeight: 500 }}>Navn</p></th>
                                 <th><p style={{ fontWeight: 500 }}>Type</p></th>
                                 <th><p style={{ fontWeight: 500 }}>Funktion</p></ th>
-                                <th style={{ verticalAlign: 'text-top', pointer: 'cursor' }} onClick={onDownloadVentiler}>
+                                <th style={{ verticalAlign: 'text-top' }} >
                                     <i className="bi bi-download "
                                      onClick={onDownloadVentiler}
                                      style={{ pointer: 'cursor' }}

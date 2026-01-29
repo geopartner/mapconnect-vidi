@@ -2322,15 +2322,12 @@ module.exports = {
                     onReadyPointLukkeliste={this.readyPointLukkeliste}
                     onClearLukkeliste={this.clearLukkeliste}
                   ></ProjectComponent>
-
-                  <hr style={{marginRight: "1.5em"}}></hr>
-  
-                
-                </div>
+                  </div>
                 </details>             
               </div>
               { ventilCount > 0 && (
-                <>
+                <div className="row mx-auto gap-0 my-3">
+                  <hr style={{marginRight: "1.5em"}}></hr>
                   <VentilListComponent 
                     ventilList={ventilList}
                     onDownloadVentiler={this.downloadVentiler.bind(this)}
@@ -2340,11 +2337,10 @@ module.exports = {
                     retryIsDisabled={retryIsDisabled}
                     clickedTableVentil  = {clickedTableVentil}
                     >
-                    </VentilListComponent>
-                  <hr style={{marginRight: "1.5em"}}></hr>
-                </>
+                  </VentilListComponent>
+                </div>
               )}
-              
+              <hr style={{marginRight: "1.5em"}}></hr>
 
               <div className="row mx-auto gap-0 my-3">
                 <details open={openBlueidea} className="col">
