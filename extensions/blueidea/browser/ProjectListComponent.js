@@ -122,7 +122,7 @@ class ProjectListComponent extends React.Component {
                           className="bi bi-trash"
                           onClick={() => onHandleStopProject(option.properties.beregnuuid)}
                           style={{ cursor: 'pointer' }}
-                          title="Gør bruddet inaktivt’"
+                          title="Gør bruddet inaktivt"
                         >
                         </i>
                       </td>
