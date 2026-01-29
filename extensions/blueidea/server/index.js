@@ -680,7 +680,26 @@ router.get("/api/extension/blueidea/:userid/getproject/:beregnuuid", function (r
   }
 );
 
+
 router.post("/api/extension/blueidea/:userid/saveproject", function (req, response) {
+    guard(req, response);
+    const body = req.body;
+    const beregnuuid = body.beregnuuid;
+    
+    const query = ` UPDATE lukkeliste.beregnlog SET brud_status = 2 WHERE beregnuuid = '${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json({ message: "Project saved successfully" });
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json({ message: "Error saving project", error: err });
+      });
+  }
+);
+
+router.post("/api/extension/blueidea/:userid/saveprojectdates", function (req, response) {
     guard(req, response);
     const body = req.body;
     const beregnuuid = body.beregnuuid;

@@ -2156,9 +2156,29 @@ module.exports = {
           });
       };
       
-      handleSaveProject = (project) => {
+      handleSaveProjectDates= (project) => {
         const me = this;
         
+        $.ajax({
+          url: `/api/extension/blueidea/${me.state.user_id}/saveprojectdates`,
+          type: "POST",
+          data: JSON.stringify(project),
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then(() => {
+            backboneEvents.get().trigger(`${exId}:listProject`);
+            me.setState({ editProject: false });
+            me.createSnack(__("Project saved successfully"));
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error saving project") + ": " + error.message);
+          });
+      };
+      handleSaveProject= () => {
+        const me = this;
+        const project = me.state.project; 
         $.ajax({
           url: `/api/extension/blueidea/${me.state.user_id}/saveproject`,
           type: "POST",
@@ -2318,7 +2338,7 @@ module.exports = {
                     editProject={this.state.editProject}
                     onChange={this.updateProject}
                     pipeSelected= {pipeSelected}
-                    onHandleSaveProject={this.handleSaveProject}
+                    onHandleSaveProject={this.handleSaveProjectDates}
                     onReadyPointLukkeliste={this.readyPointLukkeliste}
                     onClearLukkeliste={this.clearLukkeliste}
                   ></ProjectComponent>
@@ -2344,7 +2364,7 @@ module.exports = {
 
               <div className="row mx-auto gap-0 my-3">
                 <details open={openBlueidea} className="col">
-                  <summary>BlueIdea</summary>
+                  <summary>Resultat</summary>
                   { s.user_profileid && this.profileidOptions().length > 1 &&
                     <div className="row">
                       <label className="col-4">SMS Profil</label>
@@ -2366,9 +2386,17 @@ module.exports = {
                   }
                   <div className="row mx-auto gap-3 my-1">
                     <button
+                      onClick={() => this.handleSaveProject()}
+                      className="col-5 btn btn-primary"
+                      disabled={!pipeSelected}
+                      style={{ marginRight: '8px' }}
+                    >
+                      Gem
+                    </button>
+                    <button
                       onClick={() => this.sendToBlueIdea()}
-                      className="col btn btn-primary"
-                      disabled={!this.readyToBlueIdea()}
+                      className="col-6 btn btn-primary"
+                      disabled={!this.readyToBlueIdea() }
                       style={{ marginRight: '8px' }}
                     >
                       {__("Go to blueidea")}
