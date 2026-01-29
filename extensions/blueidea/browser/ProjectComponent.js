@@ -97,7 +97,7 @@ class ProjectComponent extends React.Component {
         const editProject = this.props.editProject;
         const isNotValid = project.isNotValid;
         const isAkut = project.brudtype === '1';    
-        const showTrash = editProject && project.allowDeleteEndDate;
+        const showTrash = project.allowDeleteEndDate && project.projectEndDate;
         let clearDisable = !pipeSelected;
         if (editProject) clearDisable = false;
         const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';

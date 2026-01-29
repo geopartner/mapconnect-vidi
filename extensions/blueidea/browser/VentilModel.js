@@ -88,8 +88,10 @@ class VentilModel {
         //         `Feature.properties mangler følgende påkrævede felter: ${missing.join(', ')}`
         //     );
         // }
-
-        return new VentilModel({
+        const isChecked = Boolean(selectedVentilValues.some(  v => String(v) === String(properties[ventilProperties.key])));
+   
+    
+        const ventilModel = new VentilModel({
             value: properties[ventilProperties.key],
             label: properties[ventilProperties.name_key],
             type: properties[ventilProperties.type_key],
@@ -97,8 +99,9 @@ class VentilModel {
             xkoordinat: properties[ventilProperties.xkoordinat_key],
             ykoordinat: properties[ventilProperties.ykoordinat_key],
             forbundet: properties[ventilProperties.forbundet_key],
-            checked: Boolean(selectedVentilValues.includes(String(properties[ventilProperties.key]))),
+            checked: isChecked,
         });
+        return ventilModel;
     }
     /** Create an array of VentilModel instances from an array of GeoJSON features.
      * @param {Array} features - An array of GeoJSON feature objects.

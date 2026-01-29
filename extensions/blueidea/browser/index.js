@@ -730,7 +730,6 @@ module.exports = {
           results_matrikler: [],
           edit_matr: false,
           TooManyFeatures: false,
-          // selectedVentiler: [],
           beregnuuid: null,
           clickedTableVentil: ''
         });
@@ -1414,7 +1413,7 @@ module.exports = {
         } else {
         // Here we handle data from the query-endpoint
         this.setState({
-          selectedVentiler: [],
+          // selectedVentiler: [],
           retryIsDisabled: true
         });
         
@@ -2264,11 +2263,12 @@ module.exports = {
         const ventilProperties = this.getVentilProperties('vand');
         const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
         const openBlueidea = this.allowBlueIdea() && Object.keys(s.results_adresser).length > 0;  
+        
         const ventilList =   Array.isArray(this.state.results_ventiler)
          ? VentilModel.fromFeaturesFactory(
           this.state.results_ventiler, 
           ventilProperties,  
-          Array.isArray(this.state.selectedVentiler) ? this.state.selectedVentiler : []) 
+           this.state.selectedVentiler || []) 
          : []; 
         const ventilCount = ventilList.length;
 
