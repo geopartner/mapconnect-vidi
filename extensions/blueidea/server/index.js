@@ -686,7 +686,7 @@ router.post("/api/extension/blueidea/:userid/saveproject", function (req, respon
     const body = req.body;
     const beregnuuid = body.beregnuuid;
     
-    const query = ` UPDATE lukkeliste.beregnlog SET brud_status = 2 WHERE beregnuuid = '${beregnuuid}' `;   
+    const query = `UPDATE lukkeliste.beregnlog SET brud_status = 2 WHERE beregnuuid='${beregnuuid}' `;   
 
     SQLAPI(query, req )
       .then((data) => {

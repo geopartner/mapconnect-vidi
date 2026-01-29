@@ -162,7 +162,7 @@ class ProjectComponent extends React.Component {
                                title="Nulstil dato"
                               ></i>
                             ) :
-                            (!editProject ||  !isAkut)  && (
+                            (
                               <label className="col-1"></label>
                             )}
                             <input
