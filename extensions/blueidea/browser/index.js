@@ -2188,6 +2188,7 @@ module.exports = {
         })
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
+            this.listProjects(true);
             me.setState({ editProject: false });
             me.createSnack(__("Project saved successfully"));
           })
