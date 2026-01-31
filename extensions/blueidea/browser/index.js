@@ -2301,7 +2301,7 @@ module.exports = {
             <div role="tabpanel">
               <div className="row mx-auto gap-0 my-3">
                 <details className="col">
-                  <summary>Aktive brud ({this.state.projects.length})</summary>
+                  <summary>__("projekt list") ({this.state.projects.length})</summary>
                   <ProjectListComponent
                     className="col"
                     projects={this.state.projects}
