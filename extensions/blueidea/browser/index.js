@@ -475,7 +475,7 @@ module.exports = {
         let me = this;
         me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         // Stop listening to any events, deactivate controls, but
-        // keep effects of the module until they are deleted manually or reset:all is emitted
+        // keep effects of the module until they are deleted manually or reset:all is
         backboneEvents.get().on("deactivate:all", () => {});
 
         // Activates module
@@ -2229,14 +2229,17 @@ module.exports = {
       };
 
       handleZoom (ventil) {
-        this.zoomToXY(ventil.xkoordinat, ventil.ykoordinat);
-        this.setState({ clickedTableVentil : ventil.label})
+        const me = this;
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+        me.zoomToXY(ventil.xkoordinat, ventil.ykoordinat);
+        me.setState({ clickedTableVentil : ventil.label})
       };
       
       handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
         const me = this;
         me.setState({ editProject: false });
-        let bounds = [[ymin, xmin],[ymax, xmax]];
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+        const bounds = [[ymin, xmin],[ymax, xmax]];
         cloud.get().map.fitBounds(bounds);
       };
       
