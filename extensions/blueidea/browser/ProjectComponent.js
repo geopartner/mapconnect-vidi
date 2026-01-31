@@ -43,7 +43,6 @@ class ProjectComponent extends React.Component {
         if (!date) return '';
         const pad = n => String(n).padStart(2, '0');
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-        //return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     };
 
     handleForsyningsart_selectedChange = (value) => {
@@ -62,9 +61,12 @@ class ProjectComponent extends React.Component {
         this.props.onChange({ brudtype: breakType });
         
         //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
-        // if( breakType === '1'   ){ 
-        //     this.props.onChange({ projectEndDate: null });
-        // }
+        if( breakType === '1'   ){ 
+            const now = new Date()
+            const   projectStartDate = now;
+            const projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            this.props.onChange({projectStartDate, projectEndDate });
+        }   
     }
 
     onHandleDeleteProject = () => {

@@ -1219,6 +1219,28 @@ module.exports = {
             console.warn(`Unable to locate #draw-content`)
         }
       }
+      
+      postSaveProject = () => {
+        const me = this;
+        backboneEvents.get().trigger(`${exId}:listProject`);
+        this.listProjects(true);
+         
+        const newProject  = new ProjectModel();
+        me.setState(prev => ({
+          project: newProject.withChanges({
+            forsyningsarter: prev.project.forsyningsarter,
+            projectName: '',
+            isReadOnly: false
+          }),
+          editProject: false,
+          
+        }))
+        this.clearLukkeliste(); // ?  
+
+        this.refreshProjectLayer();
+      };
+
+      
 
       /**
        * This function builds relevant data for the blueidea API
@@ -1257,12 +1279,40 @@ module.exports = {
             this.createSnack( __("Project created successfully"));
             // list projects again to show the new one
             this.listProjects(true);
+
+            this.postSaveProject
           })
           .fail((error) => {
             console.error(error);
             this.createSnack("Der opstod en fejl ved afsendelse til BlueIdea.");
         });
       };
+
+      handleSaveProject= () => {
+        const me = this;
+         const body = {beregnuuid: this.state.beregnuuid}
+
+        $.ajax({
+          url: `/api/extension/blueidea/${me.state.user_id}/saveproject`,
+          type: "POST",
+          data: JSON.stringify(body),
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then(() => {
+            backboneEvents.get().trigger(`${exId}:listProject`);
+            this.listProjects(true);
+             
+            this.postSaveProject();
+            
+            me.createSnack(__("Project saved successfully"));
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error saving project") + ": " + error.message);
+          });
+      };
+
 
       /**
        * This function turns on a layer, if it is not already on the map, and refreshes the map if there is a filter set.
@@ -1298,7 +1348,6 @@ module.exports = {
           beregnuuid: null,
           clickedTableVentil: '',
           retryIsDisabled: true,
-          editProject: false
         });
         _clearAll();
         this.refreshProjectLayer();
@@ -2142,9 +2191,10 @@ module.exports = {
             const editProject = ProjectModel.fromFeature(feature);
             me.setState(prev => ({
               project: editProject.withChanges({
+                projectName: '',
                 forsyningsarter: prev.project.forsyningsarter,
               }),
-              editProject: true
+              editProject: false
             }))
       
             
@@ -2169,28 +2219,7 @@ module.exports = {
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
             me.setState({ editProject: false });
-            me.createSnack(__("Project saved successfully"));
-          })
-          .catch((error) => {
-            console.error(error);
-            me.createSnack(__("Error saving project") + ": " + error.message);
-          });
-      };
-      handleSaveProject= () => {
-        const me = this;
-         const body = {beregnuuid: this.state.beregnuuid}
-
-        $.ajax({
-          url: `/api/extension/blueidea/${me.state.user_id}/saveproject`,
-          type: "POST",
-          data: JSON.stringify(body),
-          contentType: "application/json",
-          dataType: "json",
-        })
-          .then(() => {
-            backboneEvents.get().trigger(`${exId}:listProject`);
-            this.listProjects(true);
-            me.setState({ editProject: false });
+            me.setState({ project: ProjectModel.empty() });
             me.createSnack(__("Project saved successfully"));
           })
           .catch((error) => {
@@ -2232,8 +2261,7 @@ module.exports = {
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
             me.createSnack(__("Project stopped successfully"));
-            // Clear current project ? 
-            // me.setState({ project: Project.empty() });
+
           })
           .catch((error) => {
             console.error(error);
@@ -2301,7 +2329,7 @@ module.exports = {
             <div role="tabpanel">
               <div className="row mx-auto gap-0 my-3">
                 <details className="col">
-                  <summary>__("projekt list") ({this.state.projects.length})</summary>
+                  <summary>{__("project list")} ({this.state.projects.length})</summary>
                   <ProjectListComponent
                     className="col"
                     projects={this.state.projects}

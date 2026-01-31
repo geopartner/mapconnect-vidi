@@ -72,6 +72,9 @@ class ProjectModel {
   clearData = () => {
     this.projectName = '';
   }
+  static empty() {
+    return new ProjectModel();
+  }
   static fromFeature(feature) {
 
     const result = new ProjectModel({
@@ -94,6 +97,19 @@ class ProjectModel {
       this.projectStartDate < this.projectEndDate)
   }
 
+  get projectDurationDays() {
+    if (this.projectStartDate instanceof Date && this.projectEndDate instanceof Date) {
+      const diffTime = Math.abs(this.projectEndDate - this.projectStartDate);
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    }
+    return 0;
+  }
+
+  get projectIsHistorical() {
+    const now = new Date();
+    return this.projectEndDate instanceof Date && this.projectEndDate < now;
+  }
+
   get isNotValid() {
     return !this.isDateRangeValid || !this.isProjectNameValid
   }
@@ -113,6 +129,9 @@ class ProjectModel {
     }
     if (!this.isProjectNameValid) {
       messages.push(this.__("missing-project-name"));
+    }
+    if (this.isDateRangeValid && this.projectIsHistorical) {
+      messages.push(this.__("project-is-historical"));
     }
     return messages.join(". ");
   }

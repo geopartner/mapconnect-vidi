@@ -71,7 +71,7 @@ var dict = {
     da_DK: "Fejl i søgning af matrikler",
     en_US: "Error in search for parcels",
   },
-  "projekt list":{
+  "project list":{
     da_DK: "Aktive og fremtige brud",
     en_US: "Active breaks",
   },
@@ -106,6 +106,10 @@ var dict = {
   "Show results": {
     da_DK: "Resultat",
     en_US: "Result",
+  },
+  "project-is-historical": {
+    da_DK: "Slutdato er i fortiden. Bruddet vises som historisk.",
+    en_US: "End date is in the past. The project is shown as historical.",
   },
   "Waiting to start": {
     da_DK: "Henter jordstykker",
