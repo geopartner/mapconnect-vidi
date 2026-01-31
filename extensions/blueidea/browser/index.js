@@ -488,7 +488,7 @@ module.exports = {
 
           // if logged in, get user
           if (me.state.authed) {
-
+            
             // turn on layersOnStart
             if (me.state.layersOnStart.length > 0) {
               me.state.layersOnStart.forEach((layer) => {
@@ -565,6 +565,7 @@ module.exports = {
             .then(() => {
               // if logged in, get user
               if (me.state.authed) {
+                
                 return this.getUser();
               } else {
                 me.setState(resetObj);
@@ -579,6 +580,7 @@ module.exports = {
               if (me.state.authed && me.state.user_id) {
                 // If user has blueidea, show buttons
                 if (me.state.user_blueidea == true) {
+                  me.listProjects(true);
                   $("#_draw_blueidea_group").show();
                 } else {
                   $("#_draw_blueidea_group").hide();
