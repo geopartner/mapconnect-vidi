@@ -1234,9 +1234,9 @@ module.exports = {
             projectName: '',
             isReadOnly: false
           }),
-          editProject: false,
           
         }))
+        me.setState({ editProject: false });
         this.clearLukkeliste(); // ?  
 
         this.refreshProjectLayer();
@@ -2195,9 +2195,8 @@ module.exports = {
               project: editProject.withChanges({
                 forsyningsarter: prev.project.forsyningsarter,
               }),
-              editProject: true
             }))
-      
+           me.setState({ editProject: true });
             
             me.createSnack(__("Project loaded for editing"));       
           })
@@ -2219,8 +2218,12 @@ module.exports = {
         })
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
+            // me.setState(prev => ({
+            //   project: prev.project.withChanges({
+            //     forsyningsarter: prev.project.forsyningsarter,
+            //   })
+            // }))
             me.setState({ editProject: false });
-            me.setState({ project: ProjectModel.empty() });
             me.createSnack(__("Project saved successfully"));
           })
           .catch((error) => {

@@ -76,7 +76,7 @@ class ProjectModel {
 
     const result = new ProjectModel({
       beregnuuid: feature.properties.beregnuuid,  
-      forsyningsart_selected: 0,
+      forsyningsart_selected: feature.properties.forsyningsart || 0  ,
       brudtype: String(feature.properties.beregnaarsag),  
       projectEndDate: feature.properties.gyldig_til ? new Date(feature.properties.gyldig_til) : null,
       projectStartDate: feature.properties.gyldig_fra ? new Date(feature.properties.gyldig_fra) : null,
