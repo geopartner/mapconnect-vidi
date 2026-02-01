@@ -2193,10 +2193,9 @@ module.exports = {
             const editProject = ProjectModel.fromFeature(feature);
             me.setState(prev => ({
               project: editProject.withChanges({
-                projectName: '',
                 forsyningsarter: prev.project.forsyningsarter,
               }),
-              editProject: false
+              editProject: true
             }))
       
             
