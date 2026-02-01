@@ -22,7 +22,7 @@ import {
   featureCollection as turfFeatureCollection,
   applyFilter,
 } from "@turf/turf";
-import _ from "underscore";
+import _, { has } from "underscore";
 
 var React = require("react");
 
@@ -447,7 +447,7 @@ module.exports = {
           edit_matr: false,
           user_alarmkabel: null,
           user_alarmkabel_distance: config.extensionConfig.blueidea.alarmkabel_distance || 100,
-          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || null,
+          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || null, 
           selected_profileid: '',
           lukkeliste_ready: false,
           TooManyFeatures: false,
@@ -2317,7 +2317,8 @@ module.exports = {
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
         const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
-        const openBlueidea = this.allowBlueIdea() && Object.keys(s.results_adresser).length > 0;  
+        const openResult =  Object.keys(s.results_adresser).length > 0;  
+        const hasBlueIdeaProfile = s.user_blueidea && s.user_profileid && Object.keys(s.user_profileid).length > 0;
         
         const ventilList =   Array.isArray(this.state.results_ventiler)
          ? VentilModel.fromFeaturesFactory(
@@ -2398,9 +2399,9 @@ module.exports = {
               <hr style={{marginRight: "1.5em"}}></hr>
 
               <div className="row mx-auto gap-0 my-3">
-                <details open={openBlueidea} className="col">
+                <details open={openResult} className="col">
                   <summary>Resultat</summary>
-                  { s.user_profileid && this.profileidOptions().length > 1 &&
+                  { hasBlueIdeaProfile &&
                     <div className="row">
                       <label className="col-4">SMS Profil</label>
                       <select
@@ -2426,16 +2427,20 @@ module.exports = {
                       disabled={!pipeSelected}
                       style={{ marginRight: '8px' }}
                     >
-                      Gem
+                      {__("Save")}
                     </button>
-                    <button
-                      onClick={() => this.sendToBlueIdea()}
-                      className="col-6 btn btn-primary"
-                      disabled={!this.readyToBlueIdea() }
-                      style={{ marginRight: '8px' }}
-                    >
-                      {__("Go to blueidea")}
-                    </button>
+                    {hasBlueIdeaProfile  ? (
+                      <button
+                        onClick={() => this.sendToBlueIdea()}
+                        className="col-6 btn btn-primary"
+                        disabled={!this.readyToBlueIdea() }
+                        style={{ marginRight: '8px' }}
+                      >
+                        {__("Go to blueidea")}
+                      </button>
+                    ) : (<div className="col-6" >
+                      </div>
+                    )}
                   </div>
 
                   <div className="row mx-auto gap-3 my-1">

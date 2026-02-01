@@ -15,7 +15,6 @@
   * projectStartDate: start date of the project
   * projectEndDate: end date of the project
   * projectName: name of the project
-  * useBreakType: boolean indicating if break type is used   
  */
 var dict = require("./i18n.js");
 class ProjectModel {
@@ -28,8 +27,7 @@ class ProjectModel {
     isReadOnly = false,
     projectEndDate,
     projectStartDate,
-    projectName = '',
-    useBreakType = window.config.extensionConfig?.useBreakType ?? true,
+    projectName = ''
   } = {}) {
     const now = new Date()
     if (!projectEndDate) {
@@ -44,7 +42,6 @@ class ProjectModel {
     this.projectStartDate = projectStartDate ?? now;
     this.projectEndDate = projectEndDate;
     this.projectName = projectName;
-    this.useBreakType = useBreakType;
   }
 
   __ = (txt) => {

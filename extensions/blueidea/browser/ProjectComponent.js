@@ -59,14 +59,14 @@ class ProjectComponent extends React.Component {
 
     handleBreakTypeChange = (breakType) => {
         this.props.onChange({ brudtype: breakType });
-        
+
         //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
-        if( breakType === '1'   ){ 
+        if (breakType === '1') {
             const now = new Date()
-            const   projectStartDate = now;
+            const projectStartDate = now;
             const projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            this.props.onChange({projectStartDate, projectEndDate });
-        }   
+            this.props.onChange({ projectStartDate, projectEndDate });
+        }
     }
 
     onHandleDeleteProject = () => {
@@ -92,14 +92,13 @@ class ProjectComponent extends React.Component {
         this.props.onChange({ isReadOnly: false });
         this.props.onChange({ projectName: '' });
         this.props.onHandleSaveProject(this.props.project);
-    }   
+    }
 
     render() {
         const { pipeSelected, project } = this.props;
         const isReadOnly = project.isReadOnly || pipeSelected;
         const editProject = this.props.editProject;
         const isNotValid = project.isNotValid;
-        const isAkut = project.brudtype === '1';    
         const showTrash = false; //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
         let clearDisable = !pipeSelected;
         if (editProject) clearDisable = false;
@@ -124,63 +123,63 @@ class ProjectComponent extends React.Component {
                         ))}
                     </select>
                 </div>
-                {project.useBreakType && (
-                    <>
-                        <div className="row mx-auto gap-3 my-2">
-                            <label className="col-4" >{this.__("Break-type")}</label>
-                            <select
-                                onChange={(e) => { this.handleBreakTypeChange(e.target.value) }}
-                                value={project.brudtype}
-                                placeholder={this.__("Break-type")}
-                                disabled={isReadOnly || editProject}
-                                className="col-7"
-                            >
-                                {project.breakTypeOptions().map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
 
-                        <div className="row mx-auto gap-3 my-2">
-                            <label className="col-4" >{this.__("Forventet-start")}</label>
-                            <input
-                                className="col-7"
-                                disabled={isReadOnly}
-                                onChange={e => this.handleProjectStartChange(new Date(e.target.value))}
-                                placeholder={this.__("Forventet-start")}
-                                value={this.toDateTimeLocal(project.projectStartDate)}
-                                type="datetime-local"
-                            />
-                        </div>
 
-                        <div className="row mx-auto gap-2 my-2">
-                            <label className="col-3" >{this.__("Forventet-slut")}</label>
-                            {showTrash  ? (
-                              <i 
-                              className="col-1 bi bi-trash"
-                               onClick={this.onHandleDeleteProject}
-                               style={{ cursor: 'pointer' }}
-                               title="Nulstil dato"
-                              ></i>
-                            ) :
-                            (
-                              <label className="col-1"></label>
-                            )}
-                            <input
-                                className="col-7"
-                                disabled={isReadOnly}
-                                onChange={e => this.handleProjectEndChange(new Date(e.target.value))}
-                                placeholder={this.__("Forventet-slut")}
-                                value={toDate}
-                                type="datetime-local"
-                            />
-                            
-                        </div>
-                        
-                    </>
-                )}
+                <div className="row mx-auto gap-3 my-2">
+                    <label className="col-4" >{this.__("Break-type")}</label>
+                    <select
+                        onChange={(e) => { this.handleBreakTypeChange(e.target.value) }}
+                        value={project.brudtype}
+                        placeholder={this.__("Break-type")}
+                        disabled={isReadOnly || editProject}
+                        className="col-7"
+                    >
+                        {project.breakTypeOptions().map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="row mx-auto gap-3 my-2">
+                    <label className="col-4" >{this.__("Forventet-start")}</label>
+                    <input
+                        className="col-7"
+                        disabled={isReadOnly}
+                        onChange={e => this.handleProjectStartChange(new Date(e.target.value))}
+                        placeholder={this.__("Forventet-start")}
+                        value={this.toDateTimeLocal(project.projectStartDate)}
+                        type="datetime-local"
+                    />
+                </div>
+
+                <div className="row mx-auto gap-2 my-2">
+                    <label className="col-3" >{this.__("Forventet-slut")}</label>
+                    {showTrash ? (
+                        <i
+                            className="col-1 bi bi-trash"
+                            onClick={this.onHandleDeleteProject}
+                            style={{ cursor: 'pointer' }}
+                            title="Nulstil dato"
+                        ></i>
+                    ) :
+                        (
+                            <label className="col-1"></label>
+                        )}
+                    <input
+                        className="col-7"
+                        disabled={isReadOnly}
+                        onChange={e => this.handleProjectEndChange(new Date(e.target.value))}
+                        placeholder={this.__("Forventet-slut")}
+                        value={toDate}
+                        type="datetime-local"
+                    />
+
+                </div>
+
+
+
                 <div className="row mx-auto gap-3 my-2">
                     <label className="col-4" >{this.__("admin info")}</label>
                     <input
