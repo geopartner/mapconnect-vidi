@@ -2447,7 +2447,7 @@ module.exports = {
 
                   <div className="row mx-auto gap-3 my-1">
                     <div className="col">
-                      <div className="d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-end justify-content-between">
                         {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
                       <div className="col-2" style={{ cursor: 'pointer' }}>
                         <i className="bi bi-download" 
