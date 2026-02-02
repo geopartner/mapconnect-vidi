@@ -75,7 +75,10 @@ class ProjectListComponent extends React.Component {
                       <td style={{ textAlign: 'center' }}>
                         <i
                           className="bi bi-pencil"
-                          onClick={() => onHandleEditProject(option.properties.beregnuuid )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onHandleEditProject(option.properties.beregnuuid )} 
+                          }
                           style={{ cursor: 'pointer' }}
                           title="Rediger brud"
                         >

@@ -1354,8 +1354,6 @@ module.exports = {
         });
         _clearAll();
         this.refreshProjectLayer();
-        api.turnOff( BlueIdea.Aktive_brud_layeName);
-        api.filter(BlueIdea.Aktive_brud_layeName, {});
       };
 
      
@@ -2244,7 +2242,18 @@ module.exports = {
       
       handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
         const me = this;
+       
+        const newProject  = new ProjectModel();
+        me.setState(prev => ({
+          project: newProject.withChanges({
+            forsyningsarter: prev.project.forsyningsarter,
+            projectName: '',
+            isReadOnly: false
+          }),
+          
+        }))
         me.setState({ editProject: false });
+
         me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         const bounds = [[ymin, xmin],[ymax, xmax]];
         cloud.get().map.fitBounds(bounds);
