@@ -69,6 +69,14 @@ let start = function (dataToAuthorizeWith, req, response, status) {
             return;
         }
 
+        if (!req.session) {
+            response.status(500).send({
+                success: false,
+                message: "Session not available"
+            });
+            return;
+        }
+
         data = (`data` in data ? data.data : data);
         req.session.gc2SessionId = data.session_id;
         req.session.gc2ApiKey = data.api_key;
