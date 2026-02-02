@@ -418,6 +418,7 @@ module.exports = {
      */
     class BlueIdea extends React.Component {
       static get Aktive_brud_layeName() {  return 'lukkeliste.aktive_brud'}
+      static get Forbrugere_layerName() {  return 'lukkeliste.vw_forbrugere'}
       
       constructor(props) {
         super(props)
@@ -1353,6 +1354,8 @@ module.exports = {
         });
         _clearAll();
         this.refreshProjectLayer();
+        api.turnOff( BlueIdea.Aktive_brud_layeName);
+        api.filter(BlueIdea.Aktive_brud_layeName, {});
       };
 
      
@@ -1495,9 +1498,9 @@ module.exports = {
         if (data.forbrugere) {
           //console.debug("Got forbrugere:", data.forbrugere);
           try {
-            api.turnOn("lukkeliste.vw_forbrugere");
+            api.turnOn(Blueidea.Forbrugere_layerName);
             // add filter
-            api.filter("lukkeliste.vw_forbrugere", {
+            api.filter(Blueidea.Forbrugere_layerName, {
               "match": "any",
               "columns": [{
                 "fieldname": "beregnuuid",
