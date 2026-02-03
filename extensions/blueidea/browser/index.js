@@ -1353,6 +1353,15 @@ module.exports = {
           retryIsDisabled: true,
         });
         _clearAll();
+        api.turnOff(BlueIdea.Forbrugere_layerName);
+        try {
+           api.filter(BlueIdea.Forbrugere_layerName, {
+                                "match": "any",
+                                "columns": []
+                            });
+        } catch (error) {
+          console.warn("Could not clear filter on forbrugere layer", error);
+        }
         this.refreshProjectLayer();
       };
 
@@ -1364,7 +1373,7 @@ module.exports = {
         // if udpeg_layer is set, make sure it is turned on
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
-          me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+          // me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         }
         
         // change the cursor to crosshair and wait for a click
@@ -1420,9 +1429,10 @@ module.exports = {
         me.setState({retryIsDisabled: true})
         me.createSnack(__("Starting analysis"), true)
 
+        me.clearLukkeliste();
         // Because we already know stuff, send it again.
         // send the point to the server
-
+        
         let point = {
           lat: me.state.results_log[0].geometry.coordinates[1],
           lng: me.state.results_log[0].geometry.coordinates[0]
@@ -1496,9 +1506,9 @@ module.exports = {
         if (data.forbrugere) {
           //console.debug("Got forbrugere:", data.forbrugere);
           try {
-            api.turnOn(Blueidea.Forbrugere_layerName);
+            api.turnOn(BlueIdea.Forbrugere_layerName);
             // add filter
-            api.filter(Blueidea.Forbrugere_layerName, {
+            api.filter(BlueIdea.Forbrugere_layerName, {
               "match": "any",
               "columns": [{
                 "fieldname": "beregnuuid",
