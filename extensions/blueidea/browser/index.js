@@ -1427,7 +1427,7 @@ module.exports = {
         // if udpeg_layer is set, make sure it is turned on
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
-          // me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+          me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         }
         
         // change the cursor to crosshair and wait for a click
