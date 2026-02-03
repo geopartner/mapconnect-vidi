@@ -104,6 +104,9 @@ class ProjectComponent extends React.Component {
         if (editProject) clearDisable = false;
         const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
         // const hideDate = toDate === '' ? true : false;
+        const now = new Date();
+        const minDateTime = now.toISOString().slice(0, 16);
+
         const showNextStep = pipeSelected && !editProject;
         return (
             <>
@@ -147,6 +150,7 @@ class ProjectComponent extends React.Component {
                     <input
                         className="col-7"
                         disabled={isReadOnly}
+                        min={minDateTime}
                         onChange={e => this.handleProjectStartChange(new Date(e.target.value))}
                         placeholder={this.__("Forventet-start")}
                         value={this.toDateTimeLocal(project.projectStartDate)}
@@ -170,6 +174,7 @@ class ProjectComponent extends React.Component {
                     <input
                         className="col-7"
                         disabled={isReadOnly}
+                        min={minDateTime}
                         onChange={e => this.handleProjectEndChange(new Date(e.target.value))}
                         placeholder={this.__("Forventet-slut")}
                         value={toDate}

@@ -2521,11 +2521,18 @@ module.exports = {
                     )}
                   </div>
 
-                  <div className="row mx-auto gap-3 my-1">
+                  <div className="row mx-auto gap-3 my-2">
                     <div className="col">
                       <div className="d-flex align-items-end justify-content-between">
-                        {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
-                      <div className="col-2" style={{ cursor: 'pointer' }}>
+                        {s.TooManyFeatures ? 
+                        <span style={{ position: 'relative', top: '5px' }} >
+                          Hent først adresser
+                        </span>
+                        : 
+                        <span style={{ position: 'relative', top: '5px' }}>
+                          Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.
+                        </span>}
+                      <div className="col-2" style={{ cursor: 'pointer', position: 'relative', top: '5px' }}>
                         <i className="bi bi-download" 
                           onClick={() => this.downloadAdresser()}
                           title= {__("Download addresses")}

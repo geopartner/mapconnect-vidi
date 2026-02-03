@@ -180,8 +180,8 @@ var dict = {
     en_US: "Valve list not ready",
   },
   "Large number of parcels found": {
-    da_DK: "Der er fundet for mange matrikler. Matrikler vil ikke blive vist. Der kan gå tid før vi er klar til at hente adresser",
-    en_US: "Too many parcels found. Parcels will not be shown. It may take some time before we are ready to fetch addresses",
+    da_DK: "Berørte ejendomme vises ikke, grundet omfanget. Brudregistrering kan fortsættes ved at gå til Lukkeplansmodulets ’Resultat’ afsnit",
+    en_US: "Impacted properties are not shown due to the extent. Break registration can be continued by going to the Valve list module's 'Result' section",
   },
   "From-To": {
     da_DK: "Fra-Til",
