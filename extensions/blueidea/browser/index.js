@@ -1100,20 +1100,37 @@ module.exports = {
       /**
        * Styles and adds ventiler to the map
        */
-      addVentilerToMap(geojson) {
+      addVentilerToMap(geojson, nameKey) {
         try {
           var l = L.geoJSON(geojson, {
-            pointToLayer: function (feature, latlng) {
-              // //console.debug(feature.properties, latlng);
-              // if the feature has a forbundet property, use a different icon
-              if (feature.properties.forbundet) {
-                // //console.debug(feature.properties, latlng);
-                return L.circleMarker(latlng, {...styleObject.ventil_forbundet, interactive: false});
-              }
-              // else, use the default icon
-              return L.circleMarker(latlng, {...styleObject.ventil, interactive: false});
-            },
-          }).addTo(queryVentils);
+          pointToLayer: function (feature, latlng) {
+
+          const style = feature.properties.forbundet
+          ? styleObject.ventil_forbundet
+          : styleObject.ventil;
+
+          return L.circleMarker(latlng, {
+            ...style,
+            interactive: true
+            });
+          },
+
+          onEachFeature: function (feature, layer) {
+            layer.bindTooltip(
+            `
+            <b>Ventil</b><br>
+             ${feature.properties[nameKey]  || '—'}<br>
+             Forbundet: ${feature.properties.forbundet ? 'Ja' : 'Nej'}
+            `,
+            {
+              sticky: true,
+              direction: 'top',
+              opacity: 0.9
+            }
+            );
+          }
+        }).addTo(queryVentils);
+
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1124,7 +1141,20 @@ module.exports = {
        */
       addSelectedLedningerToMap(geojson) {
         try {
-          var l = L.geoJSON(geojson, {...styleObject.selectedLedning, interactive: false}).addTo(seletedLedninger);
+          var l = L.geoJSON(geojson, 
+            {
+              ...styleObject.selectedLedning, 
+              interactive: true,
+              onEachFeature: function (feature, layer) {
+                layer.bindTooltip(
+                'Afbrudt ledning ' ,
+                {
+                  sticky: true,
+                  direction: 'top'
+                }
+              );
+            }
+            }).addTo(seletedLedninger);
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1132,7 +1162,20 @@ module.exports = {
 
       addSelectedIndirekteLedningerToMap(geojson) {
         try {
-          var l = L.geoJSON(geojson, {...styleObject.selectedIndirekteLedning, interactive: false}).addTo(selectedIndirekteLedninger);
+          var l = L.geoJSON(geojson,
+            {
+              ...styleObject.selectedIndirekteLedning, 
+              interactive: true,
+              onEachFeature: function (feature, layer) {
+                layer.bindTooltip(
+                'Indirekte berørt ledning ',
+                {
+                  sticky: true,
+                  direction: 'top'
+                }
+              );
+            }
+          }).addTo(selectedIndirekteLedninger);
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1146,7 +1189,15 @@ module.exports = {
           var myIcon = new L.DivIcon(styleObject.selectedPoint);
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
-              return new L.Marker(latlng, { icon: myIcon, interactive: false });
+              return new L.Marker(
+                latlng, { 
+                  icon: myIcon, 
+                  interactive: true,
+                  
+                  onEachFeature: function (feature, layer) {
+                    layer.bindTooltip('Brudpunket', { sticky: true,direction: 'top' })
+                  }
+                });
             },
           }).addTo(selectedPoint);
         } catch (error) {
@@ -1159,7 +1210,10 @@ module.exports = {
           var myIcon = new L.DivIcon(styleObject.selectedForbrugspunkt);
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
-              return new L.Marker(latlng, { icon: myIcon, interactive: false });
+              return new L.Marker(latlng, 
+                { icon: myIcon, 
+                  interactive: true 
+                });
 
             },
           }).addTo(selectedForbrugspunkter);
@@ -1529,7 +1583,7 @@ module.exports = {
 
         if (data.ventiler) {
           //console.debug("Got ventiler:", data.ventiler);
-          me.addVentilerToMap(data.ventiler);
+          me.addVentilerToMap(data.ventiler, me.state.user_ventil_layer_name_key);
           me.setState({
             results_ventiler: data.ventiler.features,
           });
