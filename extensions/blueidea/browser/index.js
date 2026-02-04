@@ -296,6 +296,9 @@ module.exports = {
 
       // for each layer in drawnItems, get geojson
       let drawnItems = draw.getDrawItems();
+      // clear previous results 
+      _clearAll(); 
+      backboneEvents.get().trigger(`${exId}:clearAll`);// måske overkill. Denne er sikkert nok og _ clearAll kan undværes
 
       for (const layer of drawnItems.getLayers()) {
         if (layer._vidi_id === drawing) {
@@ -320,6 +323,10 @@ module.exports = {
         type: "FeatureCollection",
         features: [],
       };
+
+      // clear previous results 
+      _clearAll();
+      backboneEvents.get().trigger(`${exId}:clearAll`); // måske overkill. Denne er sikkert nok og _ clearAll kan undværes
       // for each layer in drawnItems, get geojson
       let drawnItems = draw.getDrawItems();
       drawnItems.eachLayer(function (layer) {
@@ -517,6 +524,10 @@ module.exports = {
             me.listProjects(true);
         });
 
+        backboneEvents.get().on(`${exId}:clearAll`, () => {
+            me.clearLukkeliste();
+            me.clearProjectState();  
+        });
 
         // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
@@ -1276,12 +1287,9 @@ module.exports = {
             console.warn(`Unable to locate #draw-content`)
         }
       }
-      
-      postSaveProject = () => {
-        const me = this;
-        backboneEvents.get().trigger(`${exId}:listProject`);
-        this.listProjects(true);
-         
+
+      clearProjectState = () => {
+        const me = this;  
         const newProject  = new ProjectModel();
         me.setState(prev => ({
           project: newProject.withChanges({
@@ -1292,9 +1300,15 @@ module.exports = {
           
         }))
         me.setState({ editProject: false });
-        this.clearLukkeliste(); // ?  
-
-        this.refreshProjectLayer();
+      }
+      
+      postSaveProject = () => {
+        const me = this;
+        backboneEvents.get().trigger(`${exId}:listProject`);
+        me.listProjects(true);
+        me.clearProjectState();  
+        me.clearLukkeliste(); // ?  
+        me.refreshProjectLayer();
       };
 
       
@@ -2480,11 +2494,10 @@ module.exports = {
                 <details open={openResult} className="col">
                   <summary>Resultat</summary>
                   { hasBlueIdeaProfile &&
-                    <div className="row">
+                    <div className="row mx-auto gap-3 my-2">
                       <label className="col-4">SMS Profil</label>
                       <select
                        className="col-7"
-                       style={{ marginRight: '18px', marginLeft: '14px' }}
                        onChange={this.setSelectedProfileid}
                        value={s.selected_profileid}
                        placeholder={__("Select profile")}
@@ -2498,12 +2511,11 @@ module.exports = {
                           </select>
                     </div>
                   }
-                  <div className="row mx-auto gap-3 my-1">
+                  <div className="row mx-auto gap-3 my-2">
                     <button
                       onClick={() => this.handleSaveProject()}
                       className="col-5 btn btn-primary"
                       disabled={!pipeSelected}
-                      style={{ marginRight: '8px' }}
                     >
                       {__("Save")}
                     </button>
@@ -2512,7 +2524,6 @@ module.exports = {
                         onClick={() => this.sendToBlueIdea()}
                         className="col-6 btn btn-primary"
                         disabled={!this.readyToBlueIdea() }
-                        style={{ marginRight: '8px' }}
                       >
                         {__("Go to blueidea")}
                       </button>
@@ -2521,18 +2532,18 @@ module.exports = {
                     )}
                   </div>
 
-                  <div className="row mx-auto gap-3 my-2">
-                    <div className="col">
-                      <div className="d-flex align-items-end justify-content-between">
+                  <div className="row mx-auto gap-2 my-2">
+                    <div className="col-9">
                         {s.TooManyFeatures ? 
-                        <span style={{ position: 'relative', top: '5px' }} >
+                        <span style={{ position: 'relative', top: '8px' }} >
                           Hent først adresser
                         </span>
                         : 
-                        <span style={{ position: 'relative', top: '5px' }}>
+                        <span style={{ position: 'relative', top: '8px' }}>
                           Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.
                         </span>}
-                      <div className="col-2" style={{ cursor: 'pointer', position: 'relative', top: '5px' }}>
+                      </div>  
+                      <div className="col-1" style={{ cursor: 'pointer', position: 'relative', top: '8px' }}>
                         <i className="bi bi-download" 
                           onClick={() => this.downloadAdresser()}
                           title= {__("Download addresses")}
@@ -2542,12 +2553,11 @@ module.exports = {
                        <button
                         disabled={Object.keys(s.results_adresser).length == 0}
                         title={__("modify parcels")}
-                        className="btn btn-primary"
+                        className="btn btn-primary col-1"
                         onClick={() => this.toggleEdit()}>
                         {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
                       </button>
-                    </div>
-                    </div>
+                    
                   </div>
 
                   <div className="row mx-auto gap-3 my-3">
