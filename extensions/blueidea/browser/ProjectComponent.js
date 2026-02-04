@@ -210,10 +210,18 @@ class ProjectComponent extends React.Component {
                         </span>
                     </div>
                 )}
+                {editProject && (
+                    <div className="row mx-auto gap-3 my-2">
+                        <span className="col text-primary" >
+                            {this.__("project edit info")}
+                        </span>
+                    </div>
+                )}
                 <div className="row mx-auto gap-2 my-3">
                     <button
                         onClick={this.handlePointClick}
                         className="btn btn-primary col-4"
+                        title={this.__("Select point tooltip")}
                         disabled={isNotValid || editProject}
                     >
                         {this.__("Select point on map")}
@@ -233,6 +241,7 @@ class ProjectComponent extends React.Component {
                     <button
                         onClick={this.handleClearClick}
                         className="btn btn-primary col-4"
+                        title={this.__("Clear map tooltip")}
                         disabled={clearDisable}
                     >
                         {this.__("Clear map")}

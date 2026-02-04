@@ -36,8 +36,12 @@ var dict = {
     en_US: "Log in",
   },
   "Select point on map": {
-    da_DK: "Udpeg punkt",
+    da_DK: "Udpeg",
     en_US: "Select point",
+  },
+  "Select point tooltip": {
+    da_DK: "Udpeg punkt på ledning, hvor der ønskes beregnet en brudregistrering. Konsekvenser af brud vises i kortet",
+    en_US: "Select point on the network where a break registration is to be calculated. Consequences of the break are shown on the map",
   },
   "admin info": {
     da_DK: "Navn / sagsnr.",
@@ -50,6 +54,10 @@ var dict = {
   "Clear map": {
     da_DK: "Nulstil",
     en_US: "Clear",
+  },
+  "Clear map tooltip": {
+    da_DK: "Fortryd alle valg og nulstil kortet",
+    en_US: "Undo all selections and reset the map",
   },
   "Project created successfully": {
     da_DK: "Lukkeplan gemt, du bliver viderestillet til Blue Idea",
@@ -91,6 +99,10 @@ var dict = {
     da_DK: "Rediger brud",
     en_US: "Edit break",
   },  
+  "project edit info" : {
+    da_DK: "Bemærk: redigering af start- og sluttidspunkt kan have konsekvenser for andre gemte og aktive brud, der grænser op til det aktuelle brud.",
+    en_US: "’Note: editing the start and end time may have consequences for other saved and active breaks adjacent to the current break.’",
+  }, 
   "Save": {
     da_DK: "Gem",
     en_US: "Save",
