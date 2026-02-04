@@ -1337,7 +1337,7 @@ module.exports = {
             // list projects again to show the new one
             this.listProjects(true);
 
-            this.postSaveProject
+            this.postSaveProject();
           })
           .fail((error) => {
             console.error(error);
