@@ -12,8 +12,12 @@ var dict = {
     en_US: "Select one or more valves and run again.",
   },
   "Retry with unaccessible valves": {
-    da_DK: "Genberegn med valgte ventiler",
+    da_DK: "Genberegn",
     en_US: "Calculate without selected",
+  },
+  "Retry tooltip": {
+    da_DK: "Genberegn funktionen bruges til at udelade ventillukninger, der er markeret i listen ovenfor. Det bruges i tilfælde hvor det viser sig at ventilen ikke kan betjenes eller ikke er tilgængelig",
+    en_US: "The Recalculate function is used to omit valve closures that are marked in the list above. It is used in cases where it turns out that the valve cannot be operated or is not accessible.",
   },
   "Info": {
     da_DK:

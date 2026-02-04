@@ -120,6 +120,7 @@ class VentilListComponent extends React.Component {
                         className="btn btn-primary col"
                         disabled={retryIsDisabled}
                         onClick={onRunWithoutSelected.bind(this)}
+                        title={this.__("Retry tooltip")}
                     >
                         {this.__("Retry with unaccessible valves")}
                     </button>

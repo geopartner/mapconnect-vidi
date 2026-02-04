@@ -6,10 +6,22 @@ var dict = require("./i18n.js");
 class ProjectComponent extends React.Component {
     constructor(props) {
         super(props);
+        this.state = {
+           isAnalyzing: false 
+        };
     }
 
     componentDidMount() {
+      let me = this;
+      this.props.backboneEvents.get().on("blueidea:setAnalyzingOff", () => {
+        me.setState({isAnalyzing: false})
+        this.forceUpdate();
+       });
 
+       this.props.backboneEvents.get().on("blueidea:setAnalyzingOn", () => {
+        me.setState({isAnalyzing: true})
+        this.forceUpdate();
+       });
     }
 
     componentWillUnmount() {
@@ -93,9 +105,11 @@ class ProjectComponent extends React.Component {
         this.props.onChange({ projectName: '' });
         this.props.onHandleSaveProject(this.props.project);
     }
+ 
 
     render() {
-        const { pipeSelected, project } = this.props;
+        const { pipeSelected, project} = this.props;
+        const { isAnalyzing } = this.state;
         const isReadOnly = project.isReadOnly || pipeSelected;
         const editProject = this.props.editProject;
         const isNotValid = project.isNotValid;
@@ -222,7 +236,7 @@ class ProjectComponent extends React.Component {
                         onClick={this.handlePointClick}
                         className="btn btn-primary col-4"
                         title={this.__("Select point tooltip")}
-                        disabled={isNotValid || editProject}
+                        disabled={isNotValid || editProject || isAnalyzing}
                     >
                         {this.__("Select point on map")}
                     </button>

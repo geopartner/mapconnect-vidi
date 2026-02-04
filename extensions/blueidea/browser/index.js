@@ -1299,7 +1299,10 @@ module.exports = {
           }),
           
         }))
-        me.setState({ editProject: false });
+        me.setState({ 
+          editProject: false, 
+        });
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
       }
       
       postSaveProject = () => {
@@ -1309,6 +1312,7 @@ module.exports = {
         me.clearProjectState();  
         me.clearLukkeliste(); // ?  
         me.refreshProjectLayer();
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
       };
 
       
@@ -1355,6 +1359,7 @@ module.exports = {
           })
           .fail((error) => {
             console.error(error);
+            backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
             this.createSnack("Der opstod en fejl ved afsendelse til BlueIdea.");
         });
       };
@@ -1464,6 +1469,9 @@ module.exports = {
         if (blocked) {
           return;
         }
+        
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOn`);
+
 
         me.createSnack(__("Starting analysis"), true)
 
@@ -1493,8 +1501,10 @@ module.exports = {
        */
       runWithoutSelected = async function () {
         let me = this;
-      
-        me.setState({retryIsDisabled: true})
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOn`);
+        me.setState({
+          retryIsDisabled: true
+        })
         me.createSnack(__("Starting analysis"), true)
 
         me.clearLukkeliste();
@@ -1546,7 +1556,7 @@ module.exports = {
           // selectedVentiler: [],
           retryIsDisabled: true
         });
-        
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
         if (data.ledninger) {
           //console.debug("Got ledninger:", data.ledninger);
           me.addSelectedLedningerToMap(data.ledninger);
@@ -2462,6 +2472,7 @@ module.exports = {
                   </div>)}
                   
                   <ProjectComponent
+                    backboneEvents={backboneEvents}
                     project={this.state.project}
                     editProject={this.state.editProject}
                     onChange={this.updateProject}
