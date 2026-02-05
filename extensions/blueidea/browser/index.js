@@ -2456,18 +2456,44 @@ module.exports = {
                 <details className="col">
                   <summary>
                     {__("project list")} ({this.state.projects.length})
-                     <i 
-                     className="bg-primary bi bi-arrow-clockwise ms-4 position-relative"
+                    <i
+                      className="bi bi-arrow-clockwise ms-4 position-relative"
                       onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          this.listProjects();
-                      }}
-                      style={{ top: '2px', transform: 'scale(1.1)', opacity: 0.8, cursor: 'pointer' }}
-                      title="Genindlæs brud"
-                      >
-                      </i>
-                    </summary>
+                      e.stopPropagation();
+                      e.preventDefault();
+                      this.listProjects();
+                     }}
+                     onMouseDown={(e) => {
+                      const el = e.currentTarget;
+                      el.style.transform = 'rotate(90deg) scale(1.1)';
+                      el.style.backgroundColor = '#e0e0e0'; // lys grå baggrund mens musen holdes nede
+                      el.style.borderRadius = '4px'; // lidt runding så det ser pænere ud
+                      el.title = 'Opdaterer…'
+                     }}
+                     onMouseUp={(e) => {
+                       const el = e.currentTarget;
+                       el.style.transform = 'scale(1.1)';
+                       el.style.backgroundColor = 'transparent';
+                       el.title = 'Genindlæs brud';
+                     }}
+                     onMouseEnter={(e) => {
+                       e.currentTarget.style.transform = 'scale(1.1)';
+                     }}
+                     onMouseLeave={(e) => {
+                       const el = e.currentTarget;
+                       el.style.transform = 'none';
+                       el.style.backgroundColor = 'transparent';
+                       el.title = 'Genindlæs brud';
+                     }}
+                     style={{
+                       top: '2px',
+                       transform: 'none',
+                       cursor: 'pointer',
+                       transition: 'transform 0.2s ease',
+                     }}
+                     title="Genindlæs brud"
+                    />
+                  </summary>
                   <ProjectListComponent
                     className="col"
                     projects={this.state.projects}
