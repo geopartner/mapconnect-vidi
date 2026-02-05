@@ -16,14 +16,14 @@ var dict = {
     en_US: "Calculate without selected",
   },
   "Retry tooltip": {
-    da_DK: "Genberegn funktionen bruges til at udelade ventillukninger, der er markeret i listen ovenfor.\nDet bruges i tilfælde hvor det viser sig at ventilen ikke kan betjenes eller ikke er tilgængelig",
-    en_US: "The Recalculate function is used to omit valve closures that are marked in the list above.\nIt is used in cases where it turns out that the valve cannot be operated or is not accessible",
+    da_DK: "Genberegn funktionen bruges til at udelade ventillukninger, der er markeret i listen ovenfor.Det bruges i tilfælde hvor det viser sig at ventilen ikke kan betjenes eller ikke er tilgængelig",
+    en_US: "The Recalculate function is used to omit valve closures that are marked in the list above.It is used in cases where it turns out that the valve cannot be operated or is not accessible",
   },
   "Info": {
     da_DK:
       "Lukkeplan er et modul der hjælper med at finde relevante adresser til en lukning.Du kan tegne et område på kortet, og få en liste over adresser i området. Du kan også udpege et punkt på ledningsnettet, og få en liste af adresser der er forbundet til det punkt. Listerne med adresser kan derefter bruges til at sende beskeder ud med BlueIdea (Kræver aftale med BlueIdea)",
     en_US:
-      "ClosurePlan is a module that helps to find relevant addressess for a valve closure.You can draw an area on the map, and get a list of addresses in the area.\nYou can also select a point on the network, and get a list of addresses connected to that point.\nThe lists of addresses can then be used to send messages with BlueIdea (Requires agreement with BlueIdea)",
+      "ClosurePlan is a module that helps to find relevant addressess for a valve closure.You can draw an area on the map, and get a list of addresses in the area.You can also select a point on the network, and get a list of addresses connected to that point.The lists of addresses can then be used to send messages with BlueIdea (Requires agreement with BlueIdea)",
   },
   "Plugin Tooltip": {
     da_DK: "Lukkeplan",
@@ -44,8 +44,8 @@ var dict = {
     en_US: "Select point",
   },
   "Select point tooltip": {
-    da_DK: "Udpeg punkt på ledning, hvor der ønskes beregnet en brudregistrering.\nKonsekvenser af brud vises i kortet",
-    en_US: "Select point on the network where a break registration is to be calculated.\nConsequences of the break are shown on the map",
+    da_DK: "Udpeg punkt på ledning, hvor der ønskes beregnet en brudregistrering.Konsekvenser af brud vises i kortet",
+    en_US: "Select point on the network where a break registration is to be calculated.Consequences of the break are shown on the map",
   },
   "admin info": {
     da_DK: "Navn / sagsnr",
@@ -105,7 +105,7 @@ var dict = {
   },  
   "project edit info" : {
     da_DK: "Bemærk: redigering af start- og sluttidspunkt kan have konsekvenser for andre gemte og aktive brud, der grænser op til det aktuelle brud",
-    en_US: "’Note: editing the start and end time may have consequences for other saved and active breaks adjacent to the current break.\n’",
+    en_US: "’Note: editing the start and end time may have consequences for other saved and active breaks adjacent to the current break.’",
   }, 
   "Save": {
     da_DK: "Gem",
@@ -124,8 +124,8 @@ var dict = {
     en_US: "Result",
   },
   "project-is-historical": {
-    da_DK: "Slutdato er i fortiden.\nBruddet vises som historisk",
-    en_US: "End date is in the past.\nThe project is shown as historical",
+    da_DK: "Slutdato er i fortiden.Bruddet vises som historisk",
+    en_US: "End date is in the past.The project is shown as historical",
   },
   "Waiting to start": {
     da_DK: "Henter jordstykker",
@@ -196,8 +196,8 @@ var dict = {
     en_US: "Valve list not ready",
   },
   "Large number of parcels found": {
-    da_DK: "Berørte ejendomme vises ikke, grundet omfanget.\nBrudregistrering kan fortsættes ved at gå til Lukkeplansmodulets ’Resultat’ afsnit",
-    en_US: "Impacted properties are not shown due to the extent.\nBreak registration can be continued by going to the Valve list module's 'Result' section",
+    da_DK: "Berørte ejendomme vises ikke, grundet omfanget.Brudregistrering kan fortsættes ved at gå til Lukkeplansmodulets ’Resultat’ afsnit",
+    en_US: "Impacted properties are not shown due to the extent.Break registration can be continued by going to the Valve list module's 'Result' section",
   },
   "From-To": {
     da_DK: "Fra-Til",
@@ -277,8 +277,8 @@ var dict = {
   },
 
   "No utility lines found": {
-    da_DK: "Der er ikke fundet nogen ledninger i nærheden af det valgte punkt.\nPrøv at vælge et andet punkt",
-    en_US: "No utility lines found near the selected point.\nPlease try selecting a different point",
+    da_DK: "Der er ikke fundet nogen ledninger i nærheden af det valgte punkt.Prøv at vælge et andet punkt",
+    en_US: "No utility lines found near the selected point.Please try selecting a different point",
   },
   "Project stopped successfully": {
     da_DK: "Bruddet er inaktivt",

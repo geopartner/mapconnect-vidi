@@ -114,7 +114,7 @@ class VentilListComponent extends React.Component {
                     </table>
                 </div>
 
-                <div className="form-text">{this.__("Select one or more valves.")}</div>
+                <div className="form-text">{this.__("Select one or more valves")}</div>
                 <div className="row mx-auto gap-0 my-3">
                     <button
                         className="btn btn-primary col"

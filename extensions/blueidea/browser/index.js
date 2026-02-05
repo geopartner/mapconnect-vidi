@@ -476,7 +476,23 @@ module.exports = {
         this.boundHandleEditClick = this.handleEditClick.bind(this);
         this.boundHandleAlarmkabelClick = this.handleAlarmkabelClick.bind(this);
         this.boundHandleAlarmskabClick = this.handleAlarmskabClick.bind(this);
+        this.buildStyleObject(); 
       }
+
+      buildStyleObject() {
+        if (config.extensionConfig.blueidea.afbrudt_ledning_farve) {
+          styleObject.afbrudt_ledning.color = config.extensionConfig.blueidea.afbrudt_ledning_farve;
+        }
+        if (config.extensionConfig.blueidea.indirekte_ledning_farve) {  
+          styleObject.selectedIndirekteLedning.color = config.extensionConfig.blueidea.indirekte_ledning_farve; 
+        }
+        if (config.extensionConfig.blueidea.ventil_forbundet_farve) {     
+          styleObject.ventil_forbundet.fillColor = config.extensionConfig.blueidea.ventil_forbundet_farve;  
+        } 
+        if (config.extensionConfig.blueidea.ventil_ikke_forbundet_farve) {  
+          styleObject.ventil.fillColor = config.extensionConfig.blueidea.ventil_ikke_forbundet_farve;
+        }     
+       }
 
       /**
        * Handle activation on mount
@@ -1165,13 +1181,14 @@ module.exports = {
        */
       addSelectedLedningerToMap(geojson) {
         try {
+         
           var l = L.geoJSON(geojson, 
             {
               ...styleObject.selectedLedning, 
               interactive: true,
               onEachFeature: function (feature, layer) {
                 layer.bindTooltip(
-                'Afbrudt ledning ' ,
+                config.extensionConfig.blueidea.afbrudt_ledning_tooltip || 'Afbrudt ledning ' ,
                 {
                   sticky: true,
                   direction: 'top'
@@ -1192,7 +1209,7 @@ module.exports = {
               interactive: true,
               onEachFeature: function (feature, layer) {
                 layer.bindTooltip(
-                'Indirekte berørt ledning ',
+                config.extensionConfig.blueidea.indirekte_ledning_tooltip || 'Indirekte berørt ledning ',
                 {
                   sticky: true,
                   direction: 'top'
