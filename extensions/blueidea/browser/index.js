@@ -2457,13 +2457,13 @@ module.exports = {
                   <summary>
                     {__("project list")} ({this.state.projects.length})
                      <i 
-                     className="bi bi-arrow-clockwise ms-4 position-relative"
+                     className="bg-primary bi bi-arrow-clockwise ms-4 position-relative"
                       onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
                           this.listProjects();
                       }}
-                      style={{ top: '2px', transform: 'scale(1.1)' }}
+                      style={{ top: '2px', transform: 'scale(1.1)', opacity: 0.8, cursor: 'pointer' }}
                       title="Genindlæs brud"
                       >
                       </i>

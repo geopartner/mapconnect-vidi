@@ -74,11 +74,15 @@ class ProjectComponent extends React.Component {
 
         //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
         if (breakType === '1') {
-            const now = new Date()
-            const projectStartDate = now;
-            const projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            this.props.onChange({ projectStartDate, projectEndDate });
+          this.clearDates();
         }
+    }
+
+    clearDates = () => {
+        const now = new Date()
+        const projectStartDate = now;
+        const projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        this.props.onChange({ projectStartDate, projectEndDate });
     }
 
     onHandleDeleteProject = () => {
@@ -95,6 +99,7 @@ class ProjectComponent extends React.Component {
     handleClearClick = () => {
         this.props.onChange({ isReadOnly: false });
         this.props.onChange({ projectName: '' });
+        this.clearDates()
         this.props.onClearLukkeliste();
     };
     handlePointClick = () => {
