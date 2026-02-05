@@ -291,4 +291,4 @@ var dict = {
   
 };
 
-module.\nexports = dict;
+module.exports = dict;
