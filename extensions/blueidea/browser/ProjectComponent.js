@@ -256,7 +256,7 @@ class ProjectComponent extends React.Component {
                         onClick={this.handleClearClick}
                         className="btn btn-primary col-4"
                         title={this.__("Clear map tooltip")}
-                        disabled={clearDisable}
+                        disabled={clearDisable || isAnalyzing}
                     >
                         {this.__("Clear map")}
                     </button>
