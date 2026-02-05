@@ -1502,6 +1502,7 @@ module.exports = {
         catch (error) {
           me.createSnack(__("Error in search") + ": " + error.message);
           console.warn(error);
+          backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
           return
         }
 
@@ -1563,6 +1564,8 @@ module.exports = {
         let me = this;
 
         if (data.log.features[0].properties.status == 1) {
+          me.clearLukkeliste();
+          backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
           me.createSnack(__("No utility lines found"));
         } else {
         // Here we handle data from the query-endpoint
