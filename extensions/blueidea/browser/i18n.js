@@ -136,8 +136,8 @@ var dict = {
     en_US: "Recalculate, clear or Save ",
   },
   "Go to blueidea": {
-    da_DK: "Gem, og gå til blueidea",
-    en_US: "Save and go to blueidea",
+    da_DK: "Gem og gå til BlueIdea",
+    en_US: "Save and go to BlueIdea",
   },
   "Valve list": {
     da_DK: "Lukkeliste",
