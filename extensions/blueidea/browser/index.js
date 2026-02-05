@@ -1424,6 +1424,7 @@ module.exports = {
       clearLukkeliste = () => {
         let me = this;
         me.setState({
+          editProject: false,
           results_adresser: {},
           results_log: {},
           results_matrikler: [],
