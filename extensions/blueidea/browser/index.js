@@ -24,6 +24,7 @@ import {
 } from "@turf/turf";
 import _, { has } from "underscore";
 
+
 var React = require("react");
 
 const blueIdeaRef = React.createRef();
@@ -435,6 +436,7 @@ module.exports = {
           authed: false,
           project: new ProjectModel(),
           editProject: false,
+          isAnalyzing: false,
           projects: [],
           done: false,
           loading: false,
@@ -519,6 +521,17 @@ module.exports = {
             me.setState({retryIsDisabled: false})
             me.setState({project: me.state.project.withChanges({isReadOnly: true})});
         });
+
+        backboneEvents.get().on(`${exId}:setAnalyzingOff`, () => {
+            me.setState({isAnalyzing: false})
+            me.forceUpdate();
+        });
+
+        backboneEvents.get().on(`${exId}:setAnalyzingOn`, () => {
+            me.setState({isAnalyzing: true})
+            me.forceUpdate();
+        });
+
 
         backboneEvents.get().on(`${exId}:listProject`, () => {
             me.listProjects(true);
@@ -2414,12 +2427,12 @@ module.exports = {
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, results_ledninger, retryIsDisabled } = this.state
+        const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
         const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
-        const openResult =  Object.keys(s.results_adresser).length > 0;  
+        const openResult =  Object.keys(s.results_adresser).length > 0 && !isAnalyzing ;  
         const hasBlueIdeaProfile = s.user_blueidea && s.user_profileid && Object.keys(s.user_profileid).length > 0;
         
         const ventilList =   Array.isArray(this.state.results_ventiler)
@@ -2437,7 +2450,20 @@ module.exports = {
             <div role="tabpanel">
               <div className="row mx-auto gap-0 my-3">
                 <details className="col">
-                  <summary>{__("project list")} ({this.state.projects.length})</summary>
+                  <summary>
+                    {__("project list")} ({this.state.projects.length})
+                     <i 
+                     className="bi bi-arrow-clockwise ms-4 position-relative"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          this.listProjects();
+                      }}
+                      style={{ top: '2px', transform: 'scale(1.1)' }}
+                      title="Genindlæs brud"
+                      >
+                      </i>
+                    </summary>
                   <ProjectListComponent
                     className="col"
                     projects={this.state.projects}
@@ -2484,7 +2510,7 @@ module.exports = {
                   </div>
                 </details>             
               </div>
-              { ventilCount > 0 && (
+              { ventilCount > 0 && !isAnalyzing  &&  (
                 <div className="row mx-auto gap-0 my-3">
                   <hr style={{marginRight: "1.5em"}}></hr>
                   <VentilListComponent 
