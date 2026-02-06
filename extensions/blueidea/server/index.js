@@ -655,12 +655,86 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
   }
 );
 
+router.get("/api/extension/blueidea/:userid/getproject/:beregnuuid", function (req, response) {
+    guard(req, response);
+    const beregnuuid = req.params.beregnuuid;
+    const query = ` SELECT 
+    beregnuuid,
+    forsyningsart,
+    to_char(gyldig_fra AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_fra,
+    to_char(gyldig_til AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_til,
+    beregnaarsag,
+    brud_status,
+    sagstekst 
+    FROM lukkeliste.beregnlog 
+    WHERE beregnuuid = '${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json(err);
+      });
+  }
+);
+
+
+router.post("/api/extension/blueidea/:userid/saveproject", function (req, response) {
+    guard(req, response);
+    const body = req.body;
+    const beregnuuid = body.beregnuuid;
+    
+    const query = `UPDATE lukkeliste.beregnlog SET brud_status = 2 WHERE beregnuuid='${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json({ message: "Project saved successfully" });
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json({ message: "Error saving project", error: err });
+      });
+  }
+);
+
+router.post("/api/extension/blueidea/:userid/saveprojectdates", function (req, response) {
+    guard(req, response);
+    const body = req.body;
+    const beregnuuid = body.beregnuuid;
+    const gyldig_fra = body.projectStartDate ? `'${body.projectStartDate}'::timestamp` : null;
+    const gyldig_til = body.projectEndDate ? `'${body.projectEndDate}'::timestamp` : null;
+
+    const query = ` UPDATE lukkeliste.beregnlog SET 
+    gyldig_fra = ${gyldig_fra},
+    gyldig_til = ${gyldig_til}
+    WHERE beregnuuid = '${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json({ message: "Project saved successfully" });
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json({ message: "Error saving project", error: err });
+      });
+  }
+);
+
 // Get active breakages for user
 router.get("/api/extension/blueidea/:userid/activebreakages", function (req, response) {
     guard(req, response);
-    let q = `
-      SELECT ST_X(ST_Centroid(the_geom)) as x,ST_Y(ST_Centroid(the_geom)) as y, * FROM lukkeliste.aktive_brud  order by gyldig_fra, gyldig_til   
-    `;
+    const buffer = 50; // buffer in meters
+    const q =`SELECT \ 
+               ST_XMin(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) xmin, \
+               ST_YMin(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) ymin, \
+               ST_XMax(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) xmax, \
+               ST_YMax(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) ymax, \
+               gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid \
+               FROM lukkeliste.aktive_brud \
+               GROUP BY gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid \
+               ORDER BY gyldig_fra desc`;
 
     SQLAPI(q, req, { format: "geojson", srs: 4326 })
       .then((data) => {

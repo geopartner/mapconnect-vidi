@@ -6,10 +6,22 @@ var dict = require("./i18n.js");
 class ProjectComponent extends React.Component {
     constructor(props) {
         super(props);
-     }
+        this.state = {
+           isAnalyzing: false 
+        };
+    }
 
     componentDidMount() {
+      let me = this;
+      this.props.backboneEvents.get().on("blueidea:setAnalyzingOff", () => {
+        me.setState({isAnalyzing: false})
+        this.forceUpdate();
+       });
 
+       this.props.backboneEvents.get().on("blueidea:setAnalyzingOn", () => {
+        me.setState({isAnalyzing: true})
+        this.forceUpdate();
+       });
     }
 
     componentWillUnmount() {
@@ -17,20 +29,20 @@ class ProjectComponent extends React.Component {
     }
 
     __ = (txt) => {
-      if (dict[txt][window._vidiLocale]) {
-        return dict[txt][window._vidiLocale];
-      } else {
-        return txt;
-      }
+        if (dict[txt][window._vidiLocale]) {
+            return dict[txt][window._vidiLocale];
+        } else {
+            return txt;
+        }
     }
 
-     forsyningsart_options = () => {
+    forsyningsart_options = () => {
         let options = [];
         for (let i = 0; i < this.props.project.forsyningsarter.length; i++) {
-          options.push({
-            value: i,
-            label: this.props.project.forsyningsarter[i].value,
-          });
+            options.push({
+                value: i,
+                label: this.props.project.forsyningsarter[i].value,
+            });
         }
         return options;
     }
@@ -40,55 +52,90 @@ class ProjectComponent extends React.Component {
     };
 
     toDateTimeLocal(date) {
-      if (!date) return '';
-      const pad = n => String(n).padStart(2, '0');
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    }
-    handleForsyningsart_selectedChange = (value)  => {
-      this.props.onChange({ forsyningsart_selected: value });
+        if (!date) return '';
+        const pad = n => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+
+    handleForsyningsart_selectedChange = (value) => {
+        this.props.onChange({ forsyningsart_selected: value });
     };
 
     handleProjectStartChange = (date) => {
-      this.props.onChange({ projectStartDate: date });
+        this.props.onChange({ projectStartDate: date });
     };
 
     handleProjectEndChange = (date) => {
-      this.props.onChange({ projectEndDate: date });
+        this.props.onChange({ projectEndDate: date });
     };
 
     handleBreakTypeChange = (breakType) => {
         this.props.onChange({ brudtype: breakType });
-     }
+
+        //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
+        if (breakType === '1') {
+          this.clearDates();
+        }
+    }
+
+    clearDates = () => {
+        const now = new Date()
+        const projectStartDate = now;
+        const projectEndDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        this.props.onChange({ projectStartDate, projectEndDate });
+    }
+
+    onHandleDeleteProject = () => {
+        this.props.onChange({ projectEndDate: null });
+    }
+
     sanitizeInput = (value) => {
-      return value.replace(/[^a-zA-Z0-9æøåÆØÅ\s\-:]/g, '');
-    } 
+        return value.replace(/[^a-zA-Z0-9æøåÆØÅ\s\-:]/g, '');
+    }
     handleProjectSagsr = (e) => {
         const sagsnr = this.sanitizeInput(e.target.value);
         this.props.onChange({ projectName: sagsnr });
     };
     handleClearClick = () => {
-      this.props.onChange({ isReadOnly: false });
-      this.props.onChange({ projectName: '' });
-      this.props.onClearLukkeliste();
-   };
-   handlePointClick = () => {
-      // this.props.onChange({ isReadOnly: true });
-      this.props.onReadyPointLukkeliste();
-   }
+        this.props.onChange({ isReadOnly: false });
+        this.props.onChange({ projectName: '' });
+        this.clearDates()
+        this.props.onClearLukkeliste();
+    };
+    handlePointClick = () => {
+        this.props.onReadyPointLukkeliste();
+    }
+    handleSaveProject = () => {
+        this.props.onChange({ isReadOnly: false });
+        this.props.onChange({ projectName: '' });
+        this.props.onHandleSaveProject(this.props.project);
+    }
+ 
+
     render() {
-        const {  pipeSelected,  project  } = this.props;
-        const  isReadOnly = project.isReadOnly || pipeSelected;
+        const { pipeSelected, project} = this.props;
+        const { isAnalyzing } = this.state;
+        const isReadOnly = project.isReadOnly || pipeSelected;
+        const editProject = this.props.editProject;
         const isNotValid = project.isNotValid;
-        const clearDisable = !pipeSelected;
+        const showTrash = false; //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
+        let clearDisable = !pipeSelected;
+        if (editProject) clearDisable = false;
+        const toDate = project.projectEndDate ? this.toDateTimeLocal(project.projectEndDate) : '';
+        // const hideDate = toDate === '' ? true : false;
+        const now = new Date();
+        const minDateTime = now.toISOString().slice(0, 16);
+
+        const showNextStep = pipeSelected && !editProject;
         return (
             <>
                 <div className="row mx-auto gap-3 my-2">
                     <label className="col-4" >{this.__("Forsyningstype")}</label>
                     <select
-                        onChange={(e) => { handleForsyningsart_selectedChange( e.target.value) }}
+                        onChange={(e) => { this.handleForsyningsart_selectedChange(e.target.value) }}
                         value={project.forsyningsart_selected}
                         placeholder={this.__("Select utility-type")}
-                        disabled={isReadOnly}
+                        disabled={isReadOnly || editProject}
                         className="col-7"
                     >
                         {this.forsyningsart_options().map((option) => (
@@ -98,86 +145,127 @@ class ProjectComponent extends React.Component {
                         ))}
                     </select>
                 </div>
-                {project.useBreakType && (
-                    <>
-                        <div className="row mx-auto gap-3 my-2">
-                            <label className="col-4" >{this.__("Break-type")}</label>
-                            <select
-                                onChange={(e) => { this.handleBreakTypeChange( e.target.value) }}
-                                value={project.brudtype}
-                                placeholder={this.__("Break-type")}
-                                disabled={isReadOnly}
-                                className="col-7"
-                            >
-                                {project.breakTypeOptions().map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
 
-                        <div className="row mx-auto gap-3 my-2">
-                            <label className="col-4" >{this.__("Forventet-start")}</label>
-                            <input
-                                className="col-7"
-                                disabled={isReadOnly}
-                                onChange={ e => this.handleProjectStartChange(new Date(e.target.value))}
-                                placeholder={this.__("Forventet-start")}
-                                value={this.toDateTimeLocal(project.projectStartDate)}
-                                type="datetime-local"
-                            />
-                        </div>
 
-                        <div className="row mx-auto gap-3 my-2">
-                            <label className="col-4" >{this.__("Forventet-slut")}</label>
-                            <input
-                                className="col-7"
-                                disabled={isReadOnly}
-                                onChange={ e => this.handleProjectEndChange(new Date(e.target.value))}
-                                placeholder={this.__("Forventet-slut")}
-                                value={this.toDateTimeLocal(project.projectEndDate)}
-                                type="datetime-local"
-                            />
-                        </div>
-                    </>
-                )}
+                <div className="row mx-auto gap-3 my-2">
+                    <label className="col-4" >{this.__("Break-type")}</label>
+                    <select
+                        onChange={(e) => { this.handleBreakTypeChange(e.target.value) }}
+                        value={project.brudtype}
+                        placeholder={this.__("Break-type")}
+                        disabled={isReadOnly || editProject}
+                        className="col-7"
+                    >
+                        {project.breakTypeOptions().map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="row mx-auto gap-3 my-2">
+                    <label className="col-4" >{this.__("Forventet-start")}</label>
+                    <input
+                        className="col-7"
+                        disabled={isReadOnly}
+                        min={minDateTime}
+                        onChange={e => this.handleProjectStartChange(new Date(e.target.value))}
+                        placeholder={this.__("Forventet-start")}
+                        value={this.toDateTimeLocal(project.projectStartDate)}
+                        type="datetime-local"
+                    />
+                </div>
+
+                <div className="row mx-auto gap-2 my-2">
+                    <label className="col-3" >{this.__("Forventet-slut")}</label>
+                    {showTrash ? (
+                        <i
+                            className="col-1 bi bi-trash"
+                            onClick={this.onHandleDeleteProject}
+                            style={{ cursor: 'pointer' }}
+                            title="Nulstil dato"
+                        ></i>
+                    ) :
+                        (
+                            <label className="col-1"></label>
+                        )}
+                    <input
+                        className="col-7"
+                        disabled={isReadOnly}
+                        min={minDateTime}
+                        onChange={e => this.handleProjectEndChange(new Date(e.target.value))}
+                        placeholder={this.__("Forventet-slut")}
+                        value={toDate}
+                        type="datetime-local"
+                    />
+
+                </div>
+
+
+
                 <div className="row mx-auto gap-3 my-2">
                     <label className="col-4" >{this.__("admin info")}</label>
                     <input
-                     className="col-7"
-                     disabled={isReadOnly}
-                     onChange={this.handleProjectSagsr}
-                     placeholder={this.__("project description")}
-                     value={project.projectName}
-                     type="text"
+                        className="col-7"
+                        disabled={isReadOnly || editProject}
+                        onChange={this.handleProjectSagsr}
+                        placeholder={this.__("project description")}
+                        value={project.projectName}
+                        type="text"
                     />
                 </div>
+                {!pipeSelected && (
+                    <div className="row mx-auto gap-3 my-2">
+                        <span className="col" style={{ color: '#ee9b10' }}>
+                            {project.statusMessage}
+                        </span>
+                    </div>
+                )}
+                {showNextStep && (
+                    <div className="row mx-auto gap-3 my-2">
+                        <span className="col text-primary" >
+                            {this.__("project next step info")}
+                        </span>
+                    </div>
+                )}
+                {editProject && (
+                    <div className="row mx-auto gap-3 my-2">
+                        <span className="col text-primary" >
+                            {this.__("project edit info")}
+                        </span>
+                    </div>
+                )}
                 <div className="row mx-auto gap-2 my-3">
                     <button
-                      onClick={this.handlePointClick}
-                      className="btn btn-primary col-4"
-                      disabled={isNotValid} 
+                        onClick={this.handlePointClick}
+                        className="btn btn-primary col-4"
+                        title={this.__("Select point tooltip")}
+                        disabled={isNotValid || editProject || isAnalyzing}
                     >
-                      {this.__("Select point on map")}
+                        {this.__("Select point on map")}
                     </button>
-                   <div className="col-3"></div>
+                    {!editProject && (
+                        <div className="col-3" ></div>
+                    )}
+                    {editProject && (
+                        <button
+                            onClick={this.handleSaveProject}
+                            className="btn btn-primary col-3"
+                            disabled={isNotValid}
+                        >
+                            {this.__("Save")}
+                        </button>
+                    )}
                     <button
-                      onClick={this.handleClearClick}
-                      className="btn btn-primary col-4"
-                      disabled={clearDisable}
+                        onClick={this.handleClearClick}
+                        className="btn btn-primary col-4"
+                        title={this.__("Clear map tooltip")}
+                        disabled={clearDisable || isAnalyzing}
                     >
-                      {this.__("Clear map")}
+                        {this.__("Clear map")}
                     </button>
-                    <div className="col-1"></div>
                 </div>
-                {!pipeSelected && (
-                   <div className="row mx-auto gap-3 my-3">
-                     <span className="col-11 mx-2 badge bg-success" >
-                      {project.statusMessage}
-                      </span>
-                   </div>
-                )}
             </>
         )
     }
