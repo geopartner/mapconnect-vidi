@@ -2313,7 +2313,7 @@ module.exports = {
                 forsyningsarter: prev.project.forsyningsarter,
               }),
             }))
-           me.setState({ editProject: true, projectOpen: true });
+            me.setState({ editProject: true, projectOpen: true });
             
             me.createSnack(__("Project loaded for editing"));       
           })
@@ -2468,7 +2468,7 @@ module.exports = {
 
       
         if (s.authed && s.user_id) {
-          // Logged in
+    
           return (
             <div role="tabpanel">
               <div className="row mx-auto gap-0 my-3">
@@ -2496,7 +2496,7 @@ module.exports = {
               </div>
               <hr></hr>
               <div className="row mx-auto gap-0 my-3">
-                <details  open={projectOpen} className="col">
+                <details  open={projectOpen} onToggle={e => this.setState({ projectOpen: e.target.open })} className="col">
                   <summary>  
                     {breakHeader}
                     {
