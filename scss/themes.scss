@@ -2,9 +2,13 @@
 [data-bs-theme="light"] .btn-primary {
     color: var(--bs-white);
 }
-
 [data-bs-theme="dark"] .btn-primary {
     color: var(--bs-white);
+}
+
+/* adjust background color for tables while in dark mode */
+[data-bs-theme="dark"] .table-primary {
+    --bs-table-bg: rgb(120 149 146);
 }
 
 /* fix leaflet-par-part beeing offset slightly */

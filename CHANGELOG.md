@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
 ## [unreleased]
+- Lukkeplan extension adjustments.
+-- handling breakproject
+-- handling valves and recalculations
+-- handling connected addresses and BlueIdea integreation
 
 ### Fixed
 - Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.

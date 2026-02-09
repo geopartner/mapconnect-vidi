@@ -10,7 +10,8 @@ import proj4 from "proj4";
 import ProjectModel from "./ProjectModel.js";
 import ProjectComponent from "./ProjectComponent.js";
 import ProjectListComponent from "./ProjectListComponent.js";
-
+import VentilListComponent  from "./VentilListComponent.js";
+import {VentilModel, VentilProperties } from "./VentilModel.js";
 
 import {
   buffer as turfBuffer,
@@ -21,8 +22,8 @@ import {
   featureCollection as turfFeatureCollection,
   applyFilter,
 } from "@turf/turf";
-import _ from "underscore";
-import { retry } from "async";
+import _, { has } from "underscore";
+
 
 var React = require("react");
 
@@ -82,7 +83,6 @@ var config = require("../../../config/config.js");
  */
 var draw;
 var cloud;
-var state;
 
 var bufferItems = new L.FeatureGroup();
 var queryMatrs = new L.FeatureGroup();
@@ -297,6 +297,9 @@ module.exports = {
 
       // for each layer in drawnItems, get geojson
       let drawnItems = draw.getDrawItems();
+      // clear previous results 
+      _clearAll(); 
+      backboneEvents.get().trigger(`${exId}:clearAll`);// måske overkill. Denne er sikkert nok og _ clearAll kan undværes
 
       for (const layer of drawnItems.getLayers()) {
         if (layer._vidi_id === drawing) {
@@ -321,6 +324,10 @@ module.exports = {
         type: "FeatureCollection",
         features: [],
       };
+
+      // clear previous results 
+      _clearAll();
+      backboneEvents.get().trigger(`${exId}:clearAll`); // måske overkill. Denne er sikkert nok og _ clearAll kan undværes
       // for each layer in drawnItems, get geojson
       let drawnItems = draw.getDrawItems();
       drawnItems.eachLayer(function (layer) {
@@ -419,6 +426,7 @@ module.exports = {
      */
     class BlueIdea extends React.Component {
       static get Aktive_brud_layeName() {  return 'lukkeliste.aktive_brud'}
+      static get Forbrugere_layerName() {  return 'lukkeliste.vw_forbrugere'}
       
       constructor(props) {
         super(props)
@@ -427,7 +435,11 @@ module.exports = {
           active: false,
           authed: false,
           project: new ProjectModel(),
+          projectOpen: true,
+          editProject: false,
+          isAnalyzing: false,
           projects: [],
+          projectsIsRefreshing: false,
           done: false,
           loading: false,
           results_adresser: {},
@@ -447,7 +459,7 @@ module.exports = {
           edit_matr: false,
           user_alarmkabel: null,
           user_alarmkabel_distance: config.extensionConfig.blueidea.alarmkabel_distance || 100,
-          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || null,
+          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || null, 
           selected_profileid: '',
           lukkeliste_ready: false,
           TooManyFeatures: false,
@@ -455,8 +467,6 @@ module.exports = {
           alarm_skab_selected: '',
           alarm_skabe: null,
           results_alarmskabe: [],
-          // forsyningsarter: [],
-          //forsyningsart_selected: 0, // todo
           layersOnStart: [],
           retryIsDisabled: true,
           selectedVentiler: [],
@@ -468,7 +478,23 @@ module.exports = {
         this.boundHandleEditClick = this.handleEditClick.bind(this);
         this.boundHandleAlarmkabelClick = this.handleAlarmkabelClick.bind(this);
         this.boundHandleAlarmskabClick = this.handleAlarmskabClick.bind(this);
+        this.buildStyleObject(); 
       }
+
+      buildStyleObject() {
+        if (config.extensionConfig.blueidea.afbrudt_ledning_farve) {
+          styleObject.selectedLedning.color = config.extensionConfig.blueidea.afbrudt_ledning_farve;
+        }
+        if (config.extensionConfig.blueidea.indirekte_ledning_farve) {  
+          styleObject.selectedIndirekteLedning.color = config.extensionConfig.blueidea.indirekte_ledning_farve; 
+        }
+        if (config.extensionConfig.blueidea.ventil_forbundet_farve) {     
+          styleObject.ventil_forbundet.fillColor = config.extensionConfig.blueidea.ventil_forbundet_farve;  
+        } 
+        if (config.extensionConfig.blueidea.ventil_ikke_forbundet_farve) {  
+          styleObject.ventil.fillColor = config.extensionConfig.blueidea.ventil_ikke_forbundet_farve;
+        }     
+       }
 
       /**
        * Handle activation on mount
@@ -477,7 +503,7 @@ module.exports = {
         let me = this;
         me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
         // Stop listening to any events, deactivate controls, but
-        // keep effects of the module until they are deleted manually or reset:all is emitted
+        // keep effects of the module until they are deleted manually or reset:all is
         backboneEvents.get().on("deactivate:all", () => {});
 
         // Activates module
@@ -490,14 +516,14 @@ module.exports = {
 
           // if logged in, get user
           if (me.state.authed) {
-
+            
             // turn on layersOnStart
             if (me.state.layersOnStart.length > 0) {
               me.state.layersOnStart.forEach((layer) => {
                 api.turnOn(layer);
               });
             }
-            this.listProjects();
+            this.listProjects(false);
             return this.getUser();
           } else {
             me.setState(resetObj);
@@ -514,10 +540,25 @@ module.exports = {
             me.setState({project: me.state.project.withChanges({isReadOnly: true})});
         });
 
-        backboneEvents.get().on(`${exId}:listProject`, () => {
-            me.listProjects();
+        backboneEvents.get().on(`${exId}:setAnalyzingOff`, () => {
+            me.setState({isAnalyzing: false})
+            me.forceUpdate();
         });
 
+        backboneEvents.get().on(`${exId}:setAnalyzingOn`, () => {
+            me.setState({isAnalyzing: true})
+            me.forceUpdate();
+        });
+
+
+        backboneEvents.get().on(`${exId}:listProject`, () => {
+            me.listProjects(true);
+        });
+
+        backboneEvents.get().on(`${exId}:clearAll`, () => {
+            me.clearLukkeliste();
+            me.clearProjectState();  
+        });
 
         // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
@@ -567,6 +608,7 @@ module.exports = {
             .then(() => {
               // if logged in, get user
               if (me.state.authed) {
+                
                 return this.getUser();
               } else {
                 me.setState(resetObj);
@@ -581,6 +623,7 @@ module.exports = {
               if (me.state.authed && me.state.user_id) {
                 // If user has blueidea, show buttons
                 if (me.state.user_blueidea == true) {
+                  me.listProjects(true);
                   $("#_draw_blueidea_group").show();
                 } else {
                   $("#_draw_blueidea_group").hide();
@@ -732,7 +775,6 @@ module.exports = {
           results_matrikler: [],
           edit_matr: false,
           TooManyFeatures: false,
-          selectedVentiler: [],
           beregnuuid: null,
           clickedTableVentil: ''
         });
@@ -741,6 +783,7 @@ module.exports = {
         body.forsynings_id = me.state.project.forsyningsart_selected; // We use the order fra config to define the numbering
         body.ignore_ventiler = ignoreList;
         body.gyldig_fra = me.state.project.projectStartDate;
+        body.beregnaarsag = me.state.project.brudtype;
         body.gyldig_til = me.state.project.projectEndDate;
         body.sagstekst = me.state.project?.projectName.trim() ?? '';
         try {
@@ -809,21 +852,28 @@ module.exports = {
         });
       }
 
-      listProjects = () => {
-        let me = this;
-        me.getActiveAndFutureBreakage()
-         .then((data) => {
-              me.setState({
-                  projects: data.features
-                });
-            return
-          })
-          .catch((error) => {
-            me.createSnack(__("Error in list") + ": " + error);
-            console.warn(error);
-            return
-          });
+      refreshProjectLayer() {
+        api.turnOff (BlueIdea.Aktive_brud_layeName);
+        console.log("Refreshing project layer off");
+        setTimeout(function () {
+          api.turnOn(BlueIdea.Aktive_brud_layeName);
+          console.log("Refreshing project layer on" );
+        }, 500);
       }
+
+      listProjects = async (refresh = false) => {
+        try {
+          const data = await this.getActiveAndFutureBreakage();
+          this.setState({projects: data.features});
+          if (refresh) {
+            this.refreshProjectLayer();
+          }
+        } catch (error) {
+          this.createSnack(__("Error in list") + ": " + error);
+          console.warn(error);
+        }
+      };
+ 
       /**
        * This function gets active and future breakage
        * @returns geojson with breakages
@@ -1085,20 +1135,37 @@ module.exports = {
       /**
        * Styles and adds ventiler to the map
        */
-      addVentilerToMap(geojson) {
+      addVentilerToMap(geojson, nameKey) {
         try {
           var l = L.geoJSON(geojson, {
-            pointToLayer: function (feature, latlng) {
-              // //console.debug(feature.properties, latlng);
-              // if the feature has a forbundet property, use a different icon
-              if (feature.properties.forbundet) {
-                // //console.debug(feature.properties, latlng);
-                return L.circleMarker(latlng, {...styleObject.ventil_forbundet, interactive: false});
-              }
-              // else, use the default icon
-              return L.circleMarker(latlng, {...styleObject.ventil, interactive: false});
-            },
-          }).addTo(queryVentils);
+          pointToLayer: function (feature, latlng) {
+
+          const style = feature.properties.forbundet
+          ? styleObject.ventil_forbundet
+          : styleObject.ventil;
+
+          return L.circleMarker(latlng, {
+            ...style,
+            interactive: true
+            });
+          },
+
+          onEachFeature: function (feature, layer) {
+            layer.bindTooltip(
+            `
+            <b>Ventil</b><br>
+             ${feature.properties[nameKey]  || '—'}<br>
+             Forbundet: ${feature.properties.forbundet ? 'Ja' : 'Nej'}
+            `,
+            {
+              sticky: true,
+              direction: 'top',
+              opacity: 0.9
+            }
+            );
+          }
+        }).addTo(queryVentils);
+
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1109,7 +1176,21 @@ module.exports = {
        */
       addSelectedLedningerToMap(geojson) {
         try {
-          var l = L.geoJSON(geojson, {...styleObject.selectedLedning, interactive: false}).addTo(seletedLedninger);
+         
+          var l = L.geoJSON(geojson, 
+            {
+              ...styleObject.selectedLedning, 
+              interactive: true,
+              onEachFeature: function (feature, layer) {
+                layer.bindTooltip(
+                config.extensionConfig.blueidea.afbrudt_ledning_tooltip || 'Afbrudt ledning ' ,
+                {
+                  sticky: true,
+                  direction: 'top'
+                }
+              );
+            }
+            }).addTo(seletedLedninger);
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1117,7 +1198,20 @@ module.exports = {
 
       addSelectedIndirekteLedningerToMap(geojson) {
         try {
-          var l = L.geoJSON(geojson, {...styleObject.selectedIndirekteLedning, interactive: false}).addTo(selectedIndirekteLedninger);
+          var l = L.geoJSON(geojson,
+            {
+              ...styleObject.selectedIndirekteLedning, 
+              interactive: true,
+              onEachFeature: function (feature, layer) {
+                layer.bindTooltip(
+                config.extensionConfig.blueidea.indirekte_ledning_tooltip || 'Indirekte berørt ledning ',
+                {
+                  sticky: true,
+                  direction: 'top'
+                }
+              );
+            }
+          }).addTo(selectedIndirekteLedninger);
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1131,7 +1225,15 @@ module.exports = {
           var myIcon = new L.DivIcon(styleObject.selectedPoint);
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
-              return new L.Marker(latlng, { icon: myIcon, interactive: false });
+              return new L.Marker(
+                latlng, { 
+                  icon: myIcon, 
+                  interactive: true,
+                  
+                  onEachFeature: function (feature, layer) {
+                    layer.bindTooltip('Brudpunket', { sticky: true,direction: 'top' })
+                  }
+                });
             },
           }).addTo(selectedPoint);
         } catch (error) {
@@ -1144,7 +1246,10 @@ module.exports = {
           var myIcon = new L.DivIcon(styleObject.selectedForbrugspunkt);
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
-              return new L.Marker(latlng, { icon: myIcon, interactive: false });
+              return new L.Marker(latlng, 
+                { icon: myIcon, 
+                  interactive: true 
+                });
 
             },
           }).addTo(selectedForbrugspunkter);
@@ -1208,6 +1313,35 @@ module.exports = {
         }
       }
 
+      clearProjectState = () => {
+        const me = this;  
+        const newProject  = new ProjectModel();
+        me.setState(prev => ({
+          project: newProject.withChanges({
+            forsyningsarter: prev.project.forsyningsarter,
+            projectName: '',
+            isReadOnly: false
+          }),
+          
+        }))
+        me.setState({ 
+          editProject: false, 
+        });
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
+      }
+      
+      postSaveProject = () => {
+        const me = this;
+        backboneEvents.get().trigger(`${exId}:listProject`);
+        me.listProjects(true);
+        me.clearProjectState();  
+        me.clearLukkeliste(); // ?  
+        me.refreshProjectLayer();
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
+      };
+
+      
+
       /**
        * This function builds relevant data for the blueidea API
        * @returns SmsGroupId for redirecting to the correct page
@@ -1242,15 +1376,44 @@ module.exports = {
               "_blank");
             }
             // success snackbar
-            this.createSnack("Beskeden er oprettet korrekt.");
+            this.createSnack( __("Project created successfully"));
             // list projects again to show the new one
-            this.listProjects();
+            this.listProjects(true);
+
+            this.postSaveProject();
           })
           .fail((error) => {
             console.error(error);
+            backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
             this.createSnack("Der opstod en fejl ved afsendelse til BlueIdea.");
         });
       };
+
+      handleSaveProject= () => {
+        const me = this;
+         const body = {beregnuuid: this.state.beregnuuid}
+
+        $.ajax({
+          url: `/api/extension/blueidea/${me.state.user_id}/saveproject`,
+          type: "POST",
+          data: JSON.stringify(body),
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then(() => {
+            backboneEvents.get().trigger(`${exId}:listProject`);
+            this.listProjects(true);
+             
+            this.postSaveProject();
+            
+            me.createSnack(__("Project saved successfully"));
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error saving project") + ": " + error.message);
+          });
+      };
+
 
       /**
        * This function turns on a layer, if it is not already on the map, and refreshes the map if there is a filter set.
@@ -1273,6 +1436,7 @@ module.exports = {
       clearLukkeliste = () => {
         let me = this;
         me.setState({
+          editProject: false,
           results_adresser: {},
           results_log: {},
           results_matrikler: [],
@@ -1280,15 +1444,27 @@ module.exports = {
           results_ledninger: [],
           results_adresser: [],
           edit_matr: false,
+          editProject: false,
           TooManyFeatures: false,
           selectedVentiler: [],
           beregnuuid: null,
           clickedTableVentil: '',
-          retryIsDisabled: true
+          retryIsDisabled: true,
         });
         _clearAll();
+        api.turnOff(BlueIdea.Forbrugere_layerName);
+        try {
+           api.filter(BlueIdea.Forbrugere_layerName, {
+                                "match": "any",
+                                "columns": []
+                            });
+        } catch (error) {
+          console.warn("Could not clear filter on forbrugere layer", error);
+        }
+        this.refreshProjectLayer();
       };
 
+     
       readyPointLukkeliste = () => {
         let me = this;
         blocked = false;
@@ -1319,6 +1495,9 @@ module.exports = {
         if (blocked) {
           return;
         }
+        
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOn`);
+
 
         me.createSnack(__("Starting analysis"), true)
 
@@ -1335,6 +1514,7 @@ module.exports = {
         catch (error) {
           me.createSnack(__("Error in search") + ": " + error.message);
           console.warn(error);
+          backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
           return
         }
 
@@ -1348,13 +1528,16 @@ module.exports = {
        */
       runWithoutSelected = async function () {
         let me = this;
-      
-        me.setState({retryIsDisabled: true})
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOn`);
+        me.setState({
+          retryIsDisabled: true
+        })
         me.createSnack(__("Starting analysis"), true)
 
+        me.clearLukkeliste();
         // Because we already know stuff, send it again.
         // send the point to the server
-
+        
         let point = {
           lat: me.state.results_log[0].geometry.coordinates[1],
           lng: me.state.results_log[0].geometry.coordinates[0]
@@ -1393,14 +1576,16 @@ module.exports = {
         let me = this;
 
         if (data.log.features[0].properties.status == 1) {
+          me.clearLukkeliste();
+          backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
           me.createSnack(__("No utility lines found"));
         } else {
         // Here we handle data from the query-endpoint
         this.setState({
-          selectedVentiler: [],
+          // selectedVentiler: [],
           retryIsDisabled: true
         });
-        
+        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
         if (data.ledninger) {
           //console.debug("Got ledninger:", data.ledninger);
           me.addSelectedLedningerToMap(data.ledninger);
@@ -1423,22 +1608,40 @@ module.exports = {
             beregnuuid: data.log.features[0].properties.beregnuuid,
           });
         }
+        
         // add forbrugere
         if (data.forbrugere) {
           //console.debug("Got forbrugere:", data.forbrugere);
-          me.addSelectedForbrugspunkterToMap(data.forbrugere);
-          me.setState({
-            results_forbrugere: data.forbrugere.features,
-          });
+          try {
+            api.turnOn(BlueIdea.Forbrugere_layerName);
+            // add filter
+            api.filter(BlueIdea.Forbrugere_layerName, {
+              "match": "any",
+              "columns": [{
+                "fieldname": "beregnuuid",
+                "expression": "=",
+                "value": data.log.features[0].properties.beregnuuid,
+                "restriction": false
+              }]
+            });
+          } catch (error) {
+            console.warn("Could not turn on forbrugere layer or apply filter", error);
+          }
+
+          // me.addSelectedForbrugspunkterToMap(data.forbrugere);
+          // me.setState({
+          //   results_forbrugere: data.forbrugere.features,
+          // });
         }
 
         if (data.ventiler) {
           //console.debug("Got ventiler:", data.ventiler);
-          me.addVentilerToMap(data.ventiler);
+          me.addVentilerToMap(data.ventiler, me.state.user_ventil_layer_name_key);
           me.setState({
             results_ventiler: data.ventiler.features,
           });
           const key = this.state.user_ventil_layer_key;
+          
           const selected = this.state.results_ventiler.filter(item => item.properties?.checked).map(item => item.properties[key]).filter(Boolean)
           this.setState({ selectedVentiler : selected })
         }
@@ -1988,8 +2191,6 @@ module.exports = {
       downloadVentiler = () => {
         let me = this;
 
-        //console.log(me.state.results_ventiler, me.state.user_ventil_export);
-
         // Use keys as headers
         let csvRows = [];
         csvRows.push(Object.keys(me.state.user_ventil_export));
@@ -2063,17 +2264,15 @@ module.exports = {
       }
 
 
-      handleVentilCheckbox = (e) => {
-        const { checked, value } = e.target;
-///        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
+      handleVentilCheckbox = (e, ventil) => {
+        const { checked } = e.target;
         this.setState({ retryIsDisabled: false   });
         this.setState(prev => {
           const selected = new Set((prev.selectedVentiler || []).map(String));
           if (checked) {
-            selected.add(String(value));
-
+            selected.add(String(ventil.value));
           } else {
-            selected.delete(String(value));
+            selected.delete(String(ventil.value));
           }
           return { selectedVentiler: Array.from(selected) };
         });
@@ -2089,132 +2288,227 @@ module.exports = {
         const bounds = L.latLngBounds(
           [lat - padding, lng - padding],
           [lat + padding, lng + padding]
-        );
+        ); 
         cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true  });
       };
 
-      handleZoom (x, y, ventil_key) {
-        this.zoomToXY(x, y);
-        this.setState({ clickedTableVentil : ventil_key})
+      handleEditProject = (beregnuuid) => {
+        const me = this;
+        me.clearLukkeliste();
+        $.ajax({
+          url: `/api/extension/blueidea/${me.state.user_id}/getproject/${beregnuuid}`,
+          type: "GET",
+          contentType: "application/json",
+          dataType: "json",
+        })
+          .then((data) => {
+            if (!data || data.features.length == 0) {
+              me.createSnack(__("Project not found"));
+              return;
+            }
+            const feature = data.features[0]; 
+            const editProject = ProjectModel.fromFeature(feature);
+            me.setState(prev => ({
+              project: editProject.withChanges({
+                forsyningsarter: prev.project.forsyningsarter,
+              }),
+            }))
+            me.setState({ editProject: true, projectOpen: true });
+            
+            me.createSnack(__("Project loaded for editing"));       
+          })
+          .catch((error) => {
+            console.error(error);
+            me.createSnack(__("Error loading project") + ": " + error.message);
+          });
       };
       
-      handleZoomProject  = (x, y) => {
-        this.zoomToXY(x, y);
-      };
-
-      handleStopProject = (beregnuuid) => {
-        if (!window.confirm(__("Confirm stop project")))  {
-         return 
-        }
-        try{
+      handleSaveProjectDates= (project) => {
         const me = this;
-        const body = {
-          beregnuuid
-        }
-        alert(beregnuuid);
+        
         $.ajax({
-          url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
+          url: `/api/extension/blueidea/${me.state.user_id}/saveprojectdates`,
           type: "POST",
-          data: JSON.stringify(body),
+          data: JSON.stringify(project),
           contentType: "application/json",
           dataType: "json",
         })
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
-            me.createSnack(__("Project stopped successfully"));
-            // Clear current project ? 
-            // me.setState({ project: Project.empty() });
+            me.setState({ editProject: false });
+            me.createSnack(__("Project saved successfully"));
           })
           .catch((error) => {
             console.error(error);
-            me.createSnack(__("Error stopping project") + ": " + error.message);
+            me.createSnack(__("Error saving project") + ": " + error.message);
           });
-        } catch (error) {
-          console.error(error);
-          this.createSnack(__("Error stopping project") + ": " + error.message);
-        } 
-      
       };
 
-       updateProject = (changes) => {
+      handleZoom (ventil) {
+        const me = this;
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+        me.zoomToXY(ventil.xkoordinat, ventil.ykoordinat);
+        me.setState({ clickedTableVentil : ventil.label})
+      };
+      
+      handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
+        const me = this;
+       
+        const newProject  = new ProjectModel();
+        me.setState(prev => ({
+          project: newProject.withChanges({
+            forsyningsarter: prev.project.forsyningsarter,
+            projectName: '',
+            isReadOnly: false
+          }),
+          
+        }))
+        me.setState({ editProject: false });
+
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+        const bounds = [[ymin, xmin],[ymax, xmax]];
+        cloud.get().map.fitBounds(bounds);
+      };
+
+      handleStopProjectAfterZoom = (properties) => {
+        setTimeout(() => {
+            const confirmTxt =`${__("Confirm stop project")}\n${properties.sagstekst}`;
+            if (!window.confirm(confirmTxt)) {
+            return;
+          }
+          const body = {beregnuuid: properties.beregnuuid};
+
+          $.ajax({
+            url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
+            type: "POST",
+            data: JSON.stringify(body),
+            contentType: "application/json",
+            dataType: "json",
+          })
+          .then(() => {
+            backboneEvents.get().trigger(`${exId}:listProject`);
+            this.createSnack(__("Project stopped successfully"));
+          })
+          .catch((error) => {
+            console.error(error);
+            this.createSnack(`${__("Error stopping project")}: ${error.message}`);
+          });
+        }, 0);
+      };
+
+      handleStopProject = (properties) => {
+        const me = this;
+        cloud.get().map.once("moveend", () => {
+           this.handleStopProjectAfterZoom(properties);
+        });
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+        const bounds = [[properties.ymin, properties.xmin],[properties.ymax, properties.xmax]]; 
+        cloud.get().map.fitBounds(bounds);
+      };
+
+      handleProjectRefreshClick = async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (this.state.projectsIsRefreshing) return; 
+        this.setState({ projectsIsRefreshing: true });
+
+        try {
+          await this.listProjects(true);
+        } finally {
+          this.setState({ projectsIsRefreshing: false });
+       }
+      };
+
+      updateProject = (changes) => {
         this.setState(prev => ({
             project: prev.project.withChanges(changes),
         }));
       };
+      
+      getVentilProperties (forsyningsart)  {
+        // her kan man komme med tilpassede ventil egenskaber - så varme nemmere kan implementeres
+        try {
+          const ventilProperties =new VentilProperties({ 
+            key: this.state?.user_ventil_layer_key ?? '',
+            name_key: this.state?.user_ventil_layer_name_key ?? '',
+            xkoordinat_key: 'xkoord',
+            ykoordinat_key: 'ykoord',
+            type_key: 'type',
+            funktion_key: 'funktion',
+            forbundet_key: 'forbundet'
+          })
+          return ventilProperties;
+        }
+        catch (error) {
+          console.error("Error getting ventil properties:", error);
 
-
+          return new VentilProperties();
+        }
+      }
+       
       /**
        * Renders component
        */
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, selectedVentiler, results_ledninger, retryIsDisabled } = this.state
+        const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled,projectOpen } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
+        const ventilProperties = this.getVentilProperties('vand');
+        const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
+        const openResult =  Object.keys(s.results_adresser).length > 0 && !isAnalyzing ;  
+        const hasBlueIdeaProfile = s.user_blueidea && s.user_profileid && Object.keys(s.user_profileid).length > 0;
         
-        let ventilOptions = (s.results_ventiler || [])
-          .filter((feature) => feature && feature.properties && feature.properties['forbundet'] !== false   )
-          .map((feature) => {
-            const selectedVentilerAsStrings = selectedVentiler.map(String);
-            const name_key = s.user_ventil_layer_name_key;
-            const key = s.user_ventil_layer_key;
-            if (!feature.properties || feature.properties[key] == null) return null;
-            return {
-              value: String(feature.properties[key]),
-              label: String(feature.properties[name_key]),
-              type: String(feature.properties['type']),
-              funktion: String(feature.properties['funktion']),
-              xkoord: String(feature.properties['xkoord']),
-              ykoord: String(feature.properties['ykoord']),
-              checked: Boolean(selectedVentilerAsStrings.includes(feature.properties[key].toString()))
-            };
-          })
-          .filter(Boolean);
-          // guard mod dubletter
-          if (ventilOptions.length > 1) {
-            ventilOptions = [...new Map(ventilOptions.map(feature => [feature.value, feature])).values()];
-          }
-       
+        const ventilList =   Array.isArray(this.state.results_ventiler)
+         ? VentilModel.fromFeaturesFactory(
+          this.state.results_ventiler, 
+          ventilProperties,  
+           this.state.selectedVentiler || []) 
+         : []; 
+        const ventilCount = ventilList.length;
+
+      
         if (s.authed && s.user_id) {
-          // Logged in
+    
           return (
             <div role="tabpanel">
-              {/* <div className="row mx-auto gap-0 my-3">
-               <details className="col-11">
-                <summary>Aktive brud</summary>
-                <ProjectListComponent
-                  projects={this.state.projects}
-                  onHandleZoomProject={this.handleZoomProject}
-                  onHandleStopProject={this.handleStopProject}
-                ></ProjectListComponent>
-                </details>
-              </div> */}
               <div className="row mx-auto gap-0 my-3">
                 <details className="col">
-                  <summary>Aktive brud</summary>
+                  <summary>
+                    {__("project list")} ({this.state.projects.length})
+                    <i
+                      className={
+                        this.state.projectsIsRefreshing
+                        ? "bi bi-arrow-repeat spin ms-4 position-relative"
+                         : "bi bi-arrow-clockwise ms-4 position-relative"
+                      }
+                      onClick={this.handleProjectRefreshClick}
+                      title={__("Refresh active breaks")}
+                    />
+                  </summary>
                   <ProjectListComponent
                     className="col"
                     projects={this.state.projects}
+                    onHandleEditProject={this.handleEditProject}
                     onHandleZoomProject={this.handleZoomProject}
                     onHandleStopProject={this.handleStopProject}>
                   </ProjectListComponent>
                 </details>
               </div>
               <hr></hr>
-              <div>
-                <div style={{ alignSelf: "center" }}>
-                  <h6>
-                    {__("Select area")}
-                    {
-                    s.lukkeliste_ready && this.allowLukkeliste() &&
-                      <span className="mx-2 badge bg-success">{__("Lukkeliste is ready")}</span>
-                    }
+              <div className="row mx-auto gap-0 my-3">
+                <details  open={projectOpen} onToggle={e => this.setState({ projectOpen: e.target.open })} className="col">
+                  <summary>  
+                    {breakHeader}
                     {
                     !s.lukkeliste_ready && this.allowLukkeliste() &&
                       <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
                     }
-                  </h6>
+                  </summary>
+                
+                  <div style={{ alignSelf: "center" }}>
+                 
                   {false && (
                    <div className="d-grid mx-auto gap-2">
                     <button
@@ -2227,118 +2521,43 @@ module.exports = {
                   </div>)}
                   
                   <ProjectComponent
+                    backboneEvents={backboneEvents}
                     project={this.state.project}
+                    editProject={this.state.editProject}
                     onChange={this.updateProject}
                     pipeSelected= {pipeSelected}
+                    onHandleSaveProject={this.handleSaveProjectDates}
                     onReadyPointLukkeliste={this.readyPointLukkeliste}
                     onClearLukkeliste={this.clearLukkeliste}
                   ></ProjectComponent>
-
+                  </div>
+                </details>             
+              </div>
+              { ventilCount > 0 && !isAnalyzing  &&  (
+                <div className="row mx-auto gap-0 my-3">
                   <hr style={{marginRight: "1.5em"}}></hr>
-
-                  {/* Checkbox list for ventiler */}
-                  {ventilOptions.length > 0 && (
-                    <>
-                      <div className="row mx-auto gap-0 my-3">
-                        <h6 className="col-9">{__("Valves")}</h6>
-                        <div className="col-2" style={{ cursor: 'pointer' }}>
-                          <i className="bi bi-download float-end" 
-                           onClick={() => this.downloadVentiler()}
-                           title= {__("Download valves")}>
-                          </i>
-                        </div>
-                      </div>  
-                      <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
-                          <table className="table table-sm mb-0 col-11">
-                          <thead style={{fontWeight: 'bold', position: 'sticky',top: 0}}>
-                            <tr>
-                              <th style={{ width: '10px' }}>
-                              </th>
-                              <th><p style={{fontWeight:500}}>Navn</p></th>
-                              <th><p style={{fontWeight:500}}>Type</p></th>
-                              <th><p style={{fontWeight:500}}>Funktion</p></ th>
-                              <th></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {ventilOptions.map((option) => {
-                               const bg =  clickedTableVentil === option.label? 'table-primary': 'table-light';
-                               return (<tr key={option.value} className={bg}>
-                                {/* 1 Checkbox */}
-                                <td>
-                                  <input
-                                   checked={option.checked }
-                                   className="form-check-input"
-                                   id={`ventil-checkbox-${option.value}`}
-                                   onChange={this.handleVentilCheckbox}
-                                   style={{ cursor: 'pointer' }}
-                                   title="Vælg for at ignorere ved ny kørsel"
-                                   type="checkbox"
-                                   value={option.value}
-                                  />
-                                </td>
-                                {/* 2 Label */}
-                                <td>
-                                  <label
-                                   className="form-check-label"
-                                   htmlFor={`ventil-checkbox-${option.value}`}
-                                   style={{ cursor: 'pointer' }}
-                                   >
-                                    {option.label}
-                                  </label>
-                                </td>
-                                {/* 3 Type */}
-                                <td>
-                                  <label>
-                                    {option.type}
-                                  </label>
-                                </td>
-                                {/* 4 Funtion */}
-                                <td>
-                                  <label>
-                                    {option.funktion}
-                                  </label>
-                                </td>
-
-                                {/* 5 Zoom icon */}
-                                <td style={{ textAlign: 'center' }}>
-                                  <i
-                                  className="bi bi-zoom-in"
-                                  onClick={() => this.handleZoom(option.xkoord, option.ykoord, option.label)}
-                                  style={{ cursor: 'pointer' }}
-                                  title="Zoom til ventil"
-                                  >
-                                  </i>
-                                </td>
-                              </tr>
-                            )})}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="form-text">{__("Select one or more valves.")}</div>
-                      <div className="row mx-auto gap-0 my-3">
-                        <button
-                          className="btn btn-primary col"
-                          disabled ={retryIsDisabled}
-                          onClick={() => this.runWithoutSelected()}
-                        >
-                        {__("Retry with unaccessible valves")}
-                        </button>
-                      </div>
-
-                      <hr></hr>
-                    </>
-                  )}
-                
+                  <VentilListComponent 
+                    ventilList={ventilList}
+                    onDownloadVentiler={this.downloadVentiler.bind(this)}
+                    onVentilZoom={this.handleZoom.bind(this)}
+                    onHandleVentilCheckbox={this.handleVentilCheckbox.bind(this)}
+                    onRunWithoutSelected={this.runWithoutSelected.bind(this)}
+                    retryIsDisabled={retryIsDisabled}
+                    clickedTableVentil  = {clickedTableVentil}
+                    >
+                  </VentilListComponent>
                 </div>
-                {
-                  s.user_profileid && this.profileidOptions().length > 1 &&
-                    <div className="row">
-                      <label class="col-4">SMS Profil</label>
+              )}
+              <hr style={{marginRight: "1.5em"}}></hr>
+
+              <div className="row mx-auto gap-0 my-3">
+                <details open={openResult} className="col">
+                  <summary>Resultat</summary>
+                  { hasBlueIdeaProfile &&
+                    <div className="row mx-auto gap-3 my-2">
+                      <label className="col-4">SMS Profil</label>
                       <select
                        className="col-7"
-                       style={{ marginRight: '18px', marginLeft: '14px' }}
                        onChange={this.setSelectedProfileid}
                        value={s.selected_profileid}
                        placeholder={__("Select profile")}
@@ -2350,127 +2569,143 @@ module.exports = {
                           </option>
                         ))}
                           </select>
-                        </div>
-                      }
-                      <div className="row mx-auto gap-3 my-1">
-                        <button
-                          onClick={() => this.sendToBlueIdea()}
-                          className="col btn btn-primary"
-                          disabled={!this.readyToBlueIdea()}
-                          style={{ marginRight: '8px' }}
-                        >
-                          {__("Go to blueidea")}
-                        </button>
-                      </div>
-                     <div className="row mx-auto gap-3 my-1">
-                       <div className="col">
-                         <h6>{__("Show results")}</h6>
-                         <div className="d-flex align-items-center justify-content-between">
-                         {s.TooManyFeatures ? <span>Hent først adresser</span> : <span>Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.</span>}
-                          <div className="col-2" style={{ cursor: 'pointer' }}>
-                            <i className="bi bi-download" 
-                              onClick={() => this.downloadAdresser()}
-                              title= {__("Download addresses")}
-                              hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
-                            </i>
-                          </div>
-                        <button
-                         disabled={Object.keys(s.results_adresser).length == 0}
-                         title={__("modify parcels")}
-                         className="btn btn-primary"
-                         onClick={() => this.toggleEdit()}>
-                          {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
-                        </button>
-                      </div>
                     </div>
+                  }
+                  <div className="row mx-auto gap-3 my-2">
+                    <button
+                      onClick={() => this.handleSaveProject()}
+                      className="col-5 btn btn-primary"
+                      disabled={!pipeSelected}
+                    >
+                      {__("Save")}
+                    </button>
+                    {hasBlueIdeaProfile  ? (
+                      <button
+                        onClick={() => this.sendToBlueIdea()}
+                        className="col-6 btn btn-primary"
+                        disabled={!this.readyToBlueIdea() }
+                      >
+                        {__("Go to blueidea")}
+                      </button>
+                    ) : (<div className="col-6" >
+                      </div>
+                    )}
                   </div>
 
-                <div className="row mx-auto gap-3 my-3">
-                
-                  <button
-                    onClick={() => this.getAdresser(s.results_matrikler)}
-                    className="col btn btn-primary"
-                    hidden={!s.TooManyFeatures}
-                    style={{ marginRight: '8px' }}
-                  >
-                    {__("Get addresses")}
-                  </button>
-                </div>
+                  <div className="row mx-auto gap-2 my-2">
+                    <div className="col-9">
+                        {s.TooManyFeatures ? 
+                        <span style={{ position: 'relative', top: '8px' }} >
+                          Hent først adresser
+                        </span>
+                        : 
+                        <span style={{ position: 'relative', top: '8px' }}>
+                          Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.
+                        </span>}
+                      </div>  
+                      <div className="col-1" style={{ cursor: 'pointer', position: 'relative', top: '8px' }}>
+                        <i className="bi bi-download" 
+                          onClick={() => this.downloadAdresser()}
+                          title= {__("Download addresses")}
+                          hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
+                        </i>
+                      </div>
+                       <button
+                        disabled={Object.keys(s.results_adresser).length == 0}
+                        title={__("modify parcels")}
+                        className="btn btn-primary col-1"
+                        onClick={() => this.toggleEdit()}>
+                        {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
+                      </button>
+                    
+                  </div>
+
+                  <div className="row mx-auto gap-3 my-3">
+                    <button
+                      onClick={() => this.getAdresser(s.results_matrikler)}
+                      className="col btn btn-primary"
+                      hidden={!s.TooManyFeatures}
+                      style={{ marginRight: '8px' }}
+                    >
+                      {__("Get addresses")}
+                    </button>
+                  </div>
+          
+                </details>
               </div>
 
-                <div
-                  style={{ alignSelf: "center" }}
-                  hidden={!s.user_alarmkabel}
+              
+              <div
+                style={{ alignSelf: "center" }}
+                hidden={!s.user_alarmkabel}
+              >
+                <h6>{__("Alarm cable")}</h6>
+                <select
+                  className="form-select"
+                  value={s.alarm_direction_selected}
+                  onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
                 >
-                  <h6>{__("Alarm cable")}</h6>
-
-                  <select
-                      className="form-select"
-                      value={s.alarm_direction_selected}
-                      onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
-                    >
-                      <option value="FT">{__('From-To')}</option>
-                      <option value="TF">{__('To-From')}</option>
-                      <option value="Both">{__('Both')}</option>
-                    </select>
-                    <div className="form-text mb-3">Angiv søgeretning</div>
-
-                  <div className="vertical-center col-auto">
-                    {__("Distance from point")}
-                  </div>
-
-                  <div className="input-group">
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={s.user_alarmkabel_distance}
-                      onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
-                      min={0}
-                      max={2000}
-                      style={{ width: "35%" }}
-                    />
-                    <button
-                      onClick={() => this.selectPointAlarmkabel()}
-                      className="btn btn-primary col-auto"
-                      disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
-                    >
-                      {__("Select point for alarmkabel")}
-                    </button>
-                  </div>
-                  <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
+                  <option value="FT">{__('From-To')}</option>
+                  <option value="TF">{__('To-From')}</option>
+                  <option value="Both">{__('Both')}</option>
+                </select>
+                <div className="form-text mb-3">Angiv søgeretning</div>
+                <div className="vertical-center col-auto">
+                  {__("Distance from point")}
                 </div>
 
-                <div
-                  style={{ alignSelf: "center" }}
-                  //hidden={!s.user_alarmkabel}
-                  hidden
-                >
-                  <div className="vertical-center col-auto">
-                  {__("Distance from cabinet")}
-                  </div>
+                <div className="input-group">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={s.user_alarmkabel_distance}
+                    onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
+                    min={0}
+                    max={2000}
+                    style={{ width: "35%" }}
+                  />
+                  <button
+                    onClick={() => this.selectPointAlarmkabel()}
+                    className="btn btn-primary col-auto"
+                    disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
+                  >
+                    {__("Select point for alarmkabel")}
+                  </button>
+                </div>
+                <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
+              </div>
 
-                  <div className="input-group">
-                    <select
-                      className="form-select"
-                      value={s.alarm_skab_selected}
-                      onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
-                    >
+              <div
+                style={{ alignSelf: "center" }}
+                //hidden={!s.user_alarmkabel}
+                hidden
+              >
+                <div className="vertical-center col-auto">
+                  {__("Distance from cabinet")}
+                </div>
+
+                <div className="input-group">
+                  <select
+                    className="form-select"
+                    value={s.alarm_skab_selected}
+                    onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
+                  >
                     // for each option in s.alarm_skabe, create an option
-                    {s.alarm_skabe.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                    </select>
-                    <button
-                      onClick={() => this.selectPointAlarmskab()}
-                      className="btn btn-primary col-auto"
-                      disabled={!this.allowAlarmkabel()}
-                    >
-                      {__("Select point for cabinet")}
-                    </button>
-                  </div>
-                  <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
+                   {s.alarm_skabe.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                   ))}
+                  </select>
+                  <button
+                    onClick={() => this.selectPointAlarmskab()}
+                    className="btn btn-primary col-auto"
+                    disabled={!this.allowAlarmkabel()}
+                  >
+                    {__("Select point for cabinet")}
+                  </button>
+                </div>
+                <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
                 </div>
 
                 <div
