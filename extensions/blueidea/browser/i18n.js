@@ -276,8 +276,8 @@ var dict = {
     en_US: "Projectname is missing",
   },
   "Confirm stop project": {
-    da_DK: "Er du sikker på at du vil gøre bruddet inaktivt? Denne handling kan ikke fortrydes",
-    en_US: "Are you sure you want to stop the project? This action cannot be undone",
+    da_DK: "Er du sikker på at du vil gøre bruddet inaktivt? Denne handling kan ikke fortrydes:",
+    en_US: "Are you sure you want to stop the project? This action cannot be undone:",
   },
 
   "No utility lines found": {

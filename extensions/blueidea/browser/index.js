@@ -2369,39 +2369,41 @@ module.exports = {
         const bounds = [[ymin, xmin],[ymax, xmax]];
         cloud.get().map.fitBounds(bounds);
       };
-      
-  
-      handleStopProject = (beregnuuid) => {
-        if (!window.confirm(__("Confirm stop project")))  {
-         return 
-        }
-        try{
-        const me = this;
-        const body = {
-          beregnuuid
-        }
-        
-        $.ajax({
-          url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
-          type: "POST",
-          data: JSON.stringify(body),
-          contentType: "application/json",
-          dataType: "json",
-        })
+
+      handleStopProjectAfterZoom = (properties) => {
+        setTimeout(() => {
+            const confirmTxt =`${__("Confirm stop project")}\n${properties.sagstekst}`;
+            if (!window.confirm(confirmTxt)) {
+            return;
+          }
+          const body = {beregnuuid: properties.beregnuuid};
+
+          $.ajax({
+            url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
+            type: "POST",
+            data: JSON.stringify(body),
+            contentType: "application/json",
+            dataType: "json",
+          })
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
-            me.createSnack(__("Project stopped successfully"));
-
+            this.createSnack(__("Project stopped successfully"));
           })
           .catch((error) => {
             console.error(error);
-            me.createSnack(__("Error stopping project") + ": " + error.message);
+            this.createSnack(`${__("Error stopping project")}: ${error.message}`);
           });
-        } catch (error) {
-          console.error(error);
-          this.createSnack(__("Error stopping project") + ": " + error.message);
-        } 
-      
+        }, 0);
+      };
+
+      handleStopProject = (properties) => {
+        const me = this;
+        cloud.get().map.once("moveend", () => {
+           this.handleStopProjectAfterZoom(properties);
+        });
+        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+        const bounds = [[properties.ymin, properties.xmin],[properties.ymax, properties.xmax]]; 
+        cloud.get().map.fitBounds(bounds);
       };
 
       handleProjectRefreshClick = async (e) => {

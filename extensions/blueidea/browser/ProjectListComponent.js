@@ -18,9 +18,23 @@ class ProjectListComponent extends React.Component {
   componentWillUnmount() {
 
   }
-  handleRowClick(rowIndex, properties) {
+
+  zoomToProject( rowIndex, properties ) {
     this.setState({ clickedTableProjectIndex: rowIndex });
     this.props.onHandleZoomProject(properties.xmin, properties.ymin, properties.xmax, properties.ymax );
+  }
+
+  handleRowClick(rowIndex, properties) {
+    this.zoomToProject(rowIndex, properties);
+  }
+
+  handleEditProject(rowIndex, properties) {
+    this.zoomToProject(rowIndex, properties);
+    this.props.onHandleEditProject(properties.beregnuuid);
+  }
+  handleStopProject(rowIndex, properties) {
+    this.setState({ clickedTableProjectIndex: rowIndex });
+    this.props.onHandleStopProject(properties);
   }
 
   toDateTimeLocal(dateStr) {
@@ -39,7 +53,7 @@ class ProjectListComponent extends React.Component {
   }
 
   render() {
-    const { onHandleEditProject, onHandleStopProject, projects, user_udpeg_layer } = this.props;
+    const { projects } = this.props;
     const { clickedTableProjectIndex } = this.state;
     const noProjects = projects.length === 0;
     return (
@@ -75,10 +89,7 @@ class ProjectListComponent extends React.Component {
                       <td style={{ textAlign: 'center' }}>
                         <i
                           className="bi bi-pencil"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onHandleEditProject(option.properties.beregnuuid )} 
-                          }
+                          onClick={() => this.handleEditProject(rowIndex, option.properties)}
                           style={{ cursor: 'pointer' }}
                           title="Rediger brud"
                         >
@@ -110,20 +121,10 @@ class ProjectListComponent extends React.Component {
                         </label>
                       </td>
 
-                      {/* <td style={{ textAlign: 'center' }}>
-                          <i
-                            className="bi bi-pencil"
-                            disabled={true}
-                            onClick={() => onHandleZoomProject(option.properties.x, option.properties.y, user_udpeg_layer )}
-                            style={{ cursor: 'pointer' }}
-                            title="Rediger projekt"
-                          >
-                          </i>
-                        </td> */}
                       <td style={{ textAlign: 'center' }}>
                         <i
                           className="bi bi-trash"
-                          onClick={() => onHandleStopProject(option.properties.beregnuuid)}
+                          onClick={(e) => { e.stopPropagation(); this.handleStopProject(rowIndex, option.properties);}}
                           style={{ cursor: 'pointer' }}
                           title="Gør bruddet inaktivt"
                         >
