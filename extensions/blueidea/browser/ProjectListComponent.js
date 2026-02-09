@@ -81,7 +81,7 @@ class ProjectListComponent extends React.Component {
                 </thead>
                 <tbody>
                   {projects.map((option, rowIndex) => {
-                    const bg = clickedTableProjectIndex === rowIndex ? 'table-primary' : 'table-light';
+                    const bg = clickedTableProjectIndex === rowIndex ? 'table-primary' : 'table';
                     const fromDate = this.toDateTimeLocal(option.properties.gyldig_fra);
                     const toDate = this.toDateTimeLocal(option.properties.gyldig_til);
                     const brudType = String(option.properties.beregnaarsag) === '1'  ? 'Akut' : 'Planlagt';

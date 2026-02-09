@@ -7,7 +7,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [unreleased]
 - Lukkeplan extension adjustments.
--- handling  breakproject
+-- handling breakproject
 -- handling valves and recalculations
 -- handling connected addresses and BlueIdea integreation
 
