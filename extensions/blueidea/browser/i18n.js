@@ -91,6 +91,10 @@ var dict = {
     da_DK: "Fejl ved hentning af projekter",
     en_US: "Error in getting projects",
   },
+  "Refresh active breaks": {
+    da_DK: "Genindlæs aktive brud",
+    en_US: "Refresh active breaks",
+  },
   "Draw area": {
     da_DK: "Tegn områder",
     en_US: "Draw area",

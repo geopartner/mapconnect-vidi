@@ -435,9 +435,11 @@ module.exports = {
           active: false,
           authed: false,
           project: new ProjectModel(),
+          projectOpen: true,
           editProject: false,
           isAnalyzing: false,
           projects: [],
+          projectsIsRefreshing: false,
           done: false,
           loading: false,
           results_adresser: {},
@@ -859,26 +861,19 @@ module.exports = {
         }, 500);
       }
 
-      listProjects = (refresh = false) => {
-        let me = this;
-        me.getActiveAndFutureBreakage()
-         .then((data) => {
-              me.setState({
-                  projects: data.features
-                });
-            return
-          })
-          .then(() => { {
-            if (refresh)
-              this.refreshProjectLayer();
-            }
-          })
-          .catch((error) => {
-            me.createSnack(__("Error in list") + ": " + error);
-            console.warn(error);
-            return
-          });
-      }
+      listProjects = async (refresh = false) => {
+        try {
+          const data = await this.getActiveAndFutureBreakage();
+          this.setState({projects: data.features});
+          if (refresh) {
+            this.refreshProjectLayer();
+          }
+        } catch (error) {
+          this.createSnack(__("Error in list") + ": " + error);
+          console.warn(error);
+        }
+      };
+ 
       /**
        * This function gets active and future breakage
        * @returns geojson with breakages
@@ -2271,7 +2266,6 @@ module.exports = {
 
       handleVentilCheckbox = (e, ventil) => {
         const { checked } = e.target;
-///        backboneEvents.get().trigger(`${exId}:enableRecalculate`);
         this.setState({ retryIsDisabled: false   });
         this.setState(prev => {
           const selected = new Set((prev.selectedVentiler || []).map(String));
@@ -2294,7 +2288,7 @@ module.exports = {
         const bounds = L.latLngBounds(
           [lat - padding, lng - padding],
           [lat + padding, lng + padding]
-        );
+        ); 
         cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true  });
       };
 
@@ -2319,7 +2313,7 @@ module.exports = {
                 forsyningsarter: prev.project.forsyningsarter,
               }),
             }))
-           me.setState({ editProject: true });
+           me.setState({ editProject: true, projectOpen: true });
             
             me.createSnack(__("Project loaded for editing"));       
           })
@@ -2341,11 +2335,6 @@ module.exports = {
         })
           .then(() => {
             backboneEvents.get().trigger(`${exId}:listProject`);
-            // me.setState(prev => ({
-            //   project: prev.project.withChanges({
-            //     forsyningsarter: prev.project.forsyningsarter,
-            //   })
-            // }))
             me.setState({ editProject: false });
             me.createSnack(__("Project saved successfully"));
           })
@@ -2415,6 +2404,19 @@ module.exports = {
       
       };
 
+      handleProjectRefreshClick = async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (this.state.projectsIsRefreshing) return; 
+        this.setState({ projectsIsRefreshing: true });
+
+        try {
+          await this.listProjects(true);
+        } finally {
+          this.setState({ projectsIsRefreshing: false });
+       }
+      };
+
       updateProject = (changes) => {
         this.setState(prev => ({
             project: prev.project.withChanges(changes),
@@ -2448,7 +2450,7 @@ module.exports = {
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled } = this.state
+        const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled,projectOpen } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
@@ -2474,41 +2476,13 @@ module.exports = {
                   <summary>
                     {__("project list")} ({this.state.projects.length})
                     <i
-                      className="bi bi-arrow-clockwise ms-4 position-relative"
-                      onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      this.listProjects();
-                     }}
-                     onMouseDown={(e) => {
-                      const el = e.currentTarget;
-                      el.style.transform = 'rotate(90deg) scale(1.1)';
-                      el.style.backgroundColor = '#e0e0e0'; // lys grå baggrund mens musen holdes nede
-                      el.style.borderRadius = '4px'; // lidt runding så det ser pænere ud
-                      el.title = 'Opdaterer…'
-                     }}
-                     onMouseUp={(e) => {
-                       const el = e.currentTarget;
-                       el.style.transform = 'scale(1.1)';
-                       el.style.backgroundColor = 'transparent';
-                       el.title = 'Genindlæs brud';
-                     }}
-                     onMouseEnter={(e) => {
-                       e.currentTarget.style.transform = 'scale(1.1)';
-                     }}
-                     onMouseLeave={(e) => {
-                       const el = e.currentTarget;
-                       el.style.transform = 'none';
-                       el.style.backgroundColor = 'transparent';
-                       el.title = 'Genindlæs brud';
-                     }}
-                     style={{
-                       top: '2px',
-                       transform: 'none',
-                       cursor: 'pointer',
-                       transition: 'transform 0.2s ease',
-                     }}
-                     title="Genindlæs brud"
+                      className={
+                        this.state.projectsIsRefreshing
+                        ? "bi bi-arrow-repeat spin ms-4 position-relative"
+                         : "bi bi-arrow-clockwise ms-4 position-relative"
+                      }
+                      onClick={this.handleProjectRefreshClick}
+                      title={__("Refresh active breaks")}
                     />
                   </summary>
                   <ProjectListComponent
@@ -2522,7 +2496,7 @@ module.exports = {
               </div>
               <hr></hr>
               <div className="row mx-auto gap-0 my-3">
-                <details open className="col">
+                <details  open={projectOpen} className="col">
                   <summary>  
                     {breakHeader}
                     {
