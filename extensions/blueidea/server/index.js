@@ -192,12 +192,23 @@ router.post("/api/extension/blueidea/:userid/CreateMessage", function (req, resp
       return;
     }
 
-    var body = req.body;
+    var body = req.body.addresses;
+    var beregnuuid = req.body.beregnuuid;
 
     // If debug is set, add testMode to body
     if (bi.users[req.params.userid].debug) {
       body.testMode = true;
     }
+    body.profileId = req.body.profileId;
+
+    // update brud_staus to drift (2)
+    SQLAPI(`UPDATE lukkeliste.beregnlog SET brud_status = 2 WHERE beregnuuid = '${beregnuuid}'`, req)
+      .then((res) => {
+        console.log("Updated brud_status to drift for", beregnuuid);
+      })
+      .catch((err) => {
+        console.error("Error updating brud_status for", beregnuuid, err);
+      });
 
     // We only use known addresses, so toggle this
     body.sendToSpecificAddresses = true;
@@ -220,6 +231,37 @@ router.post("/api/extension/blueidea/:userid/CreateMessage", function (req, resp
         }
       });
     });
+  }
+);
+
+// Set the project end date to a moment in the past, to close it
+router.post("/api/extension/blueidea/:userid/StopProject", function (req, response) {
+    guard(req, response);
+
+    // body must contain beregnuuids
+    const beregnuuid = req.body?.beregnuuid;
+    if (!beregnuuid) {
+      response.status(401).send("Missing beregnuuid");
+      return;
+    }
+    const sqlTxt = `UPDATE lukkeliste.beregnlog SET gyldig_til = now() - interval '1 minute' WHERE beregnuuid = '${beregnuuid}'`;
+
+    // If debug is set, add testMode to body
+    // if (bi.users[req.params.userid].debug) {
+    //   body.testMode = true;
+    // }
+
+    // update gyldig_til to now() - 1 minute
+    SQLAPI(sqlTxt, req)
+      .then((res) => {
+        console.log("Updated gyldig_til to to the paste for", beregnuuid);
+        response.json(res);
+      })
+      .catch((err) => {
+        console.error("Error updating gyldig_til for", beregnuuid, err);
+        response.status(500).json(err);
+      });
+    
   }
 );
 
@@ -395,6 +437,17 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
       response.status(401).send("Missing lat or lng");
       return;
     }
+    let gyldig_fra = req.body.gyldig_fra;
+    if (!gyldig_fra) {
+      // set default to now (date/time)
+      gyldig_fra = moment().format("YYYY-MM-DD HH:mm:ss");
+    }
+
+    let gyldig_til = req.body.gyldig_til;
+    if (!gyldig_til) {
+      // set default to null
+      gyldig_til = null;
+    }
 
     // set timeout to 30s
     req.setTimeout(TIMEOUT);
@@ -404,6 +457,11 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
     // convert to Postgres array syntax
     let minusVentiler = `{${ignore_ventiler.join(",")}}`;
 
+    // set default values for optional parameters if not set
+    let beregnaarsag = req.body.beregnaarsag || 1; // default to 1 (akut), 2= planlagt
+    let brud_status = req.body.brud_status || 1; // default to 1 (kladde), 2=drift
+    const sagstekst = req.body.sagstekst || 'Nyt projekt. Bør navngives ';
+
     // create the string we need to query the database
     q = `
       INSERT INTO lukkeliste.beregnlog(
@@ -411,7 +469,13 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
         forsyningsart,
         opslagmatrikler,
         username,
-        minusventiler
+        minusventiler,
+        gyldig_fra,
+        gyldig_til,
+        beregnaarsag,
+        brud_status,
+        sagstekst
+
       )
       VALUES (
         ST_Transform(
@@ -421,7 +485,12 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
         '${forsynings_id}', 
         false, 
         '${req.session.screenName}',
-        '${minusVentiler}'::integer[]
+        '${minusVentiler}'::integer[],
+        '${gyldig_fra}'::timestamp,
+        ${gyldig_til ? `'${gyldig_til}'::timestamp` : null},
+        ${beregnaarsag},
+        ${brud_status},
+        '${sagstekst}'
       )
       RETURNING beregnuuid
     `;
@@ -440,7 +509,7 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
         if (forsyningsarter[forsynings_id].ventil_layer) {
           let q = `SELECT * from lukkeliste.beregn_ventiler where beregnuuid = '${beregnuuid}'`;
 
-          q = `SELECT v.*, bv.forbundet from lukkeliste.vw_beregn_ventiler bv 
+          q = `SELECT v.*, bv.forbundet, bv.checked from lukkeliste.vw_beregn_ventiler bv 
           join ${
             forsyningsarter[forsynings_id].ventil_layer
           } v on bv.ventilgid = v.${
@@ -473,7 +542,9 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
                 "end",
                 duration,
                 matr_count,
-                null as aggregated_geom
+                null as aggregated_geom,
+                null::geometry as ind_geom,
+                sagstekst
             FROM lukkeliste.vw_beregn_result 
             WHERE beregnuuid = '${beregnuuid}'
             UNION ALL
@@ -489,7 +560,9 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
                 null,
                 null,
                 null,
-              null
+                null,
+                null,
+                null
             FROM lukkeliste.vw_beregn_result 
             WHERE beregnuuid = '${beregnuuid}'
             UNION ALL
@@ -505,9 +578,47 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
                 null,
                 null,
                 matr_count as count,
-                matr_aggregated_geom::text
+                matr_aggregated_geom::text,
+                null,
+                null
             FROM lukkeliste.vw_beregn_result 
-            WHERE beregnuuid = '${beregnuuid}'`,
+            WHERE beregnuuid = '${beregnuuid}'
+            UNION ALL
+            SELECT 
+                null,
+                null,
+                null,
+                beregnuuid,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                (indirekteledn_aggregated_geom) AS ind_geom,
+                null
+            FROM lukkeliste.vw_beregn_result 
+            WHERE beregnuuid = '${beregnuuid}'
+            `,
+            req,
+            { format: "geojson", srs: 4326 }
+          )
+        );
+
+        // get forbrugere as points. Attributes as json in value
+        promises.push(
+          SQLAPI(
+            `SELECT 
+                gid, 
+                beregnuuid, 
+                forbrugertype, 
+                value, 
+                the_geom
+            FROM lukkeliste.beregn_forbrugere 
+            WHERE beregnuuid = '${beregnuuid}'
+            `,
             req,
             { format: "geojson", srs: 4326 }
           )
@@ -517,6 +628,7 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
         Promise.all(promises)
           .then((res) => {
             // here we need to split the result of the second promise into multiple featurecollections
+            let indirekteledninger = { type: "FeatureCollection", features: [res[1].features[3]] }
             let matrikler = { type: "FeatureCollection", features: [res[1].features[2]] }
             let ledninger = { type: "FeatureCollection", features: [res[1].features[1]] }
             // keep only the first feature in the list from the second promise
@@ -526,13 +638,107 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
               ventiler: res[0],
               matrikler: matrikler,
               ledninger: ledninger,
+              indirekteledninger: indirekteledninger,
               log: res[1],
+              forbrugere: res[2],
             });
           })
           .catch((err) => {
             console.error(err);
             response.status(500).json(err);
           });
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json(err);
+      });
+  }
+);
+
+router.get("/api/extension/blueidea/:userid/getproject/:beregnuuid", function (req, response) {
+    guard(req, response);
+    const beregnuuid = req.params.beregnuuid;
+    const query = ` SELECT 
+    beregnuuid,
+    forsyningsart,
+    to_char(gyldig_fra AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_fra,
+    to_char(gyldig_til AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_til,
+    beregnaarsag,
+    brud_status,
+    sagstekst 
+    FROM lukkeliste.beregnlog 
+    WHERE beregnuuid = '${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json(err);
+      });
+  }
+);
+
+
+router.post("/api/extension/blueidea/:userid/saveproject", function (req, response) {
+    guard(req, response);
+    const body = req.body;
+    const beregnuuid = body.beregnuuid;
+    
+    const query = `UPDATE lukkeliste.beregnlog SET brud_status = 2 WHERE beregnuuid='${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json({ message: "Project saved successfully" });
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json({ message: "Error saving project", error: err });
+      });
+  }
+);
+
+router.post("/api/extension/blueidea/:userid/saveprojectdates", function (req, response) {
+    guard(req, response);
+    const body = req.body;
+    const beregnuuid = body.beregnuuid;
+    const gyldig_fra = body.projectStartDate ? `'${body.projectStartDate}'::timestamp` : null;
+    const gyldig_til = body.projectEndDate ? `'${body.projectEndDate}'::timestamp` : null;
+
+    const query = ` UPDATE lukkeliste.beregnlog SET 
+    gyldig_fra = ${gyldig_fra},
+    gyldig_til = ${gyldig_til}
+    WHERE beregnuuid = '${beregnuuid}' `;   
+
+    SQLAPI(query, req )
+      .then((data) => {
+        response.status(200).json({ message: "Project saved successfully" });
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json({ message: "Error saving project", error: err });
+      });
+  }
+);
+
+// Get active breakages for user
+router.get("/api/extension/blueidea/:userid/activebreakages", function (req, response) {
+    guard(req, response);
+    const buffer = 50; // buffer in meters
+    const q =`SELECT \ 
+               ST_XMin(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) xmin, \
+               ST_YMin(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) ymin, \
+               ST_XMax(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) xmax, \
+               ST_YMax(ST_Extent(ST_Transform(ST_Expand(the_geom,${buffer} ),4326))) ymax, \
+               gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid \
+               FROM lukkeliste.aktive_brud \
+               GROUP BY gid, gyldig_fra, gyldig_til, beregnaarsag, brud_status, username,sagstekst,brudtype,beregnuuid \
+               ORDER BY gyldig_fra desc`;
+
+    SQLAPI(q, req, { format: "geojson", srs: 4326 })
+      .then((data) => {
+        response.status(200).json(data);
       })
       .catch((err) => {
         console.error(err);

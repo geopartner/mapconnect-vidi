@@ -1,11 +1,9 @@
-/*
- * @author     Rene Borella <rgb@geopartner.dk>
- * @copyright  2025 Geopartner Landinspektører A/S
- * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
- */
-
 // This element contains the styling for the module
 var styleObject = {
+    datepicker: {
+      backgroundColor: "#fff" ,
+      color: "#33"
+    },
     ventil_forbundet: {
       radius: 8,
       fillColor: "#00ff00",
@@ -26,6 +24,10 @@ var styleObject = {
       color: "#AA4A44",
       weight: 8,
     },
+    selectedIndirekteLedning: {
+      color: "#4daa44ff",
+      weight: 8,
+    },
     selectedPoint: {
       html: `
     <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
@@ -34,6 +36,16 @@ var styleObject = {
     `,
       className: "",
       iconSize: [24, 24], // size of the icon
+      //iconAnchor: [-10, -10], // point of the icon which will correspond to marker's location
+    },
+    selectedForbrugspunkt: {
+      html: `
+    <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" fill = "#991414ff">
+    <path d="M12 11.293l10.293-10.293.707.707-10.293 10.293 10.293 10.293-.707.707-10.293-10.293-10.293 10.293-.707-.707 10.293-10.293-10.293-10.293.707-.707 10.293 10.293z"/>
+    </svg>
+    `,
+      className: "",
+      iconSize: [30, 30], // size of the icon
       //iconAnchor: [-10, -10], // point of the icon which will correspond to marker's location
     },
     matrikel: {
