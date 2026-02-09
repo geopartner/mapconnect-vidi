@@ -483,7 +483,7 @@ module.exports = {
 
       buildStyleObject() {
         if (config.extensionConfig.blueidea.afbrudt_ledning_farve) {
-          styleObject.afbrudt_ledning.color = config.extensionConfig.blueidea.afbrudt_ledning_farve;
+          styleObject.selectedLedning.color = config.extensionConfig.blueidea.afbrudt_ledning_farve;
         }
         if (config.extensionConfig.blueidea.indirekte_ledning_farve) {  
           styleObject.selectedIndirekteLedning.color = config.extensionConfig.blueidea.indirekte_ledning_farve; 
