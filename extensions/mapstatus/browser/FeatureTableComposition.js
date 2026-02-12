@@ -32,9 +32,7 @@ class FeatureTableComposition extends React.Component {
         $('.bi-layout-text-window').on('click', function () { });
 
         this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:update`, () => {
-            this.forceUpdate();
-
-
+            // this.forceUpdate();
             if (!this.props.isReadOnly) {
                 this.props.pipeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
                 this.props.nodeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
@@ -42,9 +40,7 @@ class FeatureTableComposition extends React.Component {
         });
 
         this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:updatedata`, (featuresManager) => {
-            this.forceUpdate();
             if (!this.props.isReadOnly && featuresManager) {
-
                 featuresManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
             }
         });
