@@ -77,7 +77,6 @@ class FeatureTablePipe extends React.Component {
                     console.warn("No featuresManager in FeatureTable");
                     return;
                 }
-
                 
                 const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == selectedFeatureId);
                 
@@ -87,8 +86,6 @@ class FeatureTablePipe extends React.Component {
                 this.setState({ selectedRowIndex: si });
                 this.scrollToRow();
                 this.props.featuresManager?.hilite(selectedFeatureId);
-                alert("Selected feature id: " + selectedFeatureId + " Row index: " + si);
-                // this.forceUpdate();
             });
         } else {
             console.warn("No backboneEvents in FeatureTable");

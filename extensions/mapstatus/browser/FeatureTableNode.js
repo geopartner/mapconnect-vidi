@@ -66,7 +66,7 @@ class FeatureTableNode extends React.Component {
                 this.setState({ selectedRowIndex: si });
                 this.scrollToRow();
                 this.props.featuresManager?.hilite(selectedFeatureId);
-                // this.forceUpdate();
+                
             });
         } else {
             console.warn("No backboneEvents in FeatureTable");
