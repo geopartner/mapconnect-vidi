@@ -26,8 +26,8 @@ var dict = {
       "ClosurePlan is a module that helps to find relevant addressess for a valve closure.You can draw an area on the map, and get a list of addresses in the area.You can also select a point on the network, and get a list of addresses connected to that point.The lists of addresses can then be used to send messages with BlueIdea (Requires agreement with BlueIdea)",
   },
   "Plugin Tooltip": {
-    da_DK: "Lukkeplan",
-    en_US: "ClosurePlan",
+    da_DK: "Alarm",
+    en_US: "Alarm",
   },
   "MissingLogin": {
     da_DK:
