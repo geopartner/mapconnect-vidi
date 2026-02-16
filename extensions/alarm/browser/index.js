@@ -9,7 +9,7 @@
 import proj4 from "proj4";
 import ProjectModel from "./ProjectModel.js";
 
-import VentilListComponent  from "./VentilListComponent.js";
+
 import {VentilModel, VentilProperties } from "./VentilModel.js";
 
 import {
