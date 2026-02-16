@@ -8,8 +8,7 @@
 
 import proj4 from "proj4";
 import ProjectModel from "./ProjectModel.js";
-import ProjectComponent from "./ProjectComponent.js";
-import ProjectListComponent from "./ProjectListComponent.js";
+
 import VentilListComponent  from "./VentilListComponent.js";
 import {VentilModel, VentilProperties } from "./VentilModel.js";
 
@@ -2452,12 +2451,10 @@ module.exports = {
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled,projectOpen } = this.state
-        const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
-        const doDisplay = false;
+        const { isAnalyzing, results_ledninger} = this.state
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
-        const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
+
         const openResult =  Object.keys(s.results_adresser).length > 0 && !isAnalyzing ;  
         const hasBlueIdeaProfile = s.user_blueidea && s.user_profileid && Object.keys(s.user_profileid).length > 0;
         
@@ -2474,87 +2471,7 @@ module.exports = {
     
           return (
             <div role="tabpanel">
-              {doDisplay && (
-                
-              <div>
-              <div className="row mx-auto gap-0 my-3">
-                <details className="col">
-                  <summary>
-                    {__("project list")} ({this.state.projects.length})
-                    <i
-                      className={
-                        this.state.projectsIsRefreshing
-                        ? "bi bi-arrow-repeat spin ms-4 position-relative"
-                         : "bi bi-arrow-clockwise ms-4 position-relative"
-                      }
-                      onClick={this.handleProjectRefreshClick}
-                      title={__("Refresh active breaks")}
-                    />
-                  </summary>
-                  <ProjectListComponent
-                    className="col"
-                    projects={this.state.projects}
-                    onHandleEditProject={this.handleEditProject}
-                    onHandleZoomProject={this.handleZoomProject}
-                    onHandleStopProject={this.handleStopProject}>
-                  </ProjectListComponent>
-                </details>
-              </div>
-              <hr></hr>
-              <div className="row mx-auto gap-0 my-3">
-                <details  open={projectOpen} onToggle={e => this.setState({ projectOpen: e.target.open })} className="col">
-                  <summary>  
-                    {breakHeader}
-                    {
-                    !s.lukkeliste_ready && this.allowLukkeliste() &&
-                      <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
-                    }
-                  </summary>
-                
-                  <div style={{ alignSelf: "center" }}>
-                 
-                  {false && (
-                   <div className="d-grid mx-auto gap-2">
-                    <button
-                      onClick={() => this.clickDraw()}
-                      className="btn btn-outline-secondary"
-                      disabled={!this.allowBlueIdea()}
-                    >
-                      {__("Draw area")}
-                    </button>
-                  </div>)}
-                  
-                  <ProjectComponent
-                    backboneEvents={backboneEvents}
-                    project={this.state.project}
-                    editProject={this.state.editProject}
-                    onChange={this.updateProject}
-                    pipeSelected= {pipeSelected}
-                    onHandleSaveProject={this.handleSaveProjectDates}
-                    onReadyPointLukkeliste={this.readyPointLukkeliste}
-                    onClearLukkeliste={this.clearLukkeliste}
-                  ></ProjectComponent>
-                  </div>
-                </details>             
-              </div>
-              { ventilCount > 0 && !isAnalyzing  &&  (
-                <div className="row mx-auto gap-0 my-3">
-                  <hr style={{marginRight: "1.5em"}}></hr>
-                  <VentilListComponent 
-                    ventilList={ventilList}
-                    onDownloadVentiler={this.downloadVentiler.bind(this)}
-                    onVentilZoom={this.handleZoom.bind(this)}
-                    onHandleVentilCheckbox={this.handleVentilCheckbox.bind(this)}
-                    onRunWithoutSelected={this.runWithoutSelected.bind(this)}
-                    retryIsDisabled={retryIsDisabled}
-                    clickedTableVentil  = {clickedTableVentil}
-                    >
-                  </VentilListComponent>
-                </div>
-              )}
-              <hr style={{marginRight: "1.5em"}}></hr>
-              </div>
-              )}
+          
               <div className="row mx-auto gap-0 my-3">
                 <details open={openResult} className="col">
                   <summary>Resultat</summary>
@@ -2755,7 +2672,7 @@ module.exports = {
       __("Plugin Tooltip"),
       __("Info"),
       require("./../../../browser/modules/height")().max,
-      "bi-node-minus",
+      "bi-exclamation-triangle-fill",
       false,
       exId
     );
