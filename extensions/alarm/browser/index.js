@@ -27,7 +27,7 @@ import _, { has } from "underscore";
 
 var React = require("react");
 
-const blueIdeaRef = React.createRef();
+const alarmRef = React.createRef();
 
 /**
  *
@@ -2454,6 +2454,7 @@ module.exports = {
         const s = _self.state;
         const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled,projectOpen } = this.state
         const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
+        const doDisplay = false;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
         const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
@@ -2473,6 +2474,9 @@ module.exports = {
     
           return (
             <div role="tabpanel">
+              {doDisplay && (
+                
+              <div>
               <div className="row mx-auto gap-0 my-3">
                 <details className="col">
                   <summary>
@@ -2549,7 +2553,8 @@ module.exports = {
                 </div>
               )}
               <hr style={{marginRight: "1.5em"}}></hr>
-
+              </div>
+              )}
               <div className="row mx-auto gap-0 my-3">
                 <details open={openResult} className="col">
                   <summary>Resultat</summary>
@@ -2758,7 +2763,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<BlueIdea ref={blueIdeaRef} />, document.getElementById(exId));
+      ReactDOM.render(<Alarm ref={alarmRef} />, document.getElementById(exId));
     } catch (e) {
       throw "Failed to load DOM";
     }

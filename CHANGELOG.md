@@ -10,6 +10,7 @@ and this project adheres to [CalVer](https://calver.org/).
 -- handling breakproject
 -- handling valves and recalculations
 -- handling connected addresses and BlueIdea integreation
+-- alarm as seperate extension 
 
 ### Fixed
 - Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
