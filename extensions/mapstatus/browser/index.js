@@ -541,8 +541,8 @@ module.exports = {
             pipeManager?.clear();
             nodeManager?.clear();
 
-            await _makeSearch(wkt, true, pipeManager);
-            await _makeSearch(wkt, true, nodeManager);
+            _makeSearch(wkt, true, pipeManager);
+            _makeSearch(wkt, true, nodeManager);
         } catch (e) {
             console.error("Error in draw:created event:", e);
         }

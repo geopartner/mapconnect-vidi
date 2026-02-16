@@ -125,12 +125,8 @@ class DraggableBox extends React.Component {
                 }}
                 ref={this.boxRef}
             >
-                <div className="border-bottom border-2 form-select" style={{ minHeight: '45px', maxHeight: '45px', overflowY: 'hidden', overflowX: 'hidden' }}>
-                    <div className="row">
-                        <div className="col-md-12  background-light mb-2 ">
-                            <h5 className="mb-2 mr-2">{headerText}</h5>
-                        </div>
-                    </div>
+                <div className="border-bottom border-2 form-select" style={{ minHeight: '30px', maxHeight: '30px', overflowY: 'hidden', overflowX: 'hidden' }}>
+                    <p className="mb-2 mr-2">{headerText}</p>
                 </div>
                 <div className="draggable-children">
                     {children}
