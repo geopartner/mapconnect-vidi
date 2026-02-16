@@ -73,12 +73,19 @@ class FeatureTablePipe extends React.Component {
             this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:updateSelected`, (selectedFeatureId) => {
                 if (!selectedFeatureId)
                     return;
+                if (!this.props.featuresManager) {
+                    console.warn("No featuresManager in FeatureTable");
+                    return;
+                }
+                
                 const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == selectedFeatureId);
-                this.state.selectedRowIndex = si;
+                
+                if (si === this.state.selectedRowIndex) {    
+                    return; // No change in selection, skip update
+                }
                 this.setState({ selectedRowIndex: si });
                 this.scrollToRow();
                 this.props.featuresManager?.hilite(selectedFeatureId);
-                this.forceUpdate();
             });
         } else {
             console.warn("No backboneEvents in FeatureTable");

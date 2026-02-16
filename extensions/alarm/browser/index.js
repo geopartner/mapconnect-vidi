@@ -8,9 +8,8 @@
 
 import proj4 from "proj4";
 import ProjectModel from "./ProjectModel.js";
-import ProjectComponent from "./ProjectComponent.js";
-import ProjectListComponent from "./ProjectListComponent.js";
-import VentilListComponent  from "./VentilListComponent.js";
+
+
 import {VentilModel, VentilProperties } from "./VentilModel.js";
 
 import {
@@ -27,7 +26,7 @@ import _, { has } from "underscore";
 
 var React = require("react");
 
-const blueIdeaRef = React.createRef();
+const alarmRef = React.createRef();
 
 /**
  *
@@ -69,7 +68,7 @@ var switchLayer = require("./../../../browser/modules/switchLayer");
  *
  * @type {string}
  */
-var exId = "blueidea";
+var exId = "alarm";
 var exBufferDistance = 0.1;
 
 /**
@@ -424,7 +423,7 @@ module.exports = {
     /**
      *
      */
-    class BlueIdea extends React.Component {
+    class Alarm extends React.Component {
       static get Aktive_brud_layeName() {  return 'lukkeliste.aktive_brud'}
       static get Forbrugere_layerName() {  return 'lukkeliste.vw_forbrugere'}
       
@@ -501,14 +500,14 @@ module.exports = {
        */
       componentDidMount() {
         let me = this;
-        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+        me.turnOnLayer(Alarm.Aktive_brud_layeName);
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is
         backboneEvents.get().on("deactivate:all", () => {});
 
         // Activates module
         backboneEvents.get().on(`on:${exId}`, () => {
-          //console.debug("Starting blueidea");
+          //console.debug("Starting alarm");
           me.setState({
             active: true,
             edit_matr: false,
@@ -562,7 +561,7 @@ module.exports = {
 
         // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
-          console.debug("Stopping blueidea");
+          console.debug("Stopping alarm");
 
           // remove layersOnStart
           if (me.state.layersOnStart.length > 0) {
@@ -2152,488 +2151,112 @@ module.exports = {
         return;
       };
 
-      /**
-       * downloads a csv file with the results from adresser
-       * @param {*} object kvhx af key/value pairs
-       */
-      downloadAdresser = () => {
-        let me = this;
-        let csvRows = [
-          ["kvhx", "Vejnavn", "Husnummer", "Etage", "Dør", "Postnummer", "By"],
-        ];
+ 
 
-        // from the results, append to cvsRows
-        for (let key in Object.keys(me.state.results_adresser)) {
-          let feat =
-            me.state.results_adresser[
-              Object.keys(me.state.results_adresser)[key]
-            ];
-          // console.log(feat);
-          let row = [
-            feat.kvhx,
-            feat.vejnavn,
-            feat.husnr,
-            feat.etage,
-            feat.dør,
-            feat.postnr,
-            feat.postnrnavn,
-          ];
-          csvRows.push(row);
-        }
-
-        let rows = me.arrayToCsv(csvRows);
-        this.downloadBlob(rows, "adresser.csv", "text/csv;");
-      };
-
-      /**
-       * downloads a csv file with the results from ventiler
-       */
-      downloadVentiler = () => {
-        let me = this;
-
-        // Use keys as headers
-        let csvRows = [];
-        csvRows.push(Object.keys(me.state.user_ventil_export));
-
-        // for each feature in results_ventiler, append to csvRows with the values from the user_ventil_export
-        for (let index in me.state.results_ventiler) {
-          let feature = me.state.results_ventiler[index].properties;
-
-          // create a row, using the values from the user_ventil_export
-          let columns = Object.values(me.state.user_ventil_export);
-          let row = [];
-
-          // Add values to row
-          for (let c in columns) {
-            row.push(feature[columns[c]]);
-          }
-          // Add row to file
-          csvRows.push(row);
-        }
-
-        let rows = me.arrayToCsv(csvRows);
-        this.downloadBlob(rows, "ventiler.csv", "text/csv;");
-      };
-
-
-      profileidOptions = () => {
-        let options = [];
-
-        // if user_profileid is set, create options.
-        if (this.state.user_profileid) {
-          for (let key in this.state.user_profileid) {
-            options.push({
-              value: key,
-              label: this.state.user_profileid[key],
-            });
-          }
-        }
-        return options;
-      }
-
-      setSelectedProfileid = (e) => {
-        this.setState({ selected_profileid: e.target.value });
-      }
-
-      setSelectedForsyningsart = (e) => {
-        // turn off the udpeg layer of the last forsyningsart
-        api.turnOff(this.state.project.forsyningsarter[this.state.project.forsyningsart_selected].udpeg_layer);
-
-        // turn off previous selection action if active
-        if (!blocked) {
-          cloud.get().map.off("click", this.selectPointLukkeliste.bind(this));
-          utils.cursorStyle().reset();
-          blocked = true;
-        }
-
-        // set the new values based on the index in the list
-        this.setState({
-          forsyningsart_selected: e.target.value,
-          user_udpeg_layer: this.state.project.forsyningsarter[e.target.value].udpeg_layer,
-          user_ventil_layer: this.state.project.forsyningsarter[e.target.value].ventil_layer,
-          user_ventil_layer_key: this.state.project.forsyningsarter[e.target.value].ventil_layer_key,
-          user_ventil_export: this.state.project.forsyningsarter[e.target.value].ventil_export,
-        });
-      }
-
-      haveIdenticalContents = (a, b) => {
-        if (a.length !== b.length) return false;
-        const sortedA = [...a].sort();
-        const sortedB = [...b].sort();
-       return sortedA.every((value, index) => value === sortedB[index]);
-      }
-
-
-      handleVentilCheckbox = (e, ventil) => {
-        const { checked } = e.target;
-        this.setState({ retryIsDisabled: false   });
-        this.setState(prev => {
-          const selected = new Set((prev.selectedVentiler || []).map(String));
-          if (checked) {
-            selected.add(String(ventil.value));
-          } else {
-            selected.delete(String(ventil.value));
-          }
-          return { selectedVentiler: Array.from(selected) };
-        });
-      };
-   
-      zoomToXY = (x, y) => {
-        const utm32 = "+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs";
-        const wgs84 = "+proj=longlat +datum=WGS84 +no_defs";
-        const xf =parseFloat(x)
-        const yf =parseFloat(y)
-        const [lng, lat] = proj4(utm32, wgs84, [xf, yf]);
-        const padding = 0.0001;
-        const bounds = L.latLngBounds(
-          [lat - padding, lng - padding],
-          [lat + padding, lng + padding]
-        ); 
-        cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true  });
-      };
-
-      handleEditProject = (beregnuuid) => {
-        const me = this;
-        me.clearLukkeliste();
-        $.ajax({
-          url: `/api/extension/blueidea/${me.state.user_id}/getproject/${beregnuuid}`,
-          type: "GET",
-          contentType: "application/json",
-          dataType: "json",
-        })
-          .then((data) => {
-            if (!data || data.features.length == 0) {
-              me.createSnack(__("Project not found"));
-              return;
-            }
-            const feature = data.features[0]; 
-            const editProject = ProjectModel.fromFeature(feature);
-            me.setState(prev => ({
-              project: editProject.withChanges({
-                forsyningsarter: prev.project.forsyningsarter,
-              }),
-            }))
-            me.setState({ editProject: true, projectOpen: true });
-            
-            me.createSnack(__("Project loaded for editing"));       
-          })
-          .catch((error) => {
-            console.error(error);
-            me.createSnack(__("Error loading project") + ": " + error.message);
-          });
-      };
       
-      handleSaveProjectDates= (project) => {
-        const me = this;
-        
-        $.ajax({
-          url: `/api/extension/blueidea/${me.state.user_id}/saveprojectdates`,
-          type: "POST",
-          data: JSON.stringify(project),
-          contentType: "application/json",
-          dataType: "json",
-        })
-          .then(() => {
-            backboneEvents.get().trigger(`${exId}:listProject`);
-            me.setState({ editProject: false });
-            me.createSnack(__("Project saved successfully"));
-          })
-          .catch((error) => {
-            console.error(error);
-            me.createSnack(__("Error saving project") + ": " + error.message);
-          });
-      };
-
-      handleZoom (ventil) {
-        const me = this;
-        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
-        me.zoomToXY(ventil.xkoordinat, ventil.ykoordinat);
-        me.setState({ clickedTableVentil : ventil.label})
-      };
-      
-      handleZoomProject  = (xmin, ymin,xmax, ymax,) => {
-        const me = this;
-       
-        const newProject  = new ProjectModel();
-        me.setState(prev => ({
-          project: newProject.withChanges({
-            forsyningsarter: prev.project.forsyningsarter,
-            projectName: '',
-            isReadOnly: false
-          }),
-          
-        }))
-        me.setState({ editProject: false });
-
-        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
-        const bounds = [[ymin, xmin],[ymax, xmax]];
-        cloud.get().map.fitBounds(bounds);
-      };
-
-      handleStopProjectAfterZoom = (properties) => {
-        setTimeout(() => {
-            const confirmTxt =`${__("Confirm stop project")}\n${properties.sagstekst}`;
-            if (!window.confirm(confirmTxt)) {
-            return;
-          }
-          const body = {beregnuuid: properties.beregnuuid};
-
-          $.ajax({
-            url: `/api/extension/blueidea/${config.extensionConfig.blueidea.userid}/StopProject`,
-            type: "POST",
-            data: JSON.stringify(body),
-            contentType: "application/json",
-            dataType: "json",
-          })
-          .then(() => {
-            backboneEvents.get().trigger(`${exId}:listProject`);
-            this.createSnack(__("Project stopped successfully"));
-          })
-          .catch((error) => {
-            console.error(error);
-            this.createSnack(`${__("Error stopping project")}: ${error.message}`);
-          });
-        }, 0);
-      };
-
-      handleStopProject = (properties) => {
-        const me = this;
-        cloud.get().map.once("moveend", () => {
-           this.handleStopProjectAfterZoom(properties);
-        });
-        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
-        const bounds = [[properties.ymin, properties.xmin],[properties.ymax, properties.xmax]]; 
-        cloud.get().map.fitBounds(bounds);
-      };
-
-      handleProjectRefreshClick = async (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (this.state.projectsIsRefreshing) return; 
-        this.setState({ projectsIsRefreshing: true });
-
-        try {
-          await this.listProjects(true);
-        } finally {
-          this.setState({ projectsIsRefreshing: false });
-       }
-      };
-
-      updateProject = (changes) => {
-        this.setState(prev => ({
-            project: prev.project.withChanges(changes),
-        }));
-      };
-      
-      getVentilProperties (forsyningsart)  {
-        // her kan man komme med tilpassede ventil egenskaber - så varme nemmere kan implementeres
-        try {
-          const ventilProperties =new VentilProperties({ 
-            key: this.state?.user_ventil_layer_key ?? '',
-            name_key: this.state?.user_ventil_layer_name_key ?? '',
-            xkoordinat_key: 'xkoord',
-            ykoordinat_key: 'ykoord',
-            type_key: 'type',
-            funktion_key: 'funktion',
-            forbundet_key: 'forbundet'
-          })
-          return ventilProperties;
-        }
-        catch (error) {
-          console.error("Error getting ventil properties:", error);
-
-          return new VentilProperties();
-        }
-      }
-       
       /**
        * Renders component
        */
       render() {
         const _self = this;
         const s = _self.state;
-        const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled,projectOpen } = this.state
-        const isDisabled = !this.allowLukkeliste() | s.edit_matr ;
-        const pipeSelected = results_ledninger.length > 0;
-        const ventilProperties = this.getVentilProperties('vand');
-        const breakHeader = s.editProject ? __("Edit project") : __("Select area");  
-        const openResult =  Object.keys(s.results_adresser).length > 0 && !isAnalyzing ;  
-        const hasBlueIdeaProfile = s.user_blueidea && s.user_profileid && Object.keys(s.user_profileid).length > 0;
-        
-        const ventilList =   Array.isArray(this.state.results_ventiler)
-         ? VentilModel.fromFeaturesFactory(
-          this.state.results_ventiler, 
-          ventilProperties,  
-           this.state.selectedVentiler || []) 
-         : []; 
-        const ventilCount = ventilList.length;
-
-      
+          
+            
         if (s.authed && s.user_id) {
     
           return (
             <div role="tabpanel">
-              <div className="row mx-auto gap-0 my-3">
-                <details className="col">
-                  <summary>
-                    {__("project list")} ({this.state.projects.length})
-                    <i
-                      className={
-                        this.state.projectsIsRefreshing
-                        ? "bi bi-arrow-repeat spin ms-4 position-relative"
-                         : "bi bi-arrow-clockwise ms-4 position-relative"
-                      }
-                      onClick={this.handleProjectRefreshClick}
-                      title={__("Refresh active breaks")}
-                    />
-                  </summary>
-                  <ProjectListComponent
-                    className="col"
-                    projects={this.state.projects}
-                    onHandleEditProject={this.handleEditProject}
-                    onHandleZoomProject={this.handleZoomProject}
-                    onHandleStopProject={this.handleStopProject}>
-                  </ProjectListComponent>
-                </details>
-              </div>
-              <hr></hr>
-              <div className="row mx-auto gap-0 my-3">
-                <details  open={projectOpen} onToggle={e => this.setState({ projectOpen: e.target.open })} className="col">
-                  <summary>  
-                    {breakHeader}
-                    {
-                    !s.lukkeliste_ready && this.allowLukkeliste() &&
-                      <span className="mx-2 badge bg-danger">{__("Lukkeliste not ready")}</span>
-                    }
-                  </summary>
-                
-                  <div style={{ alignSelf: "center" }}>
-                 
-                  {false && (
-                   <div className="d-grid mx-auto gap-2">
-                    <button
-                      onClick={() => this.clickDraw()}
-                      className="btn btn-outline-secondary"
-                      disabled={!this.allowBlueIdea()}
-                    >
-                      {__("Draw area")}
-                    </button>
-                  </div>)}
-                  
-                  <ProjectComponent
-                    backboneEvents={backboneEvents}
-                    project={this.state.project}
-                    editProject={this.state.editProject}
-                    onChange={this.updateProject}
-                    pipeSelected= {pipeSelected}
-                    onHandleSaveProject={this.handleSaveProjectDates}
-                    onReadyPointLukkeliste={this.readyPointLukkeliste}
-                    onClearLukkeliste={this.clearLukkeliste}
-                  ></ProjectComponent>
-                  </div>
-                </details>             
-              </div>
-              { ventilCount > 0 && !isAnalyzing  &&  (
-                <div className="row mx-auto gap-0 my-3">
-                  <hr style={{marginRight: "1.5em"}}></hr>
-                  <VentilListComponent 
-                    ventilList={ventilList}
-                    onDownloadVentiler={this.downloadVentiler.bind(this)}
-                    onVentilZoom={this.handleZoom.bind(this)}
-                    onHandleVentilCheckbox={this.handleVentilCheckbox.bind(this)}
-                    onRunWithoutSelected={this.runWithoutSelected.bind(this)}
-                    retryIsDisabled={retryIsDisabled}
-                    clickedTableVentil  = {clickedTableVentil}
-                    >
-                  </VentilListComponent>
-                </div>
-              )}
-              <hr style={{marginRight: "1.5em"}}></hr>
-
-              <div className="row mx-auto gap-0 my-3">
-                <details open={openResult} className="col">
-                  <summary>Resultat</summary>
-                  { hasBlueIdeaProfile &&
-                    <div className="row mx-auto gap-3 my-2">
-                      <label className="col-4">SMS Profil</label>
-                      <select
-                       className="col-7"
-                       onChange={this.setSelectedProfileid}
-                       value={s.selected_profileid}
-                       placeholder={__("Select profile")}
-                       disabled={!this.readyToBlueIdea()}
-                      >
-                      {this.profileidOptions().map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                          </select>
-                    </div>
-                  }
-                  <div className="row mx-auto gap-3 my-2">
-                    <button
-                      onClick={() => this.handleSaveProject()}
-                      className="col-5 btn btn-primary"
-                      disabled={!pipeSelected}
-                    >
-                      {__("Save")}
-                    </button>
-                    {hasBlueIdeaProfile  ? (
-                      <button
-                        onClick={() => this.sendToBlueIdea()}
-                        className="col-6 btn btn-primary"
-                        disabled={!this.readyToBlueIdea() }
-                      >
-                        {__("Go to blueidea")}
-                      </button>
-                    ) : (<div className="col-6" >
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="row mx-auto gap-2 my-2">
-                    <div className="col-9">
-                        {s.TooManyFeatures ? 
-                        <span style={{ position: 'relative', top: '8px' }} >
-                          Hent først adresser
-                        </span>
-                        : 
-                        <span style={{ position: 'relative', top: '8px' }}>
-                          Der blev fundet {Object.keys(s.results_adresser).length} adresser i området.
-                        </span>}
-                      </div>  
-                      <div className="col-1" style={{ cursor: 'pointer', position: 'relative', top: '8px' }}>
-                        <i className="bi bi-download" 
-                          onClick={() => this.downloadAdresser()}
-                          title= {__("Download addresses")}
-                          hidden={s.TooManyFeatures || Object.keys(s.results_adresser).length  === 0}>
-                        </i>
-                      </div>
-                       <button
-                        disabled={Object.keys(s.results_adresser).length == 0}
-                        title={__("modify parcels")}
-                        className="btn btn-primary col-1"
-                        onClick={() => this.toggleEdit()}>
-                        {s.edit_matr ? <i className="bi bi-x"></i> : <i className="bi bi-pencil"></i>}
-                      </button>
-                    
-                  </div>
-
-                  <div className="row mx-auto gap-3 my-3">
-                    <button
-                      onClick={() => this.getAdresser(s.results_matrikler)}
-                      className="col btn btn-primary"
-                      hidden={!s.TooManyFeatures}
-                      style={{ marginRight: '8px' }}
-                    >
-                      {__("Get addresses")}
-                    </button>
-                  </div>
           
-                </details>
+              
+              <div
+                style={{ alignSelf: "center" }}
+                hidden={!s.user_alarmkabel}
+              >
+                <h6>{__("Alarm cable")}</h6>
+                <select
+                  className="form-select"
+                  value={s.alarm_direction_selected}
+                  onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
+                >
+                  <option value="FT">{__('From-To')}</option>
+                  <option value="TF">{__('To-From')}</option>
+                  <option value="Both">{__('Both')}</option>
+                </select>
+                <div className="form-text mb-3">Angiv søgeretning</div>
+                <div className="vertical-center col-auto">
+                  {__("Distance from point")}
+                </div>
+
+                <div className="input-group">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={s.user_alarmkabel_distance}
+                    onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
+                    min={0}
+                    max={2000}
+                    style={{ width: "35%" }}
+                  />
+                  <button
+                    onClick={() => this.selectPointAlarmkabel()}
+                    className="btn btn-primary col-auto"
+                    disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
+                  >
+                    {__("Select point for alarmkabel")}
+                  </button>
+                </div>
+                <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
               </div>
-    
+
+              <div
+                style={{ alignSelf: "center" }}
+                //hidden={!s.user_alarmkabel}
+                hidden
+              >
+                <div className="vertical-center col-auto">
+                  {__("Distance from cabinet")}
+                </div>
+
+                <div className="input-group">
+                  <select
+                    className="form-select"
+                    value={s.alarm_skab_selected}
+                    onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
+                  >
+                    // for each option in s.alarm_skabe, create an option
+                   {s.alarm_skabe.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                   ))}
+                  </select>
+                  <button
+                    onClick={() => this.selectPointAlarmskab()}
+                    className="btn btn-primary col-auto"
+                    disabled={!this.allowAlarmkabel()}
+                  >
+                    {__("Select point for cabinet")}
+                  </button>
+                </div>
+                <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
+                </div>
+
+                <div
+                  style={{ alignSelf: "center" }}
+                  hidden={s.results_alarmskabe.length == 0}
+                >
+                <div className='list-group'>
+                    {s.results_alarmskabe.map((item, index) => (
+                      <div className='list-group-item' key={index}>
+                        <div className='d-flex w-100 justify-content-between'>
+                          <small>{item.direction}</small>
+                          <small>{item.distance}m</small>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+              </div>
             </div>
 
           );
@@ -2660,7 +2283,7 @@ module.exports = {
       __("Plugin Tooltip"),
       __("Info"),
       require("./../../../browser/modules/height")().max,
-      "bi-node-minus",
+      "bi-exclamation-triangle-fill",
       false,
       exId
     );
@@ -2668,7 +2291,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<BlueIdea ref={blueIdeaRef} />, document.getElementById(exId));
+      ReactDOM.render(<Alarm ref={alarmRef} />, document.getElementById(exId));
     } catch (e) {
       throw "Failed to load DOM";
     }

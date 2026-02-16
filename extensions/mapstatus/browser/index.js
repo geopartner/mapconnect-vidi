@@ -174,10 +174,11 @@ module.exports = {
             constructor(props) {
                 super(props);
                 this.map = props.map;
-                this.projectManager = new ProjectManager(this.getSkema());
+                const skema = this.getSkema();
+                this.projectManager = new ProjectManager(skema);
               
                 this.state = {
-                    activeProject: this.projectManager.createProjectData() || {},
+                    activeProject: this.projectManager.createProjectData(skema) || {},
                     createCustomer: false,
                     createProject: false,
                     projectManager: this.projectManager,
@@ -289,20 +290,20 @@ module.exports = {
             handleProjectSelect = async (selectedProjectId, forceUpdate) => {
                 _self.active(true);
                 const isNewProject = selectedProjectId == 0;
-
+                const skema = this.getSkema();  
                 const { pipeManager, nodeManager, projectManager } = this.state;
 
                 pipeManager?.clear();
                 nodeManager?.clear();
 
                 if (isNewProject) {
-                    this.setState({ activeProject: this.projectManager.createProjectData() });
+                    this.setState({ activeProject: this.projectManager.createProjectData(skema) });
                     return;
                 }
                 try {
                     const projektData = await projectManager?.getProjectAsync(
                         selectedProjectId,
-                        this.projectManager.createProjectData()
+                        this.projectManager.createProjectData(skema)
                     );
 
                     this.setState({ activeProject: projektData });
@@ -540,8 +541,8 @@ module.exports = {
             pipeManager?.clear();
             nodeManager?.clear();
 
-            await _makeSearch(wkt, true, pipeManager);
-            await _makeSearch(wkt, true, nodeManager);
+            _makeSearch(wkt, true, pipeManager);
+            _makeSearch(wkt, true, nodeManager);
         } catch (e) {
             console.error("Error in draw:created event:", e);
         }
