@@ -192,7 +192,7 @@ router.post("/api/extension/blueidea/:userid/CreateMessage", function (req, resp
       return;
     }
 
-    var body = req.body.addresses;
+    var body = req.body;
     var beregnuuid = req.body.beregnuuid;
 
     // If debug is set, add testMode to body
