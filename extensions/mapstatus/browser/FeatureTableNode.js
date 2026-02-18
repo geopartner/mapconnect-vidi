@@ -61,12 +61,12 @@ class FeatureTableNode extends React.Component {
                     return;
                 const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == selectedFeatureId);
                 if (si === this.state.selectedRowIndex) {    
-                    return; // No change in selection, skip update
+                    this.scrollToRow();
+                    this.props.featuresManager?.hilite(selectedFeatureId);
+                    return;
                 }
                 this.setState({ selectedRowIndex: si });
-                this.scrollToRow();
-                this.props.featuresManager?.hilite(selectedFeatureId);
-                
+                this.forceUpdate();
             });
         } else {
             console.warn("No backboneEvents in FeatureTable");
