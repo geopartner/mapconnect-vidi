@@ -55,36 +55,34 @@ const _makeSearch = async (wkt, addToExisting, featuresManager) => {
 
         await new Promise((resolve, reject) => {
             sqlQuery.init(
-                qstore,
-                wkt,
-                "4326",
-                () => {
-                    if (qstore.length >= 1 && qstore[0].geoJSON) {
-                        try {
-                            const promises = qstore[0].geoJSON.features.map(feature => {
-                                const isAdded = featuresManager?.addFeature(feature, addToExisting);
-                                if (isAdded && addToExisting) {
-                                    newFeatureId = feature.properties.id;
-                                }
-                            });
-
-                            Promise.all(promises).then(resolve).catch(reject);
-                        } catch (err) {
-                            reject(err);
+            qstore,
+            wkt,
+            "4326",
+            () => {
+                if (qstore.length >= 1 && qstore[0].geoJSON) {
+                    try {
+                    qstore[0].geoJSON.features.forEach(feature => {
+                        const isAdded = featuresManager?.addFeature(feature, addToExisting);
+                        if (isAdded && addToExisting) {
+                            newFeatureId = feature.properties.id;
                         }
-                    } else {
-                        resolve();
-                    }
-                },
-                null,
-                null,
-                null,
-                [fullLayerName],
-                true,
-                null,
-                null
-            );
-        });
+                    });
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
+            } else {
+                resolve();
+            }
+        },
+        null,
+        null,
+        null,
+        [fullLayerName],
+        true,
+        null,
+        null
+        ); });
 
         // Når await ovenfor er færdig:
         if (!addToExisting) {
@@ -541,8 +539,8 @@ module.exports = {
             pipeManager?.clear();
             nodeManager?.clear();
 
-            _makeSearch(wkt, true, pipeManager);
-            _makeSearch(wkt, true, nodeManager);
+            await _makeSearch(wkt, true, pipeManager);
+            await _makeSearch(wkt, true, nodeManager);
         } catch (e) {
             console.error("Error in draw:created event:", e);
         }

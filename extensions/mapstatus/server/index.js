@@ -64,7 +64,7 @@ function SQLAPI(q, req, options = null, timeout = 5000) {
 
     // because we are running stuff though a parser, we need to be sure this is set for a primary host
     // we need SET SERVER ROLE TO 'primary'; first, and SET SERVER ROLE TO 'default'; after
-    q = "SET SERVER ROLE TO 'primary'; " + q + "; SET SERVER ROLE TO 'default';";
+    // q = "SET SERVER ROLE TO 'primary'; " + q + "; SET SERVER ROLE TO 'default';";
 
     // if options is set, merge with postData
     if (options) {
