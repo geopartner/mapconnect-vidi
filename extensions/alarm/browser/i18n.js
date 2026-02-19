@@ -21,7 +21,7 @@ var dict = {
   },
   "Info": {
     da_DK:
-      "Alarm er et modul der hjælper med at lokalisere brud i fjernvarmetrnettet ved hjælp alarmtråde og en indtastet afstand fra et udpeget punkt i nettet.",
+      "Alarm er et modul der hjælper med at lokalisere brud i fjernvarmernettet ved hjælp alarmtråde og en indtastet afstand fra et udpeget punkt i nettet.",
     en_US:
       "Alarm is a module that helps to locate breaks in the district heating network using alarm threads and entered distance from a designated point in the network.",
   },
