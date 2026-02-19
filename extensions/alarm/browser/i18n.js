@@ -21,9 +21,9 @@ var dict = {
   },
   "Info": {
     da_DK:
-      "Lukkeplan er et modul der hjælper med at finde relevante adresser til en lukning.Du kan tegne et område på kortet, og få en liste over adresser i området. Du kan også udpege et punkt på ledningsnettet, og få en liste af adresser der er forbundet til det punkt. Listerne med adresser kan derefter bruges til at sende beskeder ud med BlueIdea (Kræver aftale med BlueIdea)",
+      "Alarm er et modul der hjælper med at lokalisere brud i fjernvarmetrnettet ved hjælp alarmtråde og indtastet afstand fra en udpeget punkt i nettet.",
     en_US:
-      "ClosurePlan is a module that helps to find relevant addressess for a valve closure.You can draw an area on the map, and get a list of addresses in the area.You can also select a point on the network, and get a list of addresses connected to that point.The lists of addresses can then be used to send messages with BlueIdea (Requires agreement with BlueIdea)",
+      "Alarm is a module that helps to locate breaks in the district heating network using alarm threads and entered distance from a designated point in the network.",
   },
   "Plugin Tooltip": {
     da_DK: "Alarm",
