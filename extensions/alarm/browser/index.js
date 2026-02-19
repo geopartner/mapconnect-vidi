@@ -522,7 +522,6 @@ module.exports = {
                 api.turnOn(layer);
               });
             }
-            this.listProjects(false);
             return this.getUser();
           } else {
             me.setState(resetObj);
@@ -547,11 +546,6 @@ module.exports = {
         backboneEvents.get().on(`${exId}:setAnalyzingOn`, () => {
             me.setState({isAnalyzing: true})
             me.forceUpdate();
-        });
-
-
-        backboneEvents.get().on(`${exId}:listProject`, () => {
-            me.listProjects(true);
         });
 
         backboneEvents.get().on(`${exId}:clearAll`, () => {
@@ -622,7 +616,6 @@ module.exports = {
               if (me.state.authed && me.state.user_id) {
                 // If user has blueidea, show buttons
                 if (me.state.user_blueidea == true) {
-                  me.listProjects(true);
                   $("#_draw_blueidea_group").show();
                 } else {
                   $("#_draw_blueidea_group").hide();
@@ -860,40 +853,8 @@ module.exports = {
         }, 500);
       }
 
-      listProjects = async (refresh = false) => {
-        try {
-          const data = await this.getActiveAndFutureBreakage();
-          this.setState({projects: data.features});
-          if (refresh) {
-            this.refreshProjectLayer();
-          }
-        } catch (error) {
-          this.createSnack(__("Error in list") + ": " + error);
-          console.warn(error);
-        }
-      };
+
  
-      /**
-       * This function gets active and future breakage
-       * @returns geojson with breakages
-       */
-
-      getActiveAndFutureBreakage = () => {
-        let me = this;
-        return new Promise(function (resolve, reject) {
-          $.ajax({
-            url: "/api/extension/blueidea/" + me.state.user_id + "/activebreakages",
-            type: "GET",
-            success: function (data) {
-              resolve(data);
-            },
-            error: function (e) {
-              reject(e);
-            },
-          });
-        });
-      }
-
       /**
        * This function is what starts the process of finding relevant addresses, returns array with kvhx
        * @param {*} geojson
@@ -1331,8 +1292,6 @@ module.exports = {
       
       postSaveProject = () => {
         const me = this;
-        backboneEvents.get().trigger(`${exId}:listProject`);
-        me.listProjects(true);
         me.clearProjectState();  
         me.clearLukkeliste(); // ?  
         me.refreshProjectLayer();
@@ -1377,7 +1336,7 @@ module.exports = {
             // success snackbar
             this.createSnack( __("Project created successfully"));
             // list projects again to show the new one
-            this.listProjects(true);
+            
 
             this.postSaveProject();
           })
@@ -1400,8 +1359,6 @@ module.exports = {
           dataType: "json",
         })
           .then(() => {
-            backboneEvents.get().trigger(`${exId}:listProject`);
-            this.listProjects(true);
              
             this.postSaveProject();
             
