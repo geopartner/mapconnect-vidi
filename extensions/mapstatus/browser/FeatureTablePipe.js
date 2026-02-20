@@ -81,11 +81,14 @@ class FeatureTablePipe extends React.Component {
                 const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == selectedFeatureId);
                 
                 if (si === this.state.selectedRowIndex) {    
+                    this.scrollToRow();
+                    this.props.featuresManager?.hilite(selectedFeatureId);
                     return; // No change in selection, skip update
                 }
                 this.setState({ selectedRowIndex: si });
                 this.scrollToRow();
                 this.props.featuresManager?.hilite(selectedFeatureId);
+                this.forceUpdate();
             });
         } else {
             console.warn("No backboneEvents in FeatureTable");
