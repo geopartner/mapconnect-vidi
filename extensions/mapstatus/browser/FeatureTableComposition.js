@@ -70,6 +70,7 @@ class FeatureTableComposition extends React.Component {
         const pipe = this.state.activeTab === "ledninger";
         const featuresManager = pipe ? this.props.pipeManager : this.props.nodeManager;
         await _makeSearch(wkt, false, featuresManager);
+        this.forceUpdate(); 
     };
 
     updateData = async () => {
