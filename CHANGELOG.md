@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
 ## [unreleased]  
-- Lukkeplan avoid turnOn layer for active-break before activating the BlueIdea extension
+
+### Fixed
+- [Lukkeplan] avoid turnOn layer for active-break before activating the BlueIdea extension
+
+### Added
+- New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
 
 ## [2026.0.0] - 2026-2-10
 - Lukkeplan extension adjustments.
