@@ -44,6 +44,7 @@ class FeatureTableNode extends React.Component {
             { key: 'bem', label: 'Bemærkning', isNumeric: false },
             { key: 'pdf', label: <i className="bi bi-file-pdf"></i>, isNumeric: false },
         ];
+        this.tableContainerRef = React.createRef();
     };
     rowRefs = [];
 
@@ -225,7 +226,7 @@ class FeatureTableNode extends React.Component {
         const biSelectMapCheck = selectFeatureAtClick ? 'bi bi-plus-square' : 'bi  bi-info-circle';
         const biCheck = this.props.autoZoom ? 'bi bi-check2-circle small' : 'bi bi-circle small';
         return (
-            <>
+            <div>
                 {this.state.urlDialog && (
                     <UrlDialog
                         url={this.state.urlDialog}
@@ -324,7 +325,7 @@ class FeatureTableNode extends React.Component {
                         </div>
 
                     </div>
-                    <div style={{ cursor: 'pointer', flex: '1 1 auto', minHeight: '0', overflowY: 'auto'  }} >
+                    <div ref={this.tableContainerRef} style={{ cursor: 'pointer', flex: '1 1 auto', minHeight: '0', overflowY: 'auto'  }} >
                         <table className="table table-striped table-bordered table-hover table-sm" >
                             <thead onClick={(e) => this.handleHeaderClick(e)}>
                                 <tr style={styleObject.headerRow} >
@@ -447,7 +448,7 @@ class FeatureTableNode extends React.Component {
                         </table>
                     </div>
                 </div>
-            </>
+            </div>
         );
     }
 }

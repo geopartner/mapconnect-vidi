@@ -34,7 +34,7 @@ export default class SelectedFeaturesManager extends DataManager   {
       { color: '#ffd000', weight: 12, opacity: 0.4 };
     this.hiliteStyle = isNode ?
       { color: '#ff0000', weight: 20, opacity: 0.25 } :
-      { color: '#800080', weight: 20, opacity: 0.25 };
+      { color: '#800080', weight: 20, opacity: 0.25 };  
   }
 
   getFeatureStyle(feature){
@@ -163,12 +163,12 @@ export default class SelectedFeaturesManager extends DataManager   {
         feature.properties[key] = '';
       }
     });
-    if (addToExisting && this.featureExists(feature)) {
+    if (this.featureExists(feature)) {
 
       console.warn("Feature with id already exists: " + feature.properties.id);
       return false;
     }
-
+  
     this._geojson.features.push(feature);
     return true;
   }
