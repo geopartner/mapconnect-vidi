@@ -116,7 +116,7 @@ class DraggableBox extends React.Component {
                     maxHeight: '650px',
                     padding: '5px',
                     overflow: 'hidden',
-                    position: 'fixed',
+                    position: 'absolute', // fixed
                     right: '75px',
                     resize: 'both',
                     userSelect: 'none',

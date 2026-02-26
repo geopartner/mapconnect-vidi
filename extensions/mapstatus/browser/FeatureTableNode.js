@@ -49,8 +49,16 @@ class FeatureTableNode extends React.Component {
 
     scrollToRow = () => {
         const row = this.rowRefs[this.state.selectedRowIndex];
-        if (row) {
-            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const container = this.tableContainerRef.current;
+
+        if (row && container) {
+            const rowTop = row.offsetTop;
+            const containerHeight = container.clientHeight;
+
+            container.scrollTo({
+                top: rowTop - containerHeight / 2,
+                behavior: 'smooth'
+           });
         }
     };
 
