@@ -6,14 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
 ## [unreleased]  
--- Lukkeplan avoid turnOn layer for active-break before activating the BlueIdea extension
+- Lukkeplan avoid turnOn layer for active-break before activating the BlueIdea extension
 
 ## [2026.0.0] - 2026-2-10
 - Lukkeplan extension adjustments.
--- handling breakproject
--- handling valves and recalculations
--- handling connected addresses and BlueIdea integreation
--- alarm as seperate extension 
+- handling breakproject
+- handling valves and recalculations
+- handling connected addresses and BlueIdea integreation
+- alarm as seperate extension 
 
 ### Fixed
 - Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
