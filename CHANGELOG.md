@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
-## [unreleased]
+## [unreleased]  
+-- Lukkeplan avoid turnOn layer for active-break before activating the BlueIdea extension
+
+## [2026.0.0] - 2026-2-10
 - Lukkeplan extension adjustments.
 -- handling breakproject
 -- handling valves and recalculations
