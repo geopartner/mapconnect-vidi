@@ -26,6 +26,140 @@ let advancedInfo;
 let meta;
 
 /**
+ * Check if a layer is queryable WMS layer
+ * @param {string} layerKey Layer key
+ * @returns {boolean}
+ */
+const isQueryableWmsLayer = (layerKey) => {
+    const metaData = meta.getMetaByKey(layerKey);
+    if (!metaData) return false;
+    return metaData.wmssource && metaData.not_querable !== true;
+};
+
+/**
+ * Get all active queryable WMS layers
+ * @returns {Array<string>}
+ */
+const getQueryableWmsLayers = () => {
+    const activeLayers = _layers.getLayers() ? _layers.getLayers().split(",") : [];
+    return activeLayers.filter(key => {
+        if (key.indexOf('v:') === 0) return false; // Skip vector layers
+        return isQueryableWmsLayer(key);
+    });
+};
+
+/**
+ * Parse WMS GetFeatureInfo text response
+ * @param {string} responseText Response text from WMS
+ * @returns {Object} Parsed features object
+ */
+const parseWmsResponse = (responseText) => {
+    if (!responseText || typeof responseText !== 'string') {
+        return { features: [] };
+    }
+
+    const features = [];
+    
+    // Use a more robust approach with RegExp.exec() to capture the content inside braces
+    const regex = /feature\s*\{([^}]+)\}/gi;
+    let match;
+    
+    while ((match = regex.exec(responseText)) !== null) {
+        const properties = {};
+        const content = match[1]; // Get the captured group (content between braces)
+        const lines = content.split('\r\n');
+        
+        lines.forEach((line) => {
+            if (!line.trim()) return; // Skip empty lines
+            
+            // Match pattern like "key value" or "key" (empty value)
+            // Split on first whitespace to separate key from value
+            const lineMatch = line.match(/^\s*(\S+)\s*(.*?)?\s*$/);
+            if (lineMatch) {
+                const key = lineMatch[1];
+                let value = lineMatch[2] ? lineMatch[2].trim() : '';
+                
+                if (value === 'null') {
+                    properties[key] = null;
+                } else if (value === '') {
+                    properties[key] = null;
+                } else {
+                    properties[key] = value;
+                }
+            }
+        });
+
+        if (Object.keys(properties).length > 0) {
+            features.push({ properties });
+        }
+    }
+
+    return { features: features };
+};
+
+/**
+ * Make WMS GetFeatureInfo request
+ * @param {string} layerKey Layer key
+ * @param {Object} e Click event
+ * @param {Object} coords Coordinates {lat, lng}
+ * @returns {Promise}
+ */
+const queryWmsLayer = (layerKey, e, coords) => {
+    return new Promise((resolve, reject) => {
+        const metaData = meta.getMetaByKey(layerKey);
+        if (!metaData || !metaData.wmssource) {
+            resolve(null);
+            return;
+        }
+
+        const map = cloud.get().map;
+        const mapBbox = map.getBounds();
+        const bbox = [mapBbox.getWest(), mapBbox.getSouth(), mapBbox.getEast(), mapBbox.getNorth()];
+        const mapSize = map.getSize();
+        const containerPoint = map.latLngToContainerPoint(e.latlng);
+
+        // Build GetFeatureInfo URL
+        const url = new URL(metaData.wmssource);
+        
+        // Extract existing LAYERS parameter from wmssource if present
+        const existingLayers = url.searchParams.get('LAYERS');
+        
+        url.searchParams.set('SERVICE', 'WMS');
+        url.searchParams.set('VERSION', '1.1.1');
+        url.searchParams.set('REQUEST', 'GetFeatureInfo');
+        if (existingLayers) {
+            url.searchParams.set('QUERY_LAYERS', existingLayers);
+        } else {
+            url.searchParams.set('QUERY_LAYERS', metaData.f_table_name);
+        }
+        url.searchParams.set('X', Math.round(containerPoint.x));
+        url.searchParams.set('Y', Math.round(containerPoint.y));
+        url.searchParams.set('WIDTH', mapSize.x);
+        url.searchParams.set('HEIGHT', mapSize.y);
+        url.searchParams.set('BBOX', bbox.join(','));
+        url.searchParams.set('SRS', 'EPSG:4326');
+
+        $.ajax({
+            url: url.toString(),
+            type: 'GET',
+            dataType: 'text',
+            success: (response) => {
+                const parsedData = parseWmsResponse(response);
+                resolve({
+                    layerKey: layerKey,
+                    layerTitle: metaData.f_table_title || metaData.f_table_name,
+                    data: parsedData
+                });
+            },
+            error: (err) => {
+                console.log(`WMS GetFeatureInfo error for ${layerKey}:`, err);
+                resolve(null);
+            }
+        });
+    });
+};
+
+/**
  *
  * @type {{set: module.exports.set, init: module.exports.init, reset: module.exports.reset, active: module.exports.active}}
  */
@@ -97,6 +231,17 @@ module.exports = {
                             }, 100);
                         }, () => {
                         }, "", true);
+
+                        // Also query WMS layers
+                        const wmsLayers = getQueryableWmsLayers();
+                        if (wmsLayers.length > 0) {
+                            Promise.all(wmsLayers.map(layerKey => queryWmsLayer(layerKey, e, coords))).then(results => {
+                                const validResults = results.filter(r => r !== null && r.data && r.data.features && r.data.features.length > 0);
+                                if (validResults.length > 0) {
+                                    console.log('WMS query results:', validResults);
+                                }
+                            });
+                        }
                         // Cross Multi select enabled
                     } else {
                         let coord3857 = utils.transform("EPSG:4326", "EPSG:3857", [e.latlng.lng, e.latlng.lat]);
@@ -150,7 +295,14 @@ module.exports = {
                                 }
                             }
                         })
-                        if (activeTilelayers.length > 0) {
+                        
+                        // Also get WMS layers for this mode
+                        const wmsLayersForCrossMulti = getQueryableWmsLayers();
+                        
+                        if (activeTilelayers.length > 0 || wmsLayersForCrossMulti.length > 0) {
+                            // Make WMS requests
+                            const wmsPromises = wmsLayersForCrossMulti.map(layerKey => queryWmsLayer(layerKey, e, coords));
+                            
                             const t = sqlQuery.init(qstore, wkt, "3857", (store) => {
                                 setTimeout(() => {
                                     if (store?.geoJSON) {
@@ -166,7 +318,14 @@ module.exports = {
                                         backboneEvents.get().trigger("doneLoading:layers", "_vidi_sql_" + store.id);
                                     }
                                     if (_layers.getCountLoading() === 0) {
-                                        layerTree.displayAttributesPopup(intersectingFeatures, e);
+                                        // Wait for WMS queries to complete
+                                        Promise.all(wmsPromises).then(wmsResults => {
+                                            const validWmsResults = wmsResults.filter(r => r !== null);
+                                            if (validWmsResults.length > 0) {
+                                                console.log('WMS query results in cross-multi-select:', validWmsResults);
+                                            }
+                                            layerTree.displayAttributesPopup(intersectingFeatures, e);
+                                        });
                                     }
                                 }, 200)
                             }, null, [coord3857[0], coord3857[1]]);
