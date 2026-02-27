@@ -44,13 +44,22 @@ class FeatureTableNode extends React.Component {
             { key: 'bem', label: 'Bemærkning', isNumeric: false },
             { key: 'pdf', label: <i className="bi bi-file-pdf"></i>, isNumeric: false },
         ];
+        this.tableContainerRef = React.createRef();
     };
     rowRefs = [];
 
     scrollToRow = () => {
         const row = this.rowRefs[this.state.selectedRowIndex];
-        if (row) {
-            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const container = this.tableContainerRef.current;
+
+        if (row && container) {
+            const rowTop = row.offsetTop;
+            const containerHeight = container.clientHeight;
+
+            container.scrollTo({
+                top: rowTop - containerHeight / 2,
+                behavior: 'smooth'
+           });
         }
     };
 
@@ -74,6 +83,10 @@ class FeatureTableNode extends React.Component {
         }
 
     };
+    
+    componentDidMount() {
+        this.setState({ selectedRowIndex: -1 });
+    }
 
     updateData = () => {
         const skema = this.props.skema
@@ -217,7 +230,7 @@ class FeatureTableNode extends React.Component {
         const biSelectMapCheck = selectFeatureAtClick ? 'bi bi-plus-square' : 'bi  bi-info-circle';
         const biCheck = this.props.autoZoom ? 'bi bi-check2-circle small' : 'bi bi-circle small';
         return (
-            <>
+            <div>
                 {this.state.urlDialog && (
                     <UrlDialog
                         url={this.state.urlDialog}
@@ -316,7 +329,7 @@ class FeatureTableNode extends React.Component {
                         </div>
 
                     </div>
-                    <div style={{ cursor: 'pointer', flex: '1 1 auto', minHeight: '0', overflowY: 'auto'  }} >
+                    <div ref={this.tableContainerRef} style={{ cursor: 'pointer', flex: '1 1 auto', minHeight: '0', overflowY: 'auto'  }} >
                         <table className="table table-striped table-bordered table-hover table-sm" >
                             <thead onClick={(e) => this.handleHeaderClick(e)}>
                                 <tr style={styleObject.headerRow} >
@@ -439,7 +452,7 @@ class FeatureTableNode extends React.Component {
                         </table>
                     </div>
                 </div>
-            </>
+            </div>
         );
     }
 }

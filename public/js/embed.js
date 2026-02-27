@@ -45,6 +45,9 @@
                 var title = targetDiv.getAttribute("data-vidi-title") || "";
                 var session = targetDiv.getAttribute("data-vidi-session") || "";
 
+                //force use another, unrelated config.
+                var overrideConfig = targetDiv.getAttribute("data-vidi-override-config") || null;
+
                 try {
                     var obj = JSON.parse(atob(token));
                 } catch (e) {
@@ -57,6 +60,12 @@
                 var database = obj.database;
                 var schema = obj.schema !== undefined && useSchema ? obj.schema + "/" : "";
                 var config = obj.config !== undefined && useConfig ? obj.config : "";
+                
+                // overrideConfig is set, then use this instead
+                if (overrideConfig) {
+                    config = overrideConfig;
+                }
+
                 var src = host + "/app/" + database + "/" + schema + "?config=" + config + "&state=" + id + "&tmpl=" + tmpl +
                     "&sea=" + search +
                     "&his=" + history +

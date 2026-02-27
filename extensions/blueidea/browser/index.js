@@ -501,7 +501,7 @@ module.exports = {
        */
       componentDidMount() {
         let me = this;
-        me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
+
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is
         backboneEvents.get().on("deactivate:all", () => {});
@@ -523,10 +523,11 @@ module.exports = {
                 api.turnOn(layer);
               });
             }
-            this.listProjects(false);
+            this.listProjects(true);
             return this.getUser();
           } else {
             me.setState(resetObj);
+            api.turnOff(BlueIdea.Aktive_brud_layeName);
           }
         });
         
@@ -553,6 +554,10 @@ module.exports = {
 
         backboneEvents.get().on(`${exId}:listProject`, () => {
             me.listProjects(true);
+        });
+
+        backboneEvents.get().on(`${exId}:listProjectNoLayer`, () => {
+            me.listProjects(false);
         });
 
         backboneEvents.get().on(`${exId}:clearAll`, () => {
@@ -608,10 +613,10 @@ module.exports = {
             .then(() => {
               // if logged in, get user
               if (me.state.authed) {
-                
                 return this.getUser();
               } else {
                 me.setState(resetObj);
+                api.turnOff(BlueIdea.Aktive_brud_layeName);
               }
             })
             .catch((e) => {
@@ -623,7 +628,7 @@ module.exports = {
               if (me.state.authed && me.state.user_id) {
                 // If user has blueidea, show buttons
                 if (me.state.user_blueidea == true) {
-                  me.listProjects(true);
+                  me.listProjects(false);
                   $("#_draw_blueidea_group").show();
                 } else {
                   $("#_draw_blueidea_group").hide();
@@ -1151,11 +1156,12 @@ module.exports = {
           },
 
           onEachFeature: function (feature, layer) {
+            const ventilStatus = feature.properties.forbundet ? 'Primær ventil' : 'Sekundær ventil';
             layer.bindTooltip(
             `
             <b>Ventil</b><br>
              ${feature.properties[nameKey]  || '—'}<br>
-             Forbundet: ${feature.properties.forbundet ? 'Ja' : 'Nej'}
+              ${ventilStatus}
             `,
             {
               sticky: true,
@@ -1423,7 +1429,6 @@ module.exports = {
         if (!layer) {
           return;
         }
-
         // if the layer is not on the map, anf the filter is empty, turn it on
         api.turnOn(layer);
 
@@ -2673,7 +2678,17 @@ module.exports = {
       throw "Failed to load DOM";
     }
   },
-
+  on: () => {
+      backboneEvents.get().trigger(`${exId}:listProject`);
+    },
+  active: (active) => {
+    try {
+      backboneEvents.get().trigger(`${exId}:listProject`);
+    }
+    catch (e) {
+      console.error(e);
+    }
+  },
   callBack: function (url) {
     utils.popupCenter(
       url,

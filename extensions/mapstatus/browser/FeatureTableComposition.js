@@ -13,11 +13,12 @@ import { booleanIntersects as turfIntersects, buffer as turfBuffer } from "@turf
 import { feature as turfFeature, point as turfPoint } from "@turf/helpers";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
 class FeatureTableComposition extends React.Component {
-
+    static get Ledninger() {  return 'ledninger';  }
+    static get Broende() {  return 'bronde';  }
     constructor(props) {
         super(props);
         this.state = {
-            activeTab: "ledninger",
+            activeTab: FeatureTableComposition.Ledninger,
             autoZoom: true,
             selectFeatureAtClick: false // true=tilføj udpeget feature, false=vælg feature  
         };
@@ -25,8 +26,16 @@ class FeatureTableComposition extends React.Component {
     }
 
     setActiveTab = (tab) => {
-        this.setState({ activeTab: tab, selectFeatureAtClick: false });
-    };
+        this.setState({ activeTab: tab }, () => {
+            const pipeActive = this.isPipeActive;
+            this.props.pipeManager?.setInterActivity(pipeActive);
+            this.props.nodeManager?.setInterActivity(!pipeActive);
+            const featureClick = this.state.selectFeatureAtClick;
+            this.setState({ selectFeatureAtClick: false }, () => {
+                this.setState({ selectFeatureAtClick: featureClick });
+            });
+        });   
+    }; 
 
     componentDidMount() {
         $('.bi-layout-text-window').on('click', function () { });
@@ -48,6 +57,7 @@ class FeatureTableComposition extends React.Component {
         if (this.map) {
             this.map.on('click', this.handleMapClick);
         }
+        this.setActiveTab(FeatureTableComposition.Ledninger);
     };
 
     componentWillUnmount() {
@@ -55,6 +65,11 @@ class FeatureTableComposition extends React.Component {
             this.map.off('click', this.handleMapClick);
         }
     };
+     
+    get isPipeActive()   {
+        return this.state.activeTab === FeatureTableComposition.Ledninger;
+    };
+    
 
     handleMapClick = async (e) => {
         if (!this.map) {
@@ -67,18 +82,23 @@ class FeatureTableComposition extends React.Component {
         const distance = 5 * getResolutions(window.vidiConfig.crs)[this.map.getZoom()];
         const clickFeature = turfBuffer(turfPoint([e.latlng.lng, e.latlng.lat]), distance, { units: 'meters' });
         const wkt = geojsonToWKT(clickFeature.geometry)
-        const pipe = this.state.activeTab === "ledninger";
-        const featuresManager = pipe ? this.props.pipeManager : this.props.nodeManager;
+                
+        const featuresManager = this.isPipeActive ? this.props.pipeManager : this.props.nodeManager;
         await _makeSearch(wkt, false, featuresManager);
+        this.forceUpdate(); 
     };
 
     updateData = async () => {
-        await this.state.pipeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        if (this.isPipeActive) {
+            await this.props.pipeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        } else {
+            await this.props.nodeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        }
         this.forceUpdate();
     };
 
     updateDataNode = async () => {
-        await this.state.nodeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        await this.props.nodeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
         this.forceUpdate();
     };
      exportExcel = () => {
@@ -113,8 +133,8 @@ class FeatureTableComposition extends React.Component {
                     <ul className="nav nav-tabs justify-content-start" role="tablist">
                         <li className="nav-item" role="presentation">
                             <button
-                                className={`nav-link ${activeTab === "ledninger" ? "active" : ""}`}
-                                onClick={() => this.setActiveTab("ledninger")}
+                                className={`nav-link ${activeTab === FeatureTableComposition.Ledninger ? "active" : ""}`}
+                                onClick={() => this.setActiveTab( FeatureTableComposition.Ledninger)} 
                                 type="button"
                                 role="tab"
                             >
@@ -123,8 +143,8 @@ class FeatureTableComposition extends React.Component {
                         </li>
                         <li className="nav-item" role="presentation">
                             <button
-                                className={`nav-link ${activeTab === "bronde" ? "active" : ""}`}
-                                onClick={() => this.setActiveTab("bronde")}
+                                className={`nav-link ${activeTab === FeatureTableComposition.Broende ? "active" : ""}`}
+                                onClick={() => this.setActiveTab(FeatureTableComposition.Broende)}
                                 type="button"
                                 role="tab"
                             >
@@ -135,7 +155,7 @@ class FeatureTableComposition extends React.Component {
 
                     {/* Tab content */}
                     <div className="tab-content">
-                        {activeTab === "ledninger" && (
+                        {activeTab === FeatureTableComposition.Ledninger && (
                             <div className="tab-pane fade show active" role="tabpanel">
                                 <FeatureTablePipe
                                     autoZoom={this.state?.autoZoom}
@@ -165,7 +185,7 @@ class FeatureTableComposition extends React.Component {
                             </div>
                         )}
 
-                        {activeTab === "bronde" && (
+                        {activeTab === FeatureTableComposition.Broende && (
                             <div className="tab-pane fade show active" role="tabpanel">
                                 <FeatureTableNode
                                     autoZoom={this.state?.autoZoom}
