@@ -5,12 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
-## [unreleased]
+## [unreleased]  
+
+### Fixed
+- [Lukkeplan] avoid turnOn layer for active-break before activating the BlueIdea extension
+
+### Added
+- New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
+
+## [2026.0.0] - 2026-2-10
 - Lukkeplan extension adjustments.
--- handling breakproject
--- handling valves and recalculations
--- handling connected addresses and BlueIdea integreation
--- alarm as seperate extension 
+- handling breakproject
+- handling valves and recalculations
+- handling connected addresses and BlueIdea integreation
+- alarm as seperate extension 
 
 ### Fixed
 - Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
