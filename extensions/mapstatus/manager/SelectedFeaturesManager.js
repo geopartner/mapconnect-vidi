@@ -29,6 +29,7 @@ export default class SelectedFeaturesManager extends DataManager   {
     this.backboneEvents = backboneEvents;
     this.MAPSTATUS_MODULE_NAME = MAPSTATUS_MODULE_NAME;
     this.isNode = isNode;
+    this.layerIsActive = true;
     this.colorStyle = isNode ?
       { color: '#00ff00', weight: 12, opacity: 0.4 } :
       { color: '#ffd000', weight: 12, opacity: 0.4 };
@@ -164,7 +165,6 @@ export default class SelectedFeaturesManager extends DataManager   {
       }
     });
     if (this.featureExists(feature)) {
-
       console.warn("Feature with id already exists: " + feature.properties.id);
       return false;
     }
@@ -300,6 +300,15 @@ export default class SelectedFeaturesManager extends DataManager   {
     }
   }
 
+  setInterActivity = (interactive) => {
+    this.layerIsActive = interactive;
+    // this.redraw(null);
+    if (this._geojsonLayer) {
+        this._geojsonLayer.eachLayer(layer => {
+         layer.setStyle({ interactive: interactive });
+      });
+    }
+  }  
 
 /*********************************************************************************************************************  
  * redraw:  redraw all features in the map with colors defined in the constructor

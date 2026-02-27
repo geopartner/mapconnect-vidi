@@ -110,8 +110,8 @@ class FeatureTablePipe extends React.Component {
 
     };
 
-     componentDidMount() {
-        alert("selectFeatureAtClick FeatureTablePipe: " + this.props.selectFeatureAtClick  );
+    componentDidMount() {
+        this.setState({ selectedRowIndex: -1 });
     }
 
     updateData = () => {

@@ -83,8 +83,9 @@ class FeatureTableNode extends React.Component {
         }
 
     };
+    
     componentDidMount() {
-        alert("selectFeatureAtClick FeatureTableNode: " + this.props.selectFeatureAtClick  );
+        this.setState({ selectedRowIndex: -1 });
     }
 
     updateData = () => {
