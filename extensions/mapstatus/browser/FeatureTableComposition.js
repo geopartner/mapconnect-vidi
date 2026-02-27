@@ -25,7 +25,7 @@ class FeatureTableComposition extends React.Component {
     }
 
     setActiveTab = (tab) => {
-        this.setState({ activeTab: tab, selectFeatureAtClick: false });
+        this.setState({ activeTab: tab });
     };
 
     componentDidMount() {
@@ -68,18 +68,24 @@ class FeatureTableComposition extends React.Component {
         const clickFeature = turfBuffer(turfPoint([e.latlng.lng, e.latlng.lat]), distance, { units: 'meters' });
         const wkt = geojsonToWKT(clickFeature.geometry)
         const pipe = this.state.activeTab === "ledninger";
+        
         const featuresManager = pipe ? this.props.pipeManager : this.props.nodeManager;
         await _makeSearch(wkt, false, featuresManager);
         this.forceUpdate(); 
     };
 
     updateData = async () => {
-        await this.state.pipeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        const pipe = this.state.activeTab === "ledninger";
+        if (pipe) {
+            await this.props.pipeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        } else {
+            await this.props.nodeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        }
         this.forceUpdate();
     };
 
     updateDataNode = async () => {
-        await this.state.nodeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
+        await this.props.nodeManager?.saveFeatureAsync(this.props.skema, this.props.activeProject);
         this.forceUpdate();
     };
      exportExcel = () => {

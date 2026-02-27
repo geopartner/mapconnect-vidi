@@ -110,6 +110,10 @@ class FeatureTablePipe extends React.Component {
 
     };
 
+     componentDidMount() {
+        alert("selectFeatureAtClick FeatureTablePipe: " + this.props.selectFeatureAtClick  );
+    }
+
     updateData = () => {
         const skema = this.props.skema
         this.props.featuresManager?.saveFeatureAsync(skema, this.props.activeProject);

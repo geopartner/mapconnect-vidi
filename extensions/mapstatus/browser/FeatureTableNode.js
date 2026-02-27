@@ -83,6 +83,9 @@ class FeatureTableNode extends React.Component {
         }
 
     };
+    componentDidMount() {
+        alert("selectFeatureAtClick FeatureTableNode: " + this.props.selectFeatureAtClick  );
+    }
 
     updateData = () => {
         const skema = this.props.skema
