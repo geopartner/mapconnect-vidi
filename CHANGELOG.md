@@ -5,35 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
-## [unreleased]  
+## [additions]  
 
-### Fixed
-- [Lukkeplan] avoid turnOn layer for active-break before activating the BlueIdea extension
-
-### Added
-- New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
-
-## [2026.0.0] - 2026-2-10
-- Lukkeplan extension adjustments.
-- handling breakproject
-- handling valves and recalculations
-- handling connected addresses and BlueIdea integreation
-- alarm as seperate extension 
+- Seperated lukkeplan/alarmplan extentions.
+- Updated [blueidea] extension to handle breakprojects, recalculations, valves and blueidea.
+- The new [alarm] extension now handles alarmkabler.
 
 ### Fixed
 - Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
 - Fixed an issue with printing when using a layer from DF-controller. Somelayers failed the SSL-check. These layers are now printable.
 - Fixed an issue with nested subgroups and their activation. 
 - Fixed an issue where the linkprefix/linksuffix was not used in the table-view of the select tool.
+- [mapstatus] fixed bugs in addFeature, dialog movement, state.
 
 ### Added
 - [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
+- [embed] New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
 
 ### Changed
 - Vidi now checks for update on launch, and every 30 seconds. If autoUpdate is set - the application will forcibly update. It does however, require the use to update once more to get this functionality in their browser.
 - Centralized the Handlebars-helpers and made them work inside the table-view of the select tool.
-
-
 
 ## [2025.10.0] - 2025-2-10
 ### Added
