@@ -68,40 +68,40 @@ var userString = function (req) {
   return userstr;
 };
 // Get current user and setup
-router.get("/api/extension/blueidea/:userid", function (req, response) {
+router.get("/api/extension/alarm", function (req, response) {
   guard(req, response);
 
   // Get user from config
-  var user = bi.users[req.params.userid];
+  //var user = bi.users[req.params.userid];
 
   //console.log(user);
 
   // guard against missing mandatory properties
 
   // if blueidea is set, and is true, check for username and password
-  try {
-    if (user.hasOwnProperty("blueidea") && user.blueidea) {
-      if (!user.hasOwnProperty("username") || !user.hasOwnProperty("password")) {
-        response.status(500).send("Missing username or password");
-        return;
-      }
-    }
-  } catch {
-    console.log("Error checking blueidea properties");
-    return;
-  }
+  // try {
+  //   if (user.hasOwnProperty("blueidea") && user.blueidea) {
+  //     if (!user.hasOwnProperty("username") || !user.hasOwnProperty("password")) {
+  //       response.status(500).send("Missing username or password");
+  //       return;
+  //     }
+  //   }
+  // } catch {
+  //   console.log("Error checking blueidea properties");
+  //   return;
+  // }
 
   // if check if blueidea and lukke liste is set
-  if (!user.hasOwnProperty("blueidea") || !user.hasOwnProperty("lukkeliste")) {
-    response.status(500).send("Missing feature flags");
-    return;
-  }
+  // if (!user.hasOwnProperty("blueidea") || !user.hasOwnProperty("lukkeliste")) {
+  //   response.status(500).send("Missing feature flags");
+  //   return;
+  // }
 
   returnobj = {
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
     alarmkabel: user.alarmkabel ? user.alarmkabel : false,
-    blueidea: user.blueidea ? user.blueidea : false,
+    //blueidea: user.blueidea ? user.blueidea : false,
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
     debug: user.debug ? user.debug : null,
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],

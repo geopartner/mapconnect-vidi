@@ -690,17 +690,16 @@ module.exports = {
           return new Promise(function (resolve, reject) {
             $.ajax({
               url:
-                "/api/extension/blueidea/" +
-                config.extensionConfig.blueidea.userid,
+              "/api/extension/alarm",
               type: "GET",
               success: function (data) {
-                console.log("[Lukkeliste] Got user", data);
+                console.log("[alarm] Got data", data);
 
                 // If data.profileid has values, set the first key as the selected
-                let userProfiles = [];
-                if (data.profileid) {
-                  userProfiles = Object.keys(data.profileid);
-                }
+                // let userProfiles = [];
+                // if (data.profileid) {
+                //   userProfiles = Object.keys(data.profileid);
+                // }
 
                 let alarmskabe = [];
                 let alarm_skab_selected = '';
