@@ -62,10 +62,7 @@ class FeatureTablePipe extends React.Component {
     rowRefs = [];
 
     scrollToRow = () => {
-        // const row = this.rowRefs[this.state.selectedRowIndex];
-        // if (row) {
-        //     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // }
+   
         const row = this.rowRefs[this.state.selectedRowIndex];
         const container = this.tableContainerRef.current;
 
@@ -101,6 +98,11 @@ class FeatureTablePipe extends React.Component {
                 this.setState({ selectedRowIndex: si });
                 this.scrollToRow();
                 this.props.featuresManager?.hilite(selectedFeatureId);
+                alert("Her åb detail Feature selected: ");
+                const feature = this.props.featuresManager?.byId(selectedFeatureId);
+                if (feature) {
+                    this.props.onTableRowClick(feature, selectedFeatureId)
+                }
                 this.forceUpdate();
             });
         } else {

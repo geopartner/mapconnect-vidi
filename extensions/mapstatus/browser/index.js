@@ -13,7 +13,7 @@ import DraggableBox from "./DraggableBox.js";
 import FeatureTableComposition from './FeatureTableComposition.js'
 
 import ProjectSelector from "./ProjectSelector.js";
-
+import FeaturePipe from "./FeaturePipe.js";
 import styleObject from "./style.js";
 // managers
 import ExcelExportManager from '../manager/ExcelExportManager.js';
@@ -356,7 +356,7 @@ module.exports = {
                 const skemaName = this.getProjectName();
                 const skema = this.getSkema();
                 const kundenavn = this.getKundeNavn();
-
+                const isLedning = this.state.selectedFeature?.properties?.hasOwnProperty("ledningid");
                 return (
 
                     <div role="tabpanel">
@@ -443,18 +443,37 @@ module.exports = {
                                 />, this.portalContainer)
 
                         }
-                        { this.state.selectedFeature && this.state.showFeatureDetails &&
+                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && isLedning &&
                             ReactDOM.createPortal(
                                 <DraggableBox  // for pipes and nodes
-                                    headerText='Detaljer for valgt feature'
+                                    headerText='Ledning'
                                     onExcel={() => {}}
                                     onMouseDown={(e) => {e.stopPropagation();}}
                                 >
-                                    <div className="featureDetails">
-                                       <h5>Detaljer for valgt feature</h5>
-                                       <pre>{JSON.stringify(this.state.selectedFeature.properties, null, 2)}</pre>
-                                       <button className="btn btn-secondary" onClick={() => this.setState({ showFeatureDetails: false })}>Luk</button> 
-                                       </div>
+                                   <FeaturePipe 
+                                     activeProject={this.state.activeProject} 
+                                     feature={this.state.selectedFeature}
+                                     skema={skema}
+                                     featuresManager={this.state.pipeManager}
+                                     onClose={() => this.setState({ showFeatureDetails: false, selectedFeature: null })} 
+                                   />
+                                </DraggableBox>, 
+                            this.portalContainer)
+                        }
+                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && !isLedning &&
+                            ReactDOM.createPortal(
+                                <DraggableBox  // for pipes and nodes
+                                    headerText='Knude'
+                                    onExcel={() => {}}
+                                    onMouseDown={(e) => {e.stopPropagation();}}
+                                >
+                                   <FeaturePipe 
+                                        
+                                     feature={this.state.selectedFeature}
+                                     skema={skema}
+                                     featuresManager={this.state.nodeManager}
+                                     onClose={() => this.setState({ showFeatureDetails: false, selectedFeature: null })} 
+                                   />
                                 </DraggableBox>, 
                             this.portalContainer)
                         }

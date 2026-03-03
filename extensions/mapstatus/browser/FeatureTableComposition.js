@@ -12,6 +12,7 @@ import { getResolutions } from '../../../browser/modules/crs';
 import { booleanIntersects as turfIntersects, buffer as turfBuffer } from "@turf/turf";
 import { feature as turfFeature, point as turfPoint } from "@turf/helpers";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
+
 class FeatureTableComposition extends React.Component {
     static get Ledninger() {  return 'ledninger';  }
     static get Broende() {  return 'bronde';  }
