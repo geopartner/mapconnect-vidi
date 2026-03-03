@@ -9,6 +9,7 @@ import React from 'react';
 
 // browser components:
 import CreateProjectForm from "./CreateProjectForm.js";
+import DraggableBox from "./DraggableBox.js";
 import FeatureTableComposition from './FeatureTableComposition.js'
 
 import ProjectSelector from "./ProjectSelector.js";
@@ -187,7 +188,8 @@ module.exports = {
                     isReadOnly: true,
                     projects: [],
                     selectedFeature: {},
-                    selectFeatureAtClick: false // true=tilføj udpeget feature, false=vælg feature  
+                    selectFeatureAtClick: false, // true=tilføj udpeget feature, false=vælg feature  
+                    showFeatureDetails: false   
                 };
                 this.portalContainer = document.createElement('div');
                 document.body.appendChild(this.portalContainer);
@@ -432,15 +434,32 @@ module.exports = {
                                     nodeManager={this.state.nodeManager}
                                     onExcel={() => { this.exportExcel(); }}
                                     onMouseDown={(e) => { e.stopPropagation(); }}
+                                    onRowClick={(feature) => {
+                                        this.setState({ selectedFeature: feature, showFeatureDetails: true });
+                                    }}
                                     pipeManager={this.state.pipeManager}
                                     projectManager={this.state.projectManager}
                                     skema={skema}
                                 />, this.portalContainer)
 
                         }
+                        { this.state.selectedFeature && this.state.showFeatureDetails &&
+                            ReactDOM.createPortal(
+                                <DraggableBox  // for pipes and nodes
+                                    headerText='Detaljer for valgt feature'
+                                    onExcel={() => {}}
+                                    onMouseDown={(e) => {e.stopPropagation();}}
+                                >
+                                    <div className="featureDetails">
+                                       <h5>Detaljer for valgt feature</h5>
+                                       <pre>{JSON.stringify(this.state.selectedFeature.properties, null, 2)}</pre>
+                                       <button className="btn btn-secondary" onClick={() => this.setState({ showFeatureDetails: false })}>Luk</button> 
+                                       </div>
+                                </DraggableBox>, 
+                            this.portalContainer)
+                        }
+
                     </div>
-
-
                 );
             }
         }

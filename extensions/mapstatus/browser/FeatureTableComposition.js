@@ -117,6 +117,7 @@ class FeatureTableComposition extends React.Component {
         } = this.state;
         const isReadOnly = this.props.isReadOnly;
         const nodeManager = this.props.nodeManager;
+        const parentRowClick = this.props.onRowClick;
         const pipeManager = this.props.pipeManager;
         const skema = this.props.skema;
         return (
@@ -173,6 +174,7 @@ class FeatureTableComposition extends React.Component {
                                     onDataUpdated={this.updateData}
                                     onTableRowClick={(feature, index) => {
                                         this.setState({ selectFeatureAtClick: false, selectedFeature: feature });
+                                        parentRowClick && parentRowClick(feature, true);
                                     }}
                                     onAddFeatureToggle={() => {
                                         this.setState({ selectFeatureAtClick: !this.state.selectFeatureAtClick });
@@ -202,7 +204,8 @@ class FeatureTableComposition extends React.Component {
                                     }}
                                     onDataUpdated={this.updateDataNode}
                                     onTableRowClick={(feature, index) => {
-                                        this.setState({ selectFeatureAtClick: false, selectedFeature: feature });
+                                        this.setState({ selectFeatureAtClick: false, selectedFeature: feature });   
+                                        parentRowClick && parentRowClick(feature, false);
                                     }}
                                     onAddFeatureToggle={() => {
                                         this.setState({ selectFeatureAtClick: !this.state.selectFeatureAtClick });
