@@ -98,7 +98,7 @@ class FeatureTablePipe extends React.Component {
                 this.setState({ selectedRowIndex: si });
                 this.scrollToRow();
                 this.props.featuresManager?.hilite(selectedFeatureId);
-                alert("Her åb detail Feature selected: ");
+                
                 const feature = this.props.featuresManager?.byId(selectedFeatureId);
                 if (feature) {
                     this.props.onTableRowClick(feature, selectedFeatureId)

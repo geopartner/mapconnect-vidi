@@ -445,8 +445,9 @@ module.exports = {
                         }
                         { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && isLedning &&
                             ReactDOM.createPortal(
-                                <DraggableBox  // for pipes and nodes
+                                <DraggableBox
                                     headerText='Ledning'
+                                    initialStyle={{bottom: '100px', height: '550px', maxHeight: '600px', right: '100px', width: '400px' }}
                                     onExcel={() => {}}
                                     onMouseDown={(e) => {e.stopPropagation();}}
                                 >
@@ -462,12 +463,12 @@ module.exports = {
                         }
                         { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && !isLedning &&
                             ReactDOM.createPortal(
-                                <DraggableBox  // for pipes and nodes
+                                <DraggableBox
                                     headerText='Knude'
-                                    onExcel={() => {}}
+                                    initialStyle={{bottom: '100px', height: '500px', maxHeight: '600px', right: '100px', width: '400px' }}
                                     onMouseDown={(e) => {e.stopPropagation();}}
                                 >
-                                   <FeaturePipe 
+                                   <FeaturePipe // -> husk node
                                         
                                      feature={this.state.selectedFeature}
                                      skema={skema}

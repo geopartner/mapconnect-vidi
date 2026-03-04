@@ -9,6 +9,17 @@ import { max } from "underscore";
 
 
 class DraggableBox extends React.Component {
+    
+    static defaultProps = {
+        initialStyle: {
+            bottom: '10px',
+            height: '650px',
+            maxHeight: '650px',
+            right: '75px',
+            width: '1200px'
+        }
+    };
+    b
     constructor(props) {
         super(props);
 
@@ -99,34 +110,32 @@ class DraggableBox extends React.Component {
         const {
             children,
             headerText,
-            onExcel } = this.props;
-
+            initialStyle } = this.props;
+        const baseStyle = {
+            backgroundColor: '#fff',
+            border: '1px solid #000',
+            cursor: 'move',
+            display: 'flex',
+            flexDirection: "column",
+            fontSize: '12px',
+            margin: '10px',
+            padding: '5px',
+            overflow: 'hidden',
+            position: 'absolute',
+            resize: 'both',
+            userSelect: 'none',
+            zIndex: 10200
+       };
         return (
-            <div className="form-select mb-3" onMouseDown={this.handleMouseDown}
-                style={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #000',
-                    bottom: '10px',
-                    cursor: 'move',
-                    display: 'flex',
-                    flexDirection: "column",
-                    fontSize: '12px',
-                    height: '650px',
-                    margin: '10px',
-                    maxHeight: '650px',
-                    padding: '5px',
-                    overflow: 'hidden',
-                    position: 'absolute', // fixed
-                    right: '75px',
-                    resize: 'both',
-                    userSelect: 'none',
-                    width: '70vw',
-                    zIndex: 10200
+            <div onMouseDown={this.handleMouseDown}
+               style={{
+                ...baseStyle,
+                ...initialStyle
                 }}
                 ref={this.boxRef}
             >
                 <div className="border-bottom border-2 form-select" style={{ minHeight: '30px', maxHeight: '30px', overflowY: 'hidden', overflowX: 'hidden' }}>
-                    <p className="mb-2 mr-2">{headerText}</p>
+                    <h6>{headerText}</h6>
                 </div>
                 <div className="draggable-children">
                     {children}

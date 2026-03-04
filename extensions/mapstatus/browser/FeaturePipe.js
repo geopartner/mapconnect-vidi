@@ -88,7 +88,7 @@ class FeatureTablePipe extends React.Component {
              } = feature.properties;
         let bem = this.state.bem; 
         
-        return <div style={{ height: '510px', width: '350px' }}>
+        return <div style={{ height: '550px', width: '350px', padding: '10px', margin: '10px' }}>
             <div className="row">
                 <div className="col">
                     <p><strong>Fra brønd:</strong> {fra_brønd}</p>
@@ -105,7 +105,7 @@ class FeatureTablePipe extends React.Component {
                             feature.properties.metode = e.target.value;;
                             this.updateData();
                         }}
-                            metode={metode} 
+                        selected={metode} 
                         />
                     </p>
                 </div>
@@ -123,8 +123,9 @@ class FeatureTablePipe extends React.Component {
                             feature.properties.terraen = e.target.value;;
                             this.updateData();
                         }} 
-                        terraen={terraen} />
-                        </p>    
+                        selected={terraen}
+                       />
+                    </p>    
                    
                 </div>      
             </div>
