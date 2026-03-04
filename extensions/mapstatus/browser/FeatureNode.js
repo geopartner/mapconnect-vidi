@@ -8,9 +8,7 @@ import React from "react";
 import PipeMethodComponent from "./PipeMethodComponent.js";
 import PipeTerrainComponent from "./PipeTerrainComponent.js";
 
-
-const MAPSTATUS_MODULE_NAME = `mapstatus`;
-class FeaturePipe extends React.Component {
+class FeatureNode extends React.Component {
     constructor(props) {
         super(props);
         this.state = {  
@@ -20,27 +18,9 @@ class FeaturePipe extends React.Component {
         };  
     }
 
-     componentDidMount() {
+    componentDidMount() {
         this.setState({ bem: this.props?.feature?.properties?.bem || "" });
     }
-
-    handleVideoLink = (id) => {
-        const skema = this.props.skema;
-        this.setState({ showModal: false });
-        this.props.featuresManager?.getLedningFilmfilAsync(skema, id)
-            .then((url) => {
-                if (url) {
-                    this.setState({ urlDialog: url });
-                    // window.open(url, '_blank');
-                } else {
-                    alert("Ingen video fundet for denne ledning.");
-                }
-            })
-            .catch((error) => {
-                console.error("Error fetching video link:", error);
-                alert("Fejl ved hentning af video link: " + error.message);
-            });
-    };
 
     handlePdfLink = (id) => {
         const skema = this.props.skema;
@@ -73,22 +53,15 @@ class FeaturePipe extends React.Component {
     render() {
         const  { feature } = this.props;
         const {
-            fra_brønd, 
-            fra_broend_dybde, 
-            til_brønd,  
-            til_broend_dybde, 
-            system, 
-            kategori, 
-            materiale, 
-            handelsmål, 
-            længde, 
-            fra_kote, 
-            til_kote, 
-            fysiskindeks, 
-            metode,    
+            knudenavn,
+            system,
+            kategori,
+            knudetype,
+            dimension,
+            brøndmateriale,
+            dybde,
+            metode,
             terraen,
-            antalstik_ledning,
-            ledningid,
             bem
              } = feature.properties;
         
@@ -97,14 +70,11 @@ class FeaturePipe extends React.Component {
         return <div style={{ height: '550px', width: '350px', padding: '10px', margin: '10px' }}>
             <div className="row">
                 <div className="col">
-                    <p><strong>Fra brønd:</strong> {fra_brønd}</p>
-                    <p><strong>Fra brønd dybde:</strong> {fra_broend_dybde} m</p>
-                    <p><strong>Fra kote:</strong> {fra_kote} m</p>
-                    <p><strong>Handelsmål:</strong> {handelsmål} mm</p>
-                    
-                    <p><strong>System:</strong> {system}</p>
+                    <p><strong>Brønd:</strong> {knudenavn}</p>
                     <p><strong>Kategori:</strong> {kategori}</p>
-                    <p><strong>Materiale:</strong> {materiale}</p>
+                    <p><strong>Dimension:</strong> {dimension} m</p>
+                    <p><strong>Dybde:</strong> {dybde} m</p>
+                    
                     <div> 
                         <p><strong>Metode:</strong></p> 
                         <PipeMethodComponent 
@@ -118,13 +88,11 @@ class FeaturePipe extends React.Component {
                     </div>
                 </div>
                 <div className="col">
-                    <p><strong>Til brønd:</strong> {til_brønd}</p>
-                    <p><strong>Til brønd dybde:</strong> {til_broend_dybde} m</p>
-                    <p><strong>Til kote:</strong> {til_kote} m</p>
-                    <p><strong>Længde:</strong> {længde} m</p>
-                    <p><strong>Fysisk indeks:</strong> {fysiskindeks}</p>
-                    <p><strong>Antal stik:</strong> {antalstik_ledning}</p>
-                    <p>_ </p>
+                    <p><strong>System:</strong> {system }</p>
+                    <p><strong>Type:</strong> {knudetype}</p>
+                    <p><strong>Materiale:</strong> {brøndmateriale} m</p>
+                    <p>&nbsp;</p>
+
                     <div> 
                      <p><strong>Terræn:</strong></p> 
                      <PipeTerrainComponent 
@@ -160,9 +128,6 @@ class FeaturePipe extends React.Component {
             </div>
             <div className="row">
                 <div className="col">
-                    <button className="btn btn-primary" onClick={() => this.handleVideoLink(ledningid)}>Video</button>
-                </div>
-                <div className="col">
                     <button className="btn btn-secondary" onClick={() => this.handlePdfLink(ledningid)}>Rapport</button>
                 </div>
                 <div className="col">
@@ -174,4 +139,4 @@ class FeaturePipe extends React.Component {
         </div>;
     }
 };
-export  default FeaturePipe;
+export  default FeatureNode;

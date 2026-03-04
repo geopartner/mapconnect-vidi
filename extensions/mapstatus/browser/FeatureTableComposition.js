@@ -13,6 +13,7 @@ import { booleanIntersects as turfIntersects, buffer as turfBuffer } from "@turf
 import { feature as turfFeature, point as turfPoint } from "@turf/helpers";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
 
+
 class FeatureTableComposition extends React.Component {
     static get Ledninger() {  return 'ledninger';  }
     static get Broende() {  return 'bronde';  }
@@ -36,6 +37,7 @@ class FeatureTableComposition extends React.Component {
                 this.setState({ selectFeatureAtClick: featureClick });
             });
         });   
+
     }; 
 
     componentDidMount() {
@@ -119,6 +121,7 @@ class FeatureTableComposition extends React.Component {
         const isReadOnly = this.props.isReadOnly;
         const nodeManager = this.props.nodeManager;
         const parentRowClick = this.props.onRowClick;
+        const onNewTab = this.props.onNewTab;
         const pipeManager = this.props.pipeManager;
         const skema = this.props.skema;
         return (
@@ -130,13 +133,19 @@ class FeatureTableComposition extends React.Component {
                 onMouseDown={(e) => {
                     e.stopPropagation();
                 }}
+                showMinimizeButton={true}
+                
             >
                 <>
                     <ul className="nav nav-tabs justify-content-start" role="tablist">
                         <li className="nav-item" role="presentation">
                             <button
                                 className={`nav-link ${activeTab === FeatureTableComposition.Ledninger ? "active" : ""}`}
-                                onClick={() => this.setActiveTab( FeatureTableComposition.Ledninger)} 
+                                onClick={() => {
+                                    this.setActiveTab( FeatureTableComposition.Ledninger)
+                                    onNewTab && onNewTab(true); 
+                                }} 
+                                
                                 type="button"
                                 role="tab"
                             >
@@ -146,7 +155,10 @@ class FeatureTableComposition extends React.Component {
                         <li className="nav-item" role="presentation">
                             <button
                                 className={`nav-link ${activeTab === FeatureTableComposition.Broende ? "active" : ""}`}
-                                onClick={() => this.setActiveTab(FeatureTableComposition.Broende)}
+                                onClick={() => {
+                                    this.setActiveTab(FeatureTableComposition.Broende);
+                                    onNewTab && onNewTab(false);
+                                }}
                                 type="button"
                                 role="tab"
                             >

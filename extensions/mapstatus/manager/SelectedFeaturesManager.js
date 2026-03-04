@@ -339,18 +339,24 @@ export default class SelectedFeaturesManager extends DataManager   {
             //   Denne er fjernet så kortet ikke hopper når der klikkes på en feature
             // this.zoomToFeature(feature);
             this.selectedFeatureId = feature.properties.id;
-
-            if (this.selectedFeatureIds.contains(this.selectedFeatureId)) {
-              this.selectedFeatureIds.remove(this.selectedFeatureId);
+            const featureId = feature.properties.id;
+            if (!feature) {
+              return;
+            }
+            if (this.selectedFeatureIds.contains(featureId)) {
+              this.selectedFeatureIds.remove(featureId);
               this.hilite(0);
               return;
             }
-
+            const isNode = feature.properties.hasOwnProperty('knudenavn');  
             const ctrlKey = e.originalEvent.ctrlKey;
-            this.selectedFeatureIds.add(this.selectedFeatureId, !ctrlKey);
-            this.hilite(this.selectedFeatureId);
-
-            this.backboneEvents.get().trigger(`${this.MAPSTATUS_MODULE_NAME}:updateSelected`, this.selectedFeatureId);
+            this.selectedFeatureIds.add(featureId, !ctrlKey);
+            this.hilite(featureId);
+            if (isNode) {
+              this.backboneEvents.get().trigger(`${this.MAPSTATUS_MODULE_NAME}:updateSelectedNode`, featureId);
+            } else {  
+              this.backboneEvents.get().trigger(`${this.MAPSTATUS_MODULE_NAME}:updateSelected`, featureId); 
+            }  
 
           });
         }

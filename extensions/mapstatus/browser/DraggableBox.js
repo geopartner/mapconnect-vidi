@@ -4,6 +4,8 @@
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
+import { Minimize } from "@material-ui/icons";
+import { toPathSchema } from "@rjsf/utils";
 import React from "react";
 import { max } from "underscore";
 
@@ -17,9 +19,17 @@ class DraggableBox extends React.Component {
             maxHeight: '650px',
             right: '75px',
             width: '1200px'
-        }
+        },
+        minimizedStyle : {
+            bottom: '10px',
+            height: '80px',
+            maxHeight: '80px',
+            right: '75px',
+            width: '1200px'
+        }       
     };
-    b
+    
+    
     constructor(props) {
         super(props);
 
@@ -32,6 +42,7 @@ class DraggableBox extends React.Component {
             },
             isDragging: false,
             isResizing: false,
+            isMaximized: true
 
         };
         this.isUserResizing = false;
@@ -107,10 +118,14 @@ class DraggableBox extends React.Component {
 
 
     render() {
+        const maximized = this.state.isMaximized;
         const {
             children,
             headerText,
-            initialStyle } = this.props;
+            initialStyle,
+            showMinimizeButton,
+            minimizedStyle } = this.props;
+     
         const baseStyle = {
             backgroundColor: '#fff',
             border: '1px solid #000',
@@ -120,25 +135,33 @@ class DraggableBox extends React.Component {
             fontSize: '12px',
             margin: '10px',
             padding: '5px',
-            overflow: 'hidden',
+            overflow: 'hidden', 
             position: 'absolute',
             resize: 'both',
             userSelect: 'none',
             zIndex: 10200
-       };
+        };
+        const activeStyle = maximized ? initialStyle : minimizedStyle;    
         return (
             <div onMouseDown={this.handleMouseDown}
                style={{
                 ...baseStyle,
-                ...initialStyle
+                ...activeStyle
                 }}
                 ref={this.boxRef}
-            >
-                <div className="border-bottom border-2 form-select" style={{ minHeight: '30px', maxHeight: '30px', overflowY: 'hidden', overflowX: 'hidden' }}>
-                    <h6>{headerText}</h6>
+            >   
+                <div className="border-bottom border-2 row" style={{ minHeight: '30px', maxHeight: '30px', overflowY: 'hidden', overflowX: 'hidden' }}>
+                    <div className="col-11">
+                        <h6>{headerText}</h6>   
+                    </div>
+                    
+                    <div className="col-1" style={{cursor: 'pointer'}}>
+                        <i className="bi bi-dash me-2 window-icon" title="maksimer"  hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: false })} ></i>
+                        <i className="bi bi-square window-icon" title="minimer" hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: true })}  ></i>
+                    </div>
                 </div>
                 <div className="draggable-children">
-                    {children}
+                 {maximized && children }
                 </div>
             </div>
         );

@@ -65,16 +65,27 @@ class FeatureTableNode extends React.Component {
 
     componentDidUpdate(prevProps) {
         if (this.props.backboneEvents) {
-            this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:updateSelected`, (selectedFeatureId) => {
+            this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:updateSelectedNode`, (selectedFeatureId) => {
                 if (!selectedFeatureId)
                     return;
                 const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == selectedFeatureId);
                 if (si === this.state.selectedRowIndex) {    
                     this.scrollToRow();
                     this.props.featuresManager?.hilite(selectedFeatureId);
+                    const feature = this.props.featuresManager?.byId(selectedFeatureId);
+                    if (feature) {
+                        this.props.onTableRowClick(feature, selectedFeatureId)
+                    }
                     return;
                 }
                 this.setState({ selectedRowIndex: si });
+                this.scrollToRow();
+                this.props.featuresManager?.hilite(selectedFeatureId);
+                
+                const feature = this.props.featuresManager?.byId(selectedFeatureId);
+                if (feature) {
+                    this.props.onTableRowClick(feature, selectedFeatureId)
+                }
                 this.forceUpdate();
             });
         } else {
@@ -358,8 +369,8 @@ class FeatureTableNode extends React.Component {
                                             onClick={(e) => {
                                                 if (this.state.showModal) return;
                                                 this.handleRowMultiSelect(feature, e);
-                                                this.onRowClick(e,feature, index)
-                                                onTableRowClick(e,feature, index);
+                                                this.onRowClick(e, feature, index)
+                                                onTableRowClick(feature, index);
                                             }}
                                             className="tableInfo"
 
@@ -368,7 +379,8 @@ class FeatureTableNode extends React.Component {
                                             }}
                                         >
                                             <td
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     this.onDeleteFeature(feature)
                                                 }}
                                                 visible={visibeTxt}
@@ -402,11 +414,15 @@ class FeatureTableNode extends React.Component {
                                             <td style={styleToUse}>{feature.properties.dybde}</td>
                                             
                                             <td style={styleToUse}>
-                                                {!isReadOnly && (<NodeMethodComponent
+                                                {/* {!isReadOnly && (<NodeMethodComponent
 
                                                     enableAdd={false}
                                                     disabled={this.state.showModal}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                    }}
                                                     onChange={(e) => {
+                                                        
                                                         feature.properties.metode = e.target.value;
                                                         this.onSetSingleMethod(feature.properties.metode);
                                                         this.updateData();
@@ -416,15 +432,20 @@ class FeatureTableNode extends React.Component {
                                                     showAdd={false}
                                                 />
                                                 )}
-                                                {isReadOnly && feature.properties.metode}
+                                                {isReadOnly && feature.properties.metode} */}
+                                                {feature.properties.metode}  
 
                                             </td>
                                             <td style={styleToUse}>
-                                                {!isReadOnly && (<PipeTerrainComponent
+                                                {/* {!isReadOnly && (<PipeTerrainComponent
 
                                                     disabled={this.state.showModal}
                                                     enableAdd={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                    }}
                                                     onChange={(e) => {
+                                                        e.stopPropagation();
                                                         feature.properties.terraen = e.target.value;
                                                         this.updateData();
                                                     }}
@@ -434,11 +455,12 @@ class FeatureTableNode extends React.Component {
                                                 />
 
                                                 )}
-                                                {isReadOnly && feature.properties.terraen}
-
+                                                {isReadOnly && feature.properties.terraen} */}
+                                                {feature.properties.terraen}
                                             </td>
                                             
-                                            <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td>
+                                            {/* <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td> */}
+                                            <td style={styleToUse}>{feature.properties.bem}</td>                                                
 
                                             <td onClick={() => this.handlePdfLink(feature.properties.knudenavn)} >
                                                 <i className={pdfClassName}  ></i>

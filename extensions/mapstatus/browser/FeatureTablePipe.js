@@ -16,13 +16,6 @@ const MAPSTATUS_MODULE_NAME = `mapstatus`;
 class FeatureTablePipe extends React.Component {
     constructor(props) {
         super(props);
-        // backboneEvents = props.backboneEvents;
-        // featuresManager = props.featuresManager;
-        // onTableRowClick
-        // isReadOnly = props.isReadOnly;
-        // activeProject = props.activeProject;
-        // skema = props.skema;
-
 
         this.state = {
             isNumeric: true,
@@ -93,6 +86,10 @@ class FeatureTablePipe extends React.Component {
                 if (si === this.state.selectedRowIndex) {    
                     this.scrollToRow();
                     this.props.featuresManager?.hilite(selectedFeatureId);
+                    const feature = this.props.featuresManager?.byId(selectedFeatureId);
+                    if (feature) {
+                        this.props.onTableRowClick(feature, selectedFeatureId)
+                    }
                     return; // No change in selection, skip update
                 }
                 this.setState({ selectedRowIndex: si });
@@ -406,7 +403,8 @@ class FeatureTablePipe extends React.Component {
                                             }}
                                         >
                                             <td
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     this.onDeleteFeature(feature)
                                                 }}
                                                 visible={visibeTxt}
@@ -446,28 +444,37 @@ class FeatureTablePipe extends React.Component {
 
 
                                             <td style={styleToUse}>
-                                                {!isReadOnly && (<PipeMethodComponent
+                                                {/* {!isReadOnly && (<PipeMethodComponent
 
                                                     enableAdd={false}
                                                     disabled={this.state.showModal}
                                                     onChange={(e) => {
+                                                        e.stopPropagation();
                                                         feature.properties.metode = e.target.value;;
                                                         this.updateData();
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                     }}
                                                     readOnly={this.state.showModal}
                                                     selected={feature.properties.metode}
                                                     showAdd={false}
                                                 />
                                                 )}
-                                                {isReadOnly && feature.properties.metode}
+                                                {isReadOnly && feature.properties.metode} */}
+                                                {feature.properties.metode}
 
                                             </td>
                                             <td style={styleToUse}>
-                                                {!isReadOnly && (<PipeTerrainComponent
+                                                {/* {!isReadOnly && (<PipeTerrainComponent
 
                                                     disabled={this.state.showModal}
                                                     enableAdd={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                    }}
                                                     onChange={(e) => {
+                                                        e.stopPropagation();
                                                         feature.properties.terraen = e.target.value;
                                                         this.updateData();
                                                     }}
@@ -477,11 +484,13 @@ class FeatureTablePipe extends React.Component {
                                                 />
 
                                                 )}
-                                                {isReadOnly && feature.properties.terraen}
+                                                {isReadOnly && feature.properties.terraen} */}
+                                                {feature.properties.terraen}
 
                                             </td>
                                             <td style={styleToUse}>{feature.properties.antalstik_ledning}</td>
-                                            <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td>
+                                            {/* <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td> */}
+                                            <td style={styleToUse}>{feature.properties.bem}</td>
                                             <td onClick={() => this.handleVideoLink(feature.properties.ledningid)}>
                                                 <i className={videoClassName}  ></i>
                                             </td>

@@ -14,6 +14,8 @@ import FeatureTableComposition from './FeatureTableComposition.js'
 
 import ProjectSelector from "./ProjectSelector.js";
 import FeaturePipe from "./FeaturePipe.js";
+import FeatureNode from "./FeatureNode.js";
+
 import styleObject from "./style.js";
 // managers
 import ExcelExportManager from '../manager/ExcelExportManager.js';
@@ -178,6 +180,7 @@ module.exports = {
               
                 this.state = {
                     activeProject: this.projectManager.createProjectData(skema) || {},
+                    activeTabIsLedning: true,
                     createCustomer: false,
                     createProject: false,
                     projectManager: this.projectManager,
@@ -347,6 +350,7 @@ module.exports = {
             render() {
                 const {
                     activeProject,
+                    activeTabIsLedning,
                     createProject,
                     isLoggedIn,
                     isReadOnly,
@@ -357,6 +361,8 @@ module.exports = {
                 const skema = this.getSkema();
                 const kundenavn = this.getKundeNavn();
                 const isLedning = this.state.selectedFeature?.properties?.hasOwnProperty("ledningid");
+                const isKnude = this.state.selectedFeature?.properties?.hasOwnProperty("knudenavn");  
+                
                 return (
 
                     <div role="tabpanel">
@@ -437,19 +443,21 @@ module.exports = {
                                     onRowClick={(feature) => {
                                         this.setState({ selectedFeature: feature, showFeatureDetails: true });
                                     }}
+                                    onNewTab = {(isLedning) => {this.setState({ selectedFeature: null, showFeatureDetails: false, activeTabIsLedning: isLedning }); }}
                                     pipeManager={this.state.pipeManager}
                                     projectManager={this.state.projectManager}
                                     skema={skema}
                                 />, this.portalContainer)
 
                         }
-                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && isLedning &&
+                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && activeTabIsLedning && isLedning &&
                             ReactDOM.createPortal(
                                 <DraggableBox
                                     headerText='Ledning'
                                     initialStyle={{bottom: '100px', height: '550px', maxHeight: '600px', right: '100px', width: '400px' }}
                                     onExcel={() => {}}
                                     onMouseDown={(e) => {e.stopPropagation();}}
+                                    showMinimizeButton={false}
                                 >
                                    <FeaturePipe 
                                      activeProject={this.state.activeProject} 
@@ -461,15 +469,16 @@ module.exports = {
                                 </DraggableBox>, 
                             this.portalContainer)
                         }
-                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && !isLedning &&
+                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly && !activeTabIsLedning && isKnude &&
                             ReactDOM.createPortal(
                                 <DraggableBox
                                     headerText='Knude'
                                     initialStyle={{bottom: '100px', height: '500px', maxHeight: '600px', right: '100px', width: '400px' }}
                                     onMouseDown={(e) => {e.stopPropagation();}}
+                                    showMinimizeButton={false}
                                 >
-                                   <FeaturePipe // -> husk node
-                                        
+                                   <FeatureNode // -> husk node
+                                     activeProject={this.state.activeProject}   
                                      feature={this.state.selectedFeature}
                                      skema={skema}
                                      featuresManager={this.state.nodeManager}
