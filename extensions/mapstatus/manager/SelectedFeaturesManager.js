@@ -193,6 +193,8 @@ export default class SelectedFeaturesManager extends DataManager   {
     });
   }
 
+  
+
 
 /*********************************************************************************************************************  
  * sortFeatures:  sorts the feature collection
@@ -482,8 +484,14 @@ export default class SelectedFeaturesManager extends DataManager   {
     const geojsonStr = projektData[this.colName];
     const geoJson = JSON.parse(geojsonStr);
     const features = geoJson.features;
-    for (let i = 0; i < features.length; i++) {
-      const feature = features[i];
+    const sortedFeatures = features.sort((a, b) => {
+      const idA = a.properties?.id ?? Infinity;   
+      const idB = b.properties?.id ?? Infinity;
+      return idA - idB;
+    });
+
+    for (let i = 0; i < sortedFeatures.length; i++) {
+      const feature = sortedFeatures[i];
       this.addFeature(feature, false);
     }
   }

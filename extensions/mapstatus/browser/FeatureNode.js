@@ -90,7 +90,7 @@ class FeatureNode extends React.Component {
                 <div className="col">
                     <p><strong>System:</strong> {system }</p>
                     <p><strong>Type:</strong> {knudetype}</p>
-                    <p><strong>Materiale:</strong> {brøndmateriale} m</p>
+                    <p><strong>Materiale:</strong> {brøndmateriale}</p>
                     <p>&nbsp;</p>
 
                     <div> 

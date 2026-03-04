@@ -491,10 +491,14 @@ class FeatureTablePipe extends React.Component {
                                             <td style={styleToUse}>{feature.properties.antalstik_ledning}</td>
                                             {/* <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td> */}
                                             <td style={styleToUse}>{feature.properties.bem}</td>
-                                            <td onClick={() => this.handleVideoLink(feature.properties.ledningid)}>
+                                            <td onClick={(e) => { 
+                                                e.stopPropagation();
+                                                this.handleVideoLink(feature.properties.ledningid)}}>
                                                 <i className={videoClassName}  ></i>
                                             </td>
-                                            <td onClick={() => this.handlePdfLink(feature.properties.ledningid)} >
+                                            <td onClick={(e) => { 
+                                                e.stopPropagation();
+                                                this.handlePdfLink(feature.properties.ledningid)}}>
                                                 <i className={pdfClassName}  ></i>
                                             </td>
                                         </tr>

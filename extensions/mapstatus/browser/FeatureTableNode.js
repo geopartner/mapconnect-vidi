@@ -462,7 +462,10 @@ class FeatureTableNode extends React.Component {
                                             {/* <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td> */}
                                             <td style={styleToUse}>{feature.properties.bem}</td>                                                
 
-                                            <td onClick={() => this.handlePdfLink(feature.properties.knudenavn)} >
+                                            <td onClick={(e) => {
+                                                e.stopPropagation();
+                                                this.handlePdfLink(feature.properties.knudenavn);
+                                            }} >    
                                                 <i className={pdfClassName}  ></i>
                                             </td>
                                         </tr>

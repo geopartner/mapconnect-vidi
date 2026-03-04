@@ -124,7 +124,7 @@ class FeaturePipe extends React.Component {
                     <p><strong>Længde:</strong> {længde} m</p>
                     <p><strong>Fysisk indeks:</strong> {fysiskindeks}</p>
                     <p><strong>Antal stik:</strong> {antalstik_ledning}</p>
-                    <p>_ </p>
+                    <p>&nbsp;</p>
                     <div> 
                      <p><strong>Terræn:</strong></p> 
                      <PipeTerrainComponent 
