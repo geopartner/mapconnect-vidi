@@ -5,8 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
-## [additions]  
-
+### unreleased 
+- mapstatus: simplified dialog for edit.
+- mapstatus:remove memory leak, should be more stabile 
+- mapstatus: minimize option on table view.
+- mapstatus: insuring same order for nodes and pipes in table view.
+## [2026.0.0] - 2025-10-2s
+### Added
 - Seperated lukkeplan/alarmplan extentions.
 - Updated [blueidea] extension to handle breakprojects, recalculations, valves and blueidea.
 - The new [alarm] extension now handles alarmkabler.

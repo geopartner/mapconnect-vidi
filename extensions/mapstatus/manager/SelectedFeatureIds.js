@@ -39,8 +39,7 @@ export default class SelectedFeatureIds {
     return this.selectedFeatureIds;
   }
 
-  count() {
+  get count() {
     return this.selectedFeatureIds.length;
-
-    }
+  }
 }

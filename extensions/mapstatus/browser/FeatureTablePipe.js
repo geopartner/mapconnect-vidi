@@ -16,13 +16,6 @@ const MAPSTATUS_MODULE_NAME = `mapstatus`;
 class FeatureTablePipe extends React.Component {
     constructor(props) {
         super(props);
-        // backboneEvents = props.backboneEvents;
-        // featuresManager = props.featuresManager;
-        // onTableRowClick
-        // isReadOnly = props.isReadOnly;
-        // activeProject = props.activeProject;
-        // skema = props.skema;
-
 
         this.state = {
             isNumeric: true,
@@ -62,10 +55,7 @@ class FeatureTablePipe extends React.Component {
     rowRefs = [];
 
     scrollToRow = () => {
-        // const row = this.rowRefs[this.state.selectedRowIndex];
-        // if (row) {
-        //     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // }
+   
         const row = this.rowRefs[this.state.selectedRowIndex];
         const container = this.tableContainerRef.current;
 
@@ -80,39 +70,49 @@ class FeatureTablePipe extends React.Component {
      }
     };
 
-    componentDidUpdate(prevProps) {
- 
-        if (this.props.backboneEvents) {
-            this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:updateSelected`, (selectedFeatureId) => {
-                if (!selectedFeatureId)
-                    return;
-                if (!this.props.featuresManager) {
-                    console.warn("No featuresManager in FeatureTable");
-                    return;
-                }
-                
-                const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == selectedFeatureId);
-                
-                if (si === this.state.selectedRowIndex) {    
-                    this.scrollToRow();
-                    this.props.featuresManager?.hilite(selectedFeatureId);
-                    return; // No change in selection, skip update
-                }
-                this.setState({ selectedRowIndex: si });
-                this.scrollToRow();
-                this.props.featuresManager?.hilite(selectedFeatureId);
-                this.forceUpdate();
-            });
-        } else {
-            console.warn("No backboneEvents in FeatureTable");
-            alert("No backboneEvents in FeatureTable");
+    handleUpdateSelected(selectedFeatureId) {
+        if (!selectedFeatureId) return;
+        if (selectedFeatureId === this.state.selectedFeatureId) {
+            console.log("Same feature selected again, skipping update", selectedFeatureId);
+            return;
         }
 
+        const si = this.props.featuresManager
+        ?.getFeatures()
+        .findIndex(f => f.properties.id == selectedFeatureId);
+        if (si === this.state.selectedRowIndex) return;
+
+        this.setState({
+            selectedRowIndex: si,
+            selectedFeatureId: selectedFeatureId
+        });
+
+        this.scrollToRow();
+        this.props.featuresManager?.hilite(selectedFeatureId);
+
+        const feature = selectedFeatureId === 0
+        ? null
+        : this.props.featuresManager?.byId(selectedFeatureId);
+
+        this.props.onTableRowClick(feature, selectedFeatureId);
     };
 
     componentDidMount() {
         this.setState({ selectedRowIndex: -1 });
-    }
+         if (!this.props.backboneEvents) return;
+         this._onUpdateSelected = this.handleUpdateSelected.bind(this);
+
+        this.props.backboneEvents
+        .get()
+        .on(`${MAPSTATUS_MODULE_NAME}:updateSelected`, this._onUpdateSelected);
+    };
+
+    componentWillUnmount() {
+        if (!this.props.backboneEvents || !this._onUpdateSelected) return;
+        this.props.backboneEvents
+        .get()
+        .off(`${MAPSTATUS_MODULE_NAME}:updateSelected`, this._onUpdateSelected);
+    };
 
     updateData = () => {
         const skema = this.props.skema
@@ -202,9 +202,9 @@ class FeatureTablePipe extends React.Component {
     handleRowMultiSelect = (feature, event) => {
         const { selectedFeatureIds } = this.props;
         const featureId = feature.properties.id;
-        if (event.shiftKey && selectedFeatureIds.count() > 0) {
+        if (event.shiftKey && selectedFeatureIds.count > 0) {
             const features = this.props.featuresManager?.getFeatures() || [];
-            const lastSelectedIndex = features.findIndex(f => f.properties.id === selectedFeatureIds.getAll()[selectedFeatureIds.count() - 1]);
+            const lastSelectedIndex = features.findIndex(f => f.properties.id === selectedFeatureIds.getAll()[selectedFeatureIds.count - 1]);
             const currentIndex = features.findIndex(f => f.properties.id === featureId);
             const range = [lastSelectedIndex, currentIndex].sort((a, b) => a - b);
             const newSelectedFeatures = features.slice(range[0], range[1] + 1).map(f => f.properties.id);
@@ -260,7 +260,7 @@ class FeatureTablePipe extends React.Component {
         } = this.props;
         const { sortKey, sortDirection } = this.state;
         const detailText = `Ledninger: ${featuresManager.selectedCount()} / ${featuresManager.length()}`
-        const selectedFeatureCount = featuresManager?.selectedFeatureIdsGet().count() || 0;
+        const selectedFeatureCount = featuresManager?.selectedFeatureIdsGet().count || 0;
         const selectedTxt = selectedFeatureCount === 1 ? "1 valgt" : selectedFeatureCount > 1 ? `${selectedFeatureCount} valgte` : "";
         const features = this.props.featuresManager?.sortFeatures(this.state.sortKey, this.state.sortDirection, this.state.isNumeric);
         const visibeTxt = isReadOnly ? "false" : "true";
@@ -395,7 +395,7 @@ class FeatureTablePipe extends React.Component {
                                                 if (this.state.showModal) return;
                                                 this.handleRowMultiSelect(feature, e);
                                                 this.onRowClick(feature, index)
-                                                onTableRowClick(feature, index);
+                                                onTableRowClick(feature, index, false);
                                             }}
                                             className="tableInfo"
 
@@ -404,7 +404,8 @@ class FeatureTablePipe extends React.Component {
                                             }}
                                         >
                                             <td
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     this.onDeleteFeature(feature)
                                                 }}
                                                 visible={visibeTxt}
@@ -444,28 +445,37 @@ class FeatureTablePipe extends React.Component {
 
 
                                             <td style={styleToUse}>
-                                                {!isReadOnly && (<PipeMethodComponent
+                                                {/* {!isReadOnly && (<PipeMethodComponent
 
                                                     enableAdd={false}
                                                     disabled={this.state.showModal}
                                                     onChange={(e) => {
+                                                        e.stopPropagation();
                                                         feature.properties.metode = e.target.value;;
                                                         this.updateData();
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                     }}
                                                     readOnly={this.state.showModal}
                                                     selected={feature.properties.metode}
                                                     showAdd={false}
                                                 />
                                                 )}
-                                                {isReadOnly && feature.properties.metode}
+                                                {isReadOnly && feature.properties.metode} */}
+                                                {feature.properties.metode}
 
                                             </td>
                                             <td style={styleToUse}>
-                                                {!isReadOnly && (<PipeTerrainComponent
+                                                {/* {!isReadOnly && (<PipeTerrainComponent
 
                                                     disabled={this.state.showModal}
                                                     enableAdd={false}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                    }}
                                                     onChange={(e) => {
+                                                        e.stopPropagation();
                                                         feature.properties.terraen = e.target.value;
                                                         this.updateData();
                                                     }}
@@ -475,15 +485,21 @@ class FeatureTablePipe extends React.Component {
                                                 />
 
                                                 )}
-                                                {isReadOnly && feature.properties.terraen}
+                                                {isReadOnly && feature.properties.terraen} */}
+                                                {feature.properties.terraen}
 
                                             </td>
                                             <td style={styleToUse}>{feature.properties.antalstik_ledning}</td>
-                                            <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td>
-                                            <td onClick={() => this.handleVideoLink(feature.properties.ledningid)}>
+                                            {/* <td style={styleToUse} onClick={(e) => this.onBemClick(e, feature)} >{feature.properties.bem}</td> */}
+                                            <td style={styleToUse}>{feature.properties.bem}</td>
+                                            <td onClick={(e) => { 
+                                                e.stopPropagation();
+                                                this.handleVideoLink(feature.properties.ledningid)}}>
                                                 <i className={videoClassName}  ></i>
                                             </td>
-                                            <td onClick={() => this.handlePdfLink(feature.properties.ledningid)} >
+                                            <td onClick={(e) => { 
+                                                e.stopPropagation();
+                                                this.handlePdfLink(feature.properties.ledningid)}}>
                                                 <i className={pdfClassName}  ></i>
                                             </td>
                                         </tr>

@@ -96,6 +96,20 @@ const styleObject = {
 
     formDialog : {
         '--bs-form-select-bg-img': 'none',
+    },
+
+    featureDetails: {
+        position: 'fixed',
+        zIndex: 10202,
+        top: '20%',
+        left: '50%',
+        transform: 'translate(-50%, -20%)',
+        background: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        maxWidth: '80%',
+        maxHeight: '60%',
+        overflowY: 'auto',
     }
 
 

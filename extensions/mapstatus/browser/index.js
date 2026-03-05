@@ -9,9 +9,12 @@ import React from 'react';
 
 // browser components:
 import CreateProjectForm from "./CreateProjectForm.js";
+import DraggableBox from "./DraggableBox.js";
 import FeatureTableComposition from './FeatureTableComposition.js'
 
 import ProjectSelector from "./ProjectSelector.js";
+import FeaturePipe from "./FeaturePipe.js";
+import FeatureNode from "./FeatureNode.js";
 
 import styleObject from "./style.js";
 // managers
@@ -177,6 +180,7 @@ module.exports = {
               
                 this.state = {
                     activeProject: this.projectManager.createProjectData(skema) || {},
+                    activeTabIsLedning: true,
                     createCustomer: false,
                     createProject: false,
                     projectManager: this.projectManager,
@@ -187,7 +191,8 @@ module.exports = {
                     isReadOnly: true,
                     projects: [],
                     selectedFeature: {},
-                    selectFeatureAtClick: false // true=tilføj udpeget feature, false=vælg feature  
+                    selectFeatureAtClick: false, // true=tilføj udpeget feature, false=vælg feature  
+                    showFeatureDetails: false   
                 };
                 this.portalContainer = document.createElement('div');
                 document.body.appendChild(this.portalContainer);
@@ -345,6 +350,7 @@ module.exports = {
             render() {
                 const {
                     activeProject,
+                    activeTabIsLedning,
                     createProject,
                     isLoggedIn,
                     isReadOnly,
@@ -354,7 +360,9 @@ module.exports = {
                 const skemaName = this.getProjectName();
                 const skema = this.getSkema();
                 const kundenavn = this.getKundeNavn();
-
+                const isLedning = this.state.selectedFeature?.properties?.hasOwnProperty("ledningid");
+                const isKnude = this.state.selectedFeature?.properties?.hasOwnProperty("knudenavn");  
+                
                 return (
 
                     <div role="tabpanel">
@@ -432,15 +440,56 @@ module.exports = {
                                     nodeManager={this.state.nodeManager}
                                     onExcel={() => { this.exportExcel(); }}
                                     onMouseDown={(e) => { e.stopPropagation(); }}
+                                    onRowClick={(feature) => {
+                                       const isVisible = !!feature;
+                                       this.setState({ selectedFeature: feature, showFeatureDetails: isVisible });
+                                    }}
+                                    onNewTab = {(isLedning) => {this.setState({ selectedFeature: null, showFeatureDetails: false, activeTabIsLedning: isLedning }); }}
                                     pipeManager={this.state.pipeManager}
                                     projectManager={this.state.projectManager}
                                     skema={skema}
                                 />, this.portalContainer)
 
                         }
+                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly  && activeTabIsLedning && isLedning &&
+                            ReactDOM.createPortal(
+                                <DraggableBox
+                                    headerText='Ledning'
+                                    initialStyle={{bottom: '100px', height: '550px', maxHeight: '600px', right: '100px', width: '400px' }}
+                                    onExcel={() => {}}
+                                    onMouseDown={(e) => {e.stopPropagation();}}
+                                    showMinimizeButton={false}
+                                >
+                                   <FeaturePipe 
+                                     activeProject={this.state.activeProject} 
+                                     feature={this.state.selectedFeature}
+                                     skema={skema}
+                                     featuresManager={this.state.pipeManager}
+                                     onClose={() => this.setState({ showFeatureDetails: false, selectedFeature: null })} 
+                                   />
+                                </DraggableBox>, 
+                            this.portalContainer)
+                        }
+                        { this.state.selectedFeature && this.state.showFeatureDetails && !isReadOnly && !activeTabIsLedning && isKnude &&
+                            ReactDOM.createPortal(
+                                <DraggableBox
+                                    headerText='Knude'
+                                    initialStyle={{bottom: '100px', height: '500px', maxHeight: '600px', right: '100px', width: '400px' }}
+                                    onMouseDown={(e) => {e.stopPropagation();}}
+                                    showMinimizeButton={false}
+                                >
+                                   <FeatureNode // -> husk node
+                                     activeProject={this.state.activeProject}   
+                                     feature={this.state.selectedFeature}
+                                     skema={skema}
+                                     featuresManager={this.state.nodeManager}
+                                     onClose={() => this.setState({ showFeatureDetails: false, selectedFeature: null })} 
+                                   />
+                                </DraggableBox>, 
+                            this.portalContainer)
+                        }
+
                     </div>
-
-
                 );
             }
         }
