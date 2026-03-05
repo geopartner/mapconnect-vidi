@@ -70,52 +70,49 @@ class FeatureTablePipe extends React.Component {
      }
     };
 
-    componentDidUpdate(prevProps) {
- 
-        if (this.props.backboneEvents) {
-            this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:updateSelected`, (selectedFeatureId) => {
-             
-                 const featureId = selectedFeatureId; 
-                if (!this.props.featuresManager) {
-                    console.warn("No featuresManager in FeatureTable");
-                    return;
-                }
-                if (featureId === this.state.selectedFeatureId) {
-                    console.log("Same feature selected again, skipping update", selectedFeatureId);
-                    return; // No change in selection, skip update
-                }
-             
-                const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == featureId);
-                
-                if (si === this.state.selectedRowIndex) {    
-                    // this.scrollToRow();
-                    // this.props.featuresManager?.hilite(selectedFeatureId);
-                    // const feature = this.props.featuresManager?.byId(selectedFeatureId);
-                    //alert("Same feature selected again, just hiliting and scrolling to it" + selectedFeatureId);
-                    // // if (feature) {
-                    // //     this.props.onTableRowClick(feature, selectedFeatureId)
-                    // // }
-                    return; // No change in selection, skip update
-                }
-                this.setState({ selectedRowIndex: si });
-                this.setState({ selectedFeatureId: featureId });
-                this.scrollToRow();
-                this.props.featuresManager?.hilite(featureId);
-                
-                const feature = featureId === 0 ? null :  this.props.featuresManager?.byId(featureId);
-                this.props.onTableRowClick(feature, featureId);
-                this.forceUpdate();
-            });
-        } else {
-            console.warn("No backboneEvents in FeatureTable");
-            alert("No backboneEvents in FeatureTable");
+    handleUpdateSelected(selectedFeatureId) {
+        if (!selectedFeatureId) return;
+        if (selectedFeatureId === this.state.selectedFeatureId) {
+            console.log("Same feature selected again, skipping update", selectedFeatureId);
+            return;
         }
 
+        const si = this.props.featuresManager
+        ?.getFeatures()
+        .findIndex(f => f.properties.id == selectedFeatureId);
+        if (si === this.state.selectedRowIndex) return;
+
+        this.setState({
+            selectedRowIndex: si,
+            selectedFeatureId: selectedFeatureId
+        });
+
+        this.scrollToRow();
+        this.props.featuresManager?.hilite(selectedFeatureId);
+
+        const feature = selectedFeatureId === 0
+        ? null
+        : this.props.featuresManager?.byId(selectedFeatureId);
+
+        this.props.onTableRowClick(feature, selectedFeatureId);
     };
 
     componentDidMount() {
         this.setState({ selectedRowIndex: -1 });
-    }
+         if (!this.props.backboneEvents) return;
+         this._onUpdateSelected = this.handleUpdateSelected.bind(this);
+
+        this.props.backboneEvents
+        .get()
+        .on(`${MAPSTATUS_MODULE_NAME}:updateSelected`, this._onUpdateSelected);
+    };
+
+    componentWillUnmount() {
+        if (!this.props.backboneEvents || !this._onUpdateSelected) return;
+        this.props.backboneEvents
+        .get()
+        .off(`${MAPSTATUS_MODULE_NAME}:updateSelected`, this._onUpdateSelected);
+    };
 
     updateData = () => {
         const skema = this.props.skema

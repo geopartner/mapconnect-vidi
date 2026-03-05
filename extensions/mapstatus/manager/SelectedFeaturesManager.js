@@ -500,7 +500,7 @@ export default class SelectedFeaturesManager extends DataManager   {
 
     for (let i = 0; i < sortedFeatures.length; i++) {
       const feature = sortedFeatures[i];
-      this.addFeature(feature, false);
+      this.addFeature(feature, true);
     }
   }
 
