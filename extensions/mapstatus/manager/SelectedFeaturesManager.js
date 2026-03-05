@@ -118,7 +118,7 @@ export default class SelectedFeaturesManager extends DataManager   {
   }
 
 /*********************************************************************************************************************  
-  *  clear:  remove all features from the map and clear selectedFeatures collextion
+  *  clear:  remove all features from the map and clear selectedFeatures collection
  **********************************************************************************************************************/
    clear() {
     try {
@@ -129,10 +129,21 @@ export default class SelectedFeaturesManager extends DataManager   {
       this.selectedFeatureIds.clear();
       this.selectedFeatureId = null;
     } catch (e) {
-      console.error("Error in selectedFeaturesClear: " + e);
+      console.error("Error in selectedFeatures Clear: " + e);
     }
   }
 
+/*********************************************************************************************************************  
+  *  clearSelect:  clear selectedFeatures collection
+ **********************************************************************************************************************/
+ clearSelect() {
+    try {
+      this.selectedFeatureIds.clear();
+      this.selectedFeatureId = null;
+    } catch (e) {
+      console.error("clearSelect: " + e);
+    }
+  }
 
  /*********************************************************************************************************************  
   *  selectedFeaturesRemove:  remove feature by id from the selectedfeature collection

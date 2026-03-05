@@ -34,6 +34,11 @@ class FeatureTableComposition extends React.Component {
                 this.setState({ selectFeatureAtClick: featureClick });
             });
         });   
+        this.props.pipeManager?.clearSelect();
+        this.props.nodeManager?.clearSelect();
+
+        this.props.pipeManager?.redraw(null);
+        this.props.nodeManager?.redraw(null);
 
     }; 
 
