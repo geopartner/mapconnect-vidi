@@ -7,6 +7,7 @@
 import React from "react";
 import PipeMethodComponent from "./PipeMethodComponent.js";
 import PipeTerrainComponent from "./PipeTerrainComponent.js";
+import UrlDialog from "./UrlDialog.js";
 
 
 const MAPSTATUS_MODULE_NAME = `mapstatus`;
@@ -92,7 +93,15 @@ class FeaturePipe extends React.Component {
         
         let bemark = this.state.bem; 
         
-        return <div style={{ height: '550px', width: '350px', padding: '10px', margin: '10px' }}>
+        return(<>
+           
+            {this.state.urlDialog && (
+                <UrlDialog
+                    url={this.state.urlDialog}
+                    onClose={() => this.setState({ urlDialog: '' })}
+                >  </UrlDialog>)
+            }           
+            <div style={{ height: '550px', width: '350px', padding: '10px', margin: '10px' }}>
             <div className="row">
                 <div className="col">
                     <p><strong>Fra brønd:</strong> {fra_brønd}</p>
@@ -118,7 +127,7 @@ class FeaturePipe extends React.Component {
                 <div className="col">
                     <p><strong>Til brønd:</strong> {til_brønd}</p>
                     <p><strong>Til brønd dybde:</strong> {til_broend_dybde} m</p>
-                    <p><strong>Til kote:</strong> {til_kote} m</p>
+                    <p><    strong>Til kote:</strong> {til_kote} m</p>
                     <p><strong>Længde:</strong> {længde} m</p>
                     <p><strong>Fysisk indeks:</strong> {fysiskindeks}</p>
                     <p><strong>Antal stik:</strong> {antalstik_ledning}</p>
@@ -169,7 +178,8 @@ class FeaturePipe extends React.Component {
             </div>
             
             
-        </div>;
+        </div>
+        </>);
     }
 };
 export  default FeaturePipe;
