@@ -302,15 +302,7 @@ export default class SelectedFeaturesManager extends DataManager   {
     }
   }
 
-  setInterActivity = (interactive) => {
-    this.layerIsActive = interactive;
-    // this.redraw(null);
-    if (this._geojsonLayer) {
-        this._geojsonLayer.eachLayer(layer => {
-         layer.setStyle({ interactive: interactive });
-      });
-    }
-  }  
+ 
 
 /*********************************************************************************************************************  
  * redraw:  redraw all features in the map with colors defined in the constructor
@@ -321,10 +313,13 @@ export default class SelectedFeaturesManager extends DataManager   {
     this.addExtraProperties();
 
     if (this._geojsonLayer) {
-      this._geojsonLayer.clearLayers();
+      this.map.removeLayer(this._geojsonLayer);
+       this._geojsonLayer = null;
     }
-
+    const layerName = this.isNode ? "knuder" :  "ledninger";  
     this._geojsonLayer = L.geoJSON(this._geojson, {
+      layerName: layerName,
+      interactive: this.layerIsActive,
       style: (feature) => {
         const currentStyle = (hiliteFeatureId && feature.properties.id === hiliteFeatureId) ||
           this.selectedFeatureIds.contains(feature.properties.id)
@@ -340,20 +335,32 @@ export default class SelectedFeaturesManager extends DataManager   {
           layer.on('click', (e) => {
             //   Denne er fjernet så kortet ikke hopper når der klikkes på en feature
             // this.zoomToFeature(feature);
-            this.selectedFeatureId = feature.properties.id;
-            const featureId = feature.properties.id;
+            const layerName= e.target?.options?.layerName || "unknown";
+            const isKnudeLayer = layerName.toLowerCase().includes("knude");
+            const isNode = feature.properties.hasOwnProperty('knudenavn');  
+            if (isNode !== isKnudeLayer) {
+              console.warn(`Layer name "${layerName}" does not match feature type. Expected ${isNode ? "knude" : "ledning"} layer.`);
+              return;
+            }
             if (!feature) {
               return;
             }
+            const featureId = feature.properties.id;
+            if (featureId === this.selectedFeatureId) {
+              return;
+            }
+
             if (this.selectedFeatureIds.contains(featureId)) {
-              this.selectedFeatureIds.remove(featureId);
+              // this.selectedFeatureIds.remove(featureId);
               this.hilite(0);
               return;
             }
-            const isNode = feature.properties.hasOwnProperty('knudenavn');  
+            this.selectedFeatureId = featureId;
+            
             const ctrlKey = e.originalEvent.ctrlKey;
             this.selectedFeatureIds.add(featureId, !ctrlKey);
             this.hilite(featureId);
+            
             if (isNode) {
               this.backboneEvents.get().trigger(`${this.MAPSTATUS_MODULE_NAME}:updateSelectedNode`, featureId);
             } else {  
@@ -364,6 +371,7 @@ export default class SelectedFeaturesManager extends DataManager   {
         }
       }
     }).addTo(this.map);
+
   }
 
  

@@ -440,8 +440,9 @@ module.exports = {
                                     nodeManager={this.state.nodeManager}
                                     onExcel={() => { this.exportExcel(); }}
                                     onMouseDown={(e) => { e.stopPropagation(); }}
-                                    onRowClick={(feature) => {
-                                        this.setState({ selectedFeature: feature, showFeatureDetails: true });
+                                    onRowClick={(feature, featureId, multiple) => {
+                                        const isVisible = !multiple;    
+                                        this.setState({ selectedFeature: feature, showFeatureDetails: isVisible });
                                     }}
                                     onNewTab = {(isLedning) => {this.setState({ selectedFeature: null, showFeatureDetails: false, activeTabIsLedning: isLedning }); }}
                                     pipeManager={this.state.pipeManager}

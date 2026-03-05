@@ -156,8 +156,8 @@ class DraggableBox extends React.Component {
                     </div>
                     
                     <div className="col-1" style={{cursor: 'pointer'}}>
-                        <i className="bi bi-dash me-2 window-icon" title="maksimer"  hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: false })} ></i>
-                        <i className="bi bi-square window-icon" title="minimer" hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: true })}  ></i>
+                        <i className="bi bi-dash me-2 window-icon" title="minimer"  hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: false })} ></i>
+                        <i className="bi bi-square window-icon" title="maksimer" hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: true })}  ></i>
                     </div>
                 </div>
                 <div className="draggable-children">

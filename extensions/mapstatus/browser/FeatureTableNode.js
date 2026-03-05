@@ -66,26 +66,29 @@ class FeatureTableNode extends React.Component {
     componentDidUpdate(prevProps) {
         if (this.props.backboneEvents) {
             this.props.backboneEvents.get().on(`${MAPSTATUS_MODULE_NAME}:updateSelectedNode`, (selectedFeatureId) => {
-                if (!selectedFeatureId)
+                const featureId = selectedFeatureId;    
+                if (!featureId)
                     return;
-                const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == selectedFeatureId);
+                  if (featureId === this.state.selectedFeatureId) {
+                    return; // No change in selection, skip update
+                }
+                const si = this.props.featuresManager?.getFeatures().findIndex(feature => feature.properties.id == featureId);
                 if (si === this.state.selectedRowIndex) {    
-                    this.scrollToRow();
-                    this.props.featuresManager?.hilite(selectedFeatureId);
-                    const feature = this.props.featuresManager?.byId(selectedFeatureId);
-                    if (feature) {
-                        this.props.onTableRowClick(feature, selectedFeatureId)
-                    }
+                    // this.scrollToRow();
+                    // this.props.featuresManager?.hilite(featureId);
+                    // const feature = this.props.featuresManager?.byId(featureId);
+                    // if (feature) {
+                    //     this.props.onTableRowClick(feature, featureId, multiple)
+                    // }
                     return;
                 }
                 this.setState({ selectedRowIndex: si });
+                this.setState({ selectedFeatureId: featureId });
                 this.scrollToRow();
-                this.props.featuresManager?.hilite(selectedFeatureId);
+                this.props.featuresManager?.hilite(featureId);
                 
-                const feature = this.props.featuresManager?.byId(selectedFeatureId);
-                if (feature) {
-                    this.props.onTableRowClick(feature, selectedFeatureId)
-                }
+                const feature = featureId === 0 ? null :  this.props.featuresManager?.byId(featureId);
+                this.props.onTableRowClick(feature, featureId);
                 this.forceUpdate();
             });
         } else {
@@ -171,9 +174,9 @@ class FeatureTableNode extends React.Component {
     handleRowMultiSelect = (feature, event) => {
         const { selectedFeatureIds } = this.props;
         const featureId = feature.properties.id;
-        if (event.shiftKey && selectedFeatureIds.count() > 0) {
+        if (event.shiftKey && selectedFeatureIds.count > 0) {
             const features = this.props.featuresManager?.getFeatures() || [];
-            const lastSelectedIndex = features.findIndex(f => f.properties.id === selectedFeatureIds.getAll()[selectedFeatureIds.count() - 1]);
+            const lastSelectedIndex = features.findIndex(f => f.properties.id === selectedFeatureIds.getAll()[selectedFeatureIds.count - 1]);
             const currentIndex = features.findIndex(f => f.properties.id === featureId);
             const range = [lastSelectedIndex, currentIndex].sort((a, b) => a - b);
             const newSelectedFeatures = features.slice(range[0], range[1] + 1).map(f => f.properties.id);
@@ -233,7 +236,7 @@ class FeatureTableNode extends React.Component {
         } = this.props;
         const { sortKey, sortDirection } = this.state;
         const detailText = `Brønde: ${featuresManager.selectedCount()} / ${featuresManager.length()}`
-        const selectedFeatureCount = featuresManager?.selectedFeatureIdsGet().count() || 0;
+        const selectedFeatureCount = featuresManager?.selectedFeatureIdsGet().count || 0;
         const selectedTxt = selectedFeatureCount === 1 ? "1 valgt" : selectedFeatureCount > 1 ? `${selectedFeatureCount} valgte` : "";
         const features = this.props.featuresManager?.sortFeatures(this.state.sortKey, this.state.sortDirection, this.state.isNumeric);
         const visibeTxt = isReadOnly ? "false" : "true";
@@ -370,7 +373,7 @@ class FeatureTableNode extends React.Component {
                                                 if (this.state.showModal) return;
                                                 this.handleRowMultiSelect(feature, e);
                                                 this.onRowClick(e, feature, index)
-                                                onTableRowClick(feature, index);
+                                                onTableRowClick(feature, index, false);
                                             }}
                                             className="tableInfo"
 

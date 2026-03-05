@@ -29,9 +29,6 @@ class FeatureTableComposition extends React.Component {
 
     setActiveTab = (tab) => {
         this.setState({ activeTab: tab }, () => {
-            const pipeActive = this.isPipeActive;
-            this.props.pipeManager?.setInterActivity(pipeActive);
-            this.props.nodeManager?.setInterActivity(!pipeActive);
             const featureClick = this.state.selectFeatureAtClick;
             this.setState({ selectFeatureAtClick: false }, () => {
                 this.setState({ selectFeatureAtClick: featureClick });
