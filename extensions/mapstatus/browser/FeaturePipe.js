@@ -26,7 +26,6 @@ class FeaturePipe extends React.Component {
 
     handleVideoLink = (id) => {
         const skema = this.props.skema;
-        this.setState({ showModal: false });
         this.props.featuresManager?.getLedningFilmfilAsync(skema, id)
             .then((url) => {
                 if (url) {
@@ -44,11 +43,10 @@ class FeaturePipe extends React.Component {
 
     handlePdfLink = (id) => {
         const skema = this.props.skema;
-        this.setState({ showModal: false });
         this.props.featuresManager?.getLedningRapportnrAsync(skema, id)
             .then((url) => {
                 if (url) {
-                    this.setState({ urlDialog: url });
+                    this.setState({ urlDialog: url, showModal: true });
                 } else {
                     alert("Ingen PDF fundet for denne ledning.");
                 }

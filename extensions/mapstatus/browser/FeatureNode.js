@@ -7,6 +7,7 @@
 import React from "react";
 import PipeMethodComponent from "./PipeMethodComponent.js";
 import PipeTerrainComponent from "./PipeTerrainComponent.js";
+import UrlDialog from "./UrlDialog.js";
 
 class FeatureNode extends React.Component {
     constructor(props) {
@@ -22,15 +23,15 @@ class FeatureNode extends React.Component {
         this.setState({ bem: this.props?.feature?.properties?.bem || "" });
     }
 
-    handlePdfLink = (id) => {
+
+    handlePdfLink = (knudenavn) => {
         const skema = this.props.skema;
-        this.setState({ showModal: false });
-        this.props.featuresManager?.getLedningRapportnrAsync(skema, id)
+        this.props.featuresManager?.getBroendRapportnrAsync(skema, knudenavn)
             .then((url) => {
                 if (url) {
-                    this.setState({ urlDialog: url });
+                    this.setState({ urlDialog: url,showModal: true });
                 } else {
-                    alert("Ingen PDF fundet for denne ledning.");
+                    alert("Ingen PDF fundet for denne brønd.");
                 }
             })
             .catch((error) => {
@@ -67,7 +68,15 @@ class FeatureNode extends React.Component {
         
         let bemark = this.state.bem; 
         
-        return <div style={{ height: '550px', width: '350px', padding: '10px', margin: '10px' }}>
+        return (
+             <>
+                {this.state.urlDialog && (
+                    <UrlDialog
+                        url={this.state.urlDialog}
+                        onClose={() => this.setState({ urlDialog: '' })}
+                    >  </UrlDialog>)
+                }
+            <div style={{ height: '550px', width: '350px', padding: '10px', margin: '10px' }}>
             <div className="row">
                 <div className="col">
                     <p><strong>Brønd:</strong> {knudenavn}</p>
@@ -128,7 +137,7 @@ class FeatureNode extends React.Component {
             </div>
             <div className="row">
                 <div className="col">
-                    <button className="btn btn-secondary" onClick={() => this.handlePdfLink(ledningid)}>Rapport</button>
+                    <button className="btn btn-secondary" onClick={() => this.handlePdfLink(knudenavn)}>Rapport</button>
                 </div>
                 <div className="col">
                     <button className="btn btn-secondary" onClick={() => this.props.onClose()}>Luk</button>
@@ -137,6 +146,7 @@ class FeatureNode extends React.Component {
             
             
         </div>;
+        </>)
     }
 };
 export  default FeatureNode;
