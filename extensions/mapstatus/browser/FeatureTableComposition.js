@@ -12,6 +12,8 @@ import { getResolutions } from '../../../browser/modules/crs';
 import { booleanIntersects as turfIntersects, buffer as turfBuffer } from "@turf/turf";
 import { feature as turfFeature, point as turfPoint } from "@turf/helpers";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
+
+
 class FeatureTableComposition extends React.Component {
     static get Ledninger() {  return 'ledninger';  }
     static get Broende() {  return 'bronde';  }
@@ -27,14 +29,17 @@ class FeatureTableComposition extends React.Component {
 
     setActiveTab = (tab) => {
         this.setState({ activeTab: tab }, () => {
-            const pipeActive = this.isPipeActive;
-            this.props.pipeManager?.setInterActivity(pipeActive);
-            this.props.nodeManager?.setInterActivity(!pipeActive);
             const featureClick = this.state.selectFeatureAtClick;
             this.setState({ selectFeatureAtClick: false }, () => {
                 this.setState({ selectFeatureAtClick: featureClick });
             });
         });   
+        this.props.pipeManager?.clearSelect();
+        this.props.nodeManager?.clearSelect();
+
+        this.props.pipeManager?.redraw(null);
+        this.props.nodeManager?.redraw(null);
+
     }; 
 
     componentDidMount() {
@@ -117,6 +122,8 @@ class FeatureTableComposition extends React.Component {
         } = this.state;
         const isReadOnly = this.props.isReadOnly;
         const nodeManager = this.props.nodeManager;
+        const parentRowClick = this.props.onRowClick;
+        const onNewTab = this.props.onNewTab;
         const pipeManager = this.props.pipeManager;
         const skema = this.props.skema;
         return (
@@ -128,13 +135,19 @@ class FeatureTableComposition extends React.Component {
                 onMouseDown={(e) => {
                     e.stopPropagation();
                 }}
+                showMinimizeButton={true}
+                
             >
                 <>
                     <ul className="nav nav-tabs justify-content-start" role="tablist">
                         <li className="nav-item" role="presentation">
                             <button
                                 className={`nav-link ${activeTab === FeatureTableComposition.Ledninger ? "active" : ""}`}
-                                onClick={() => this.setActiveTab( FeatureTableComposition.Ledninger)} 
+                                onClick={() => {
+                                    this.setActiveTab( FeatureTableComposition.Ledninger)
+                                    onNewTab && onNewTab(true); 
+                                }} 
+                                
                                 type="button"
                                 role="tab"
                             >
@@ -144,7 +157,10 @@ class FeatureTableComposition extends React.Component {
                         <li className="nav-item" role="presentation">
                             <button
                                 className={`nav-link ${activeTab === FeatureTableComposition.Broende ? "active" : ""}`}
-                                onClick={() => this.setActiveTab(FeatureTableComposition.Broende)}
+                                onClick={() => {
+                                    this.setActiveTab(FeatureTableComposition.Broende);
+                                    onNewTab && onNewTab(false);
+                                }}
                                 type="button"
                                 role="tab"
                             >
@@ -173,6 +189,7 @@ class FeatureTableComposition extends React.Component {
                                     onDataUpdated={this.updateData}
                                     onTableRowClick={(feature, index) => {
                                         this.setState({ selectFeatureAtClick: false, selectedFeature: feature });
+                                        parentRowClick && parentRowClick(feature, true);
                                     }}
                                     onAddFeatureToggle={() => {
                                         this.setState({ selectFeatureAtClick: !this.state.selectFeatureAtClick });
@@ -202,7 +219,8 @@ class FeatureTableComposition extends React.Component {
                                     }}
                                     onDataUpdated={this.updateDataNode}
                                     onTableRowClick={(feature, index) => {
-                                        this.setState({ selectFeatureAtClick: false, selectedFeature: feature });
+                                        this.setState({ selectFeatureAtClick: false, selectedFeature: feature });   
+                                        parentRowClick && parentRowClick(feature, false);
                                     }}
                                     onAddFeatureToggle={() => {
                                         this.setState({ selectFeatureAtClick: !this.state.selectFeatureAtClick });
