@@ -1954,11 +1954,11 @@ module.exports = {
         let newAdresser = Object.assign({}, this.state.results_adresser);
 
         // filter out the addresses that contain the matrikel and ejerlav
-        let filtered = []
+        let filtered = {};
         for (let key in newAdresser) {
           let a = newAdresser[key];
           if (a.matrikelnr != matrikel || a.ejerlavkode != ejerlav) {
-            filtered.push(a);
+            filtered[key] = a;
           }
         }
         // Remove matrikel from map
