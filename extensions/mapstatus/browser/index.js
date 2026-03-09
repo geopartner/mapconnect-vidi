@@ -282,7 +282,7 @@ module.exports = {
                         this.buildProjectList(data);
                         this.setState({ createProject: false });
                         if (data.returning !== null && data.returning.length && data.returning[0]?.id) {
-                            this.handleProjectSelect(data.returning[0].id, true);
+                            this.handleProjectSelect(data.returning[0].id, true, true);
                         }
                     })
                     .catch((error) => {
@@ -290,18 +290,17 @@ module.exports = {
                     });
             }
 
-            handleProjectSelect = async (selectedProjectId, forceUpdate) => {
+            handleProjectSelect = async (selectedProjectId, forceUpdate, isNew= false) => {
                 _self.active(true);
-                const isNewProject = selectedProjectId == 0;
+
                 const skema = this.getSkema();  
                 const { pipeManager, nodeManager, projectManager } = this.state;
 
                 pipeManager?.clear();
                 nodeManager?.clear();
 
-                if (isNewProject) {
-                    this.setState({ activeProject: this.projectManager.createProjectData(skema) });
-                    return;
+                if (isNew) {
+                    this.setState({ activeProject: this.projectManager.createProjectData(skema),  });
                 }
                 try {
                     const projektData = await projectManager?.getProjectAsync(
@@ -406,7 +405,7 @@ module.exports = {
                             {isLoggedIn && !createProject && (
                                 <ProjectSelector
                                     projects={this.state.projects}
-                                    selectedProject={this.state.selectedProject}
+                                    selectedProject={this.state.activeProject}
                                     onSelectChange={this.handleProjectSelect}
                                     isProjectSelected={isProjectSelected}
                                     onClickExportExcel={() => { this.exportExcel(); }}
