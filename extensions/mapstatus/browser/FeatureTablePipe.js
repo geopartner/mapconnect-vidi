@@ -58,16 +58,18 @@ class FeatureTablePipe extends React.Component {
    
         const row = this.rowRefs[this.state.selectedRowIndex];
         const container = this.tableContainerRef.current;
+        if (!row || !container) return; 
 
-        if (row && container) {
-            const rowTop = row.offsetTop;
-            const containerHeight = container.clientHeight;
+        const rowRect = row.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
 
-            container.scrollTo({
-                top: rowTop - containerHeight / 2,
-                behavior: 'smooth'
-        });
-     }
+        const offset = rowRect.top - containerRect.top;
+
+        container.scrollTo({
+            top: container.scrollTop + offset - container.clientHeight / 2 + row.clientHeight / 2,
+            behavior: "smooth"
+       });
+
     };
 
     handleUpdateSelected(selectedFeatureId) {
