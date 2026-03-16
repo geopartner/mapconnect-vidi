@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
 ### unreleased 
+- mapstatus. Knudetype configurable for selection
+
+## [2026.0.1] - 2025-10-3
 - mapstatus: simplified dialog for edit.
 - mapstatus:remove memory leak, should be more stabile 
 - mapstatus: minimize option on table view.
