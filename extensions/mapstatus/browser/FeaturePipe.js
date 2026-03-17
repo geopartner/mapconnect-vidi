@@ -127,7 +127,7 @@ class FeaturePipe extends React.Component {
                 <div className="col">
                     <p><strong>Til brønd:</strong> {til_brønd}</p>
                     <p><strong>Til brønd dybde:</strong> {til_broend_dybde} m</p>
-                    <p><    strong>Til kote:</strong> {til_kote} m</p>
+                    <p><strong>Til kote:</strong> {til_kote} m</p>
                     <p><strong>Længde:</strong> {længde} m</p>
                     <p><strong>Fysisk indeks:</strong> {fysiskindeks}</p>
                     <p><strong>Antal stik:</strong> {antalstik_ledning}</p>
