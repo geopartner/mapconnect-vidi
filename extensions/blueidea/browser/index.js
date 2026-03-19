@@ -1863,14 +1863,20 @@ module.exports = {
 
         // 2 things can happen here, either we hit an already selected matrikel, or we hit somewhere without a matrikel.
         // if we hit a matrikel, we remove it from the list, if we hit somewhere without a matrikel, we add it and the adresse it represents to the lists
+       
+        blocked = false;
+        // Remove the click event listener for the map
+        cloud.get().map.off("click", me.boundHandleEditClick);
 
+        // if the click is blocked, return
+       
         // get the clicked point
         let point = e.latlng;
         point = turfPoint([point.lng, point.lat]);
-
+        blocked = true;
         // Did we hit a feature on queryMatrs?
         let hit = false;
-        let feature
+        let feature = null;
 
         // Check if the point is inside a feature on queryMatrs. The point needs to be inside a feature, and the feature needs to be a matrikel
         queryMatrs.eachLayer(function (layer) {
