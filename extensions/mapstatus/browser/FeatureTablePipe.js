@@ -29,26 +29,26 @@ class FeatureTablePipe extends React.Component {
             urlDialog: ''
         };
         this.columns = [
-            { key: '-', label: '', isNumeric: false },
-            { key: '#', label: '', isNumeric: false },
-            { key: 'fra_brønd', label: 'Opstr.', isNumeric: false },
-            { key: 'fra_broend_dybde', label: 'Dybde opstr.', isNumeric: true },
-            { key: 'til_brønd', label: 'Nedstr.', isNumeric: false },
-            { key: 'til_broend_dybde', label: 'Dybde nedstr.', isNumeric: true },
-            { key: 'system', label: 'System', isNumeric: false },
-            { key: 'kategori', label: 'Kategori', isNumeric: false },
-            { key: 'materiale', label: 'Materiale', isNumeric: false },
-            { key: 'handelsmål', label: 'Rør diameter', isNumeric: true },
-            { key: 'længde', label: 'Længde', isNumeric: true },
-            { key: 'fra_kote', label: 'Fra kote', isNumeric: true },
-            { key: 'til_kote', label: 'Til kote', isNumeric: true },
-            { key: 'fysiskindeks', label: 'Fysisk indeks', isNumeric: true },
-            { key: 'metode', label: 'Metode', isNumeric: false },
-            { key: 'terraen', label: 'Terræn', isNumeric: false },
-            { key: 'antalstik_ledning', label: 'Antal stik', isNumeric: true },
-            { key: 'bem', label: 'Bemærkning', isNumeric: false },
-            { key: 'video', label: <i className="bi bi-camera-video"></i>, isNumeric: false },
-            { key: 'pdf', label: <i className="bi bi-file-pdf"></i>, isNumeric: false },
+            { key: '-', label: '', isNumeric: false,  visible: !this.props.isReadOnly },
+            { key: '#', label: '', isNumeric: false,  visible: !this.props.isReadOnly }, 
+            { key: 'fra_brønd', label: 'Opstr.', isNumeric: false, visible: true },
+            { key: 'fra_broend_dybde', label: 'Dybde opstr.', isNumeric: true, visible: true },
+            { key: 'til_brønd', label: 'Nedstr.', isNumeric: false, visible: true },
+            { key: 'til_broend_dybde', label: 'Dybde nedstr.', isNumeric: true, visible: true },
+            { key: 'system', label: 'System', isNumeric: false, visible: true },
+            { key: 'kategori', label: 'Kategori', isNumeric: false, visible: true },
+            { key: 'materiale', label: 'Materiale', isNumeric: false,  visible: true },
+            { key: 'handelsmål', label: 'Rør diameter', isNumeric: true, visible: true },
+            { key: 'længde', label: 'Længde', isNumeric: true, visible: true },
+            { key: 'fra_kote', label: 'Fra kote', isNumeric: true, visible: true },
+            { key: 'til_kote', label: 'Til kote', isNumeric: true, visible: true },
+            { key: 'fysiskindeks', label: 'Fysisk indeks', isNumeric: true, visible: true },
+            { key: 'metode', label: 'Metode', isNumeric: false, visible: true },
+            { key: 'terraen', label: 'Terræn', isNumeric: false, visible: true },
+            { key: 'antalstik_ledning', label: 'Antal stik', isNumeric: true, visible: true },
+            { key: 'bem', label: 'Bemærkning', isNumeric: false, visible: true },
+            { key: 'video', label: <i className="bi bi-camera-video"></i>, isNumeric: false, visible: true },
+            { key: 'pdf', label: <i className="bi bi-file-pdf"></i>, isNumeric: false, visible: true },
         ];
         this.tableContainerRef = React.createRef();
     };
@@ -370,7 +370,7 @@ class FeatureTablePipe extends React.Component {
                         <table className="table table-striped table-bordered table-hover table-sm" >
                             <thead onClick={(e) => this.handleHeaderClick(e)}>
                                 <tr style={styleObject.headerRow} >
-                                    {this.columns.map((col, index) => (
+                                    {this.columns.filter(col => col.visible === true).map((col, index) => (
                                         <th key={index}
                                             style={index === 0 || index === this.columns.length - 1 ? styleObject.tableHeaderSmall : styleObject.tableHeader} >
                                             {col.label}
@@ -405,7 +405,8 @@ class FeatureTablePipe extends React.Component {
                                                 border: selectedFeatureIds.contains(feature.properties.id) ? '4px solid rgb(0, 150, 130)' : '1px solid gray',
                                             }}
                                         >
-                                            <td
+                                            {!isReadOnly &&  (   
+                                              <td
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     this.onDeleteFeature(feature)
@@ -417,8 +418,10 @@ class FeatureTablePipe extends React.Component {
                                                     disabled={isReadOnly}
                                                 >
                                                 </i>
-                                            </td>
-                                            <td
+                                              </td>
+                                            )}
+                                            {!isReadOnly &&  (   
+                                              <td
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     feature.properties.isSelected = !feature.properties.isSelected;
@@ -431,7 +434,8 @@ class FeatureTablePipe extends React.Component {
                                                     disabled={isReadOnly}
                                                 >
                                                 </i>
-                                            </td>
+                                              </td>
+                                            )}
                                             <td style={styleToUse}>{feature.properties.fra_brønd}</td>
                                             <td style={styleToUse}>{feature.properties.fra_broend_dybde}</td>
                                             <td style={styleToUse}>{feature.properties.til_brønd}</td>
