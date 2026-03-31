@@ -277,7 +277,7 @@ const swBuildOptions = {
     alias: {
         'urls-to-cache': swCacheFile,
     },
-    external: ['os'],
+    external: ['os', 'crypto', 'stream', 'util', 'buffer', 'assert', 'http', 'https', 'net', 'tls', 'fs', 'path', 'url', 'querystring', 'zlib', 'dgram'],
     plugins: [requireGlobifyPlugin()],
     logLevel: 'info',
 };
@@ -304,7 +304,7 @@ const buildOptions = {
         '@x0k/json-schema-merge/dist/lib/array.js': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
         '@x0k/json-schema-merge': './node_modules/@x0k/json-schema-merge/dist/index.js',
     },
-    external: ['os'],
+    external: ['os', 'crypto', 'stream', 'util', 'buffer', 'assert', 'http', 'https', 'net', 'tls', 'fs', 'path', 'url', 'querystring', 'zlib', 'dgram'],
     plugins: [requireGlobifyPlugin()],
     logLevel: 'info',
 };
