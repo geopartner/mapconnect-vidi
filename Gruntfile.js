@@ -9,10 +9,14 @@ var fs = require('fs');
 module.exports = function (grunt) {
     "use strict";
 
-    const lessConfig = {"public/css/styles.css": "public/less/styles.default.less"};
     const transform = [['babelify', {
         presets: ["@babel/preset-env", "@babel/preset-react"],
         plugins: ["@babel/plugin-proposal-class-properties", "@babel/plugin-proposal-object-rest-spread"]
+    }], ['babelify', {
+        presets: ["@babel/preset-env", "@babel/preset-react"],
+        plugins: ["@babel/plugin-proposal-class-properties", "@babel/plugin-proposal-object-rest-spread"],
+        global: true,
+        only: [/node_modules\/@x0k/, /node_modules\/fast-uri/, /node_modules\/@rjsf/]
     }], 'require-globify', 'windowify', 'envify', ['browserify-css', {global: true}]];
     const transform_sw = [['babelify', {
         presets: ["@babel/preset-env", "@babel/preset-react"],
@@ -47,24 +51,6 @@ module.exports = function (grunt) {
                 src: ['public/version.json']
             }
         },
-        less: {
-            publish: {
-                options: {
-                    compress: false,
-                    optimization: 2
-                },
-                files: [
-                    lessConfig,
-                    {
-                        expand: true,        // Enable dynamic expansion.
-                        cwd: 'extensions',  // Src matches are relative to this path.
-                        src: ['**/less/*.less',],     // Actual pattern(s) to match.
-                        dest: 'public/css/extensions',  // Destination path prefix.
-                        ext: '.css',         // Dest filepaths will have this extension.
-                    }
-                ]
-            }
-        },
         cssmin: {
             build: {
                 options: {
@@ -75,7 +61,6 @@ module.exports = function (grunt) {
                     'public/css/build/all.min.css': [
                         // Bootstrap icons
                         'node_modules/bootstrap-icons/font/bootstrap-icons.css',
-                        'node_modules/@fortawesome/fontawesome-free/css/all.css',
                         // Leaflet
                         'node_modules/leaflet/dist/leaflet.css',
                         'public/js/lib/leaflet-draw/leaflet.draw.css',
@@ -104,7 +89,7 @@ module.exports = function (grunt) {
                 },
                 files: {
                     'public/css/styles.min.css': [
-                        'public/css/styles.css',
+                        'scss/main.css',
                         'public/css/extensions/**/less/*.css'
                     ]
                 }
@@ -165,8 +150,15 @@ module.exports = function (grunt) {
                 options: {
                     transform,
                     alias: {
-                        react: 'react/cjs/react.production.min.js',
-                        'react-dom': 'react-dom/cjs/react-dom.production.min.js'
+                        react: 'react',
+                        'react-dom': 'react-dom',
+                        '@rjsf/core': './node_modules/@rjsf/core/dist/index.cjs',
+                        '@rjsf/react-bootstrap': './node_modules/@rjsf/react-bootstrap/lib/index.js',
+                        '@rjsf/validator-ajv8': './node_modules/@rjsf/validator-ajv8/dist/index.cjs',
+                        '@rjsf/utils': './node_modules/@rjsf/utils/dist/index.cjs',
+                        '@x0k/json-schema-merge/lib/array': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
+                        '@x0k/json-schema-merge/dist/lib/array.js': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
+                        '@x0k/json-schema-merge': './node_modules/@x0k/json-schema-merge/dist/index.js'
                     }
                 }
             },
@@ -174,7 +166,18 @@ module.exports = function (grunt) {
                 files,
                 options: {
                     browserifyOptions,
-                    transform
+                    transform,
+                    alias: {
+                        react: 'react',
+                        'react-dom': 'react-dom',
+                        '@rjsf/core': './node_modules/@rjsf/core/dist/index.cjs',
+                        '@rjsf/react-bootstrap': './node_modules/@rjsf/react-bootstrap/lib/index.js',
+                        '@rjsf/validator-ajv8': './node_modules/@rjsf/validator-ajv8/dist/index.cjs',
+                        '@rjsf/utils': './node_modules/@rjsf/utils/dist/index.cjs',
+                        '@x0k/json-schema-merge/lib/array': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
+                        '@x0k/json-schema-merge/dist/lib/array.js': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
+                        '@x0k/json-schema-merge': './node_modules/@x0k/json-schema-merge/dist/index.js'
+                    }
                 }
             },
             publish_sw: {
@@ -202,7 +205,17 @@ module.exports = function (grunt) {
                     transform,
                     watch: true,
                     keepAlive: true,
-
+                    alias: {
+                        react: 'react',
+                        'react-dom': 'react-dom',
+                        '@rjsf/core': './node_modules/@rjsf/core/dist/index.cjs',
+                        '@rjsf/react-bootstrap': './node_modules/@rjsf/react-bootstrap/lib/index.js',
+                        '@rjsf/validator-ajv8': './node_modules/@rjsf/validator-ajv8/dist/index.cjs',
+                        '@rjsf/utils': './node_modules/@rjsf/utils/dist/index.cjs',
+                        '@x0k/json-schema-merge/lib/array': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
+                        '@x0k/json-schema-merge/dist/lib/array.js': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
+                        '@x0k/json-schema-merge': './node_modules/@x0k/json-schema-merge/dist/index.js'
+                    }
                 }
             }
         },
@@ -254,7 +267,6 @@ module.exports = function (grunt) {
                         'public/js/lib/Leaflet.utfgrid/L.NonTiledUTFGrid.js',
                         'public/js/lib/leaflet-plugins/Bing.js',
                         'public/js/lib/Leaflet.GridLayer.GoogleMutant/Leaflet.GoogleMutant.js',
-                        'public/js/lib/Leaflet.NonTiledLayer/NonTiledLayer.js',
                         'public/js/lib/leaflet-vector-grid/Leaflet.VectorGrid.bundled.min.js',
                         'public/js/lib/Leaflet.markercluster/leaflet.markercluster.js',
                         'public/js/lib/Leaflet.extra-markers/leaflet.extra-markers.js',
@@ -269,7 +281,8 @@ module.exports = function (grunt) {
                         'public/js/lib/leaflet.editable/Leaflet.Editable.js',
                         'public/js/lib/leaflet-geometryutil/leaflet.geometryutil.js',
                         'public/js/lib/Path.Drag.js/src/Path.Drag.js',
-                        'public/js/lib/leaflet-side-by-side/leaflet-side-by-side.min.js',
+                        'public/js/lib/leaflet-side-by-side/leaflet-side-by-side.js',
+                        'public/js/lib/Leaflet.NonTiledLayer/NonTiledLayer.js',
 
                         'node_modules/jquery-ui/dist/jquery-ui.js',
                         'node_modules/jquery-ui-touch-punch-c/jquery.ui.touch-punch.js',
@@ -370,7 +383,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-browserify');
     grunt.loadNpmTasks('grunt-shell');
     grunt.loadNpmTasks('grunt-terser');
-    grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-processhtml');
     grunt.loadNpmTasks('grunt-cache-bust');
@@ -384,5 +396,5 @@ module.exports = function (grunt) {
     grunt.registerTask('default', ['prepareAssets', 'browserify:publish', 'browserify:publish_sw_dev', 'css', 'hogan', 'version']);
     grunt.registerTask('production', ['env:prod', 'hogan', 'prepareAssets', 'browserify:publish', 'browserify:publish_sw', 'css', 'terser', 'processhtml', 'cssmin:build', 'cacheBust', 'version', 'appendBuildHashToVersion']);
     grunt.registerTask('production-test', ['env:prod', 'browserify:publish']);
-    grunt.registerTask('css', ['less', 'sass', 'cssmin']);
+    grunt.registerTask('css', ['sass', 'cssmin']);
 };
