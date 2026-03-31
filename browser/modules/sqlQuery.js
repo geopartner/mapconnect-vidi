@@ -474,6 +474,7 @@ module.exports = {
                                 try {
                                     s(id, layer, key, sqlQuery);
                                     selectCallBack(id, layer, key, sqlQuery);
+                                    backboneEvents.get().trigger("feature:selected", layer, key);
                                 } catch (e) {
                                     console.info("Error in select function for: " + _key_, e.message);
                                 }
@@ -483,6 +484,7 @@ module.exports = {
                                 try {
                                     s(id, layer, key, sqlQuery);
                                     selectCallBack(id, layer, key, sqlQuery);
+                                    backboneEvents.get().trigger("feature:selected", layer, key)
                                 } catch (e) {
                                     console.info("Error in select function for: " + _key_, e.message);
                                 }
@@ -674,9 +676,7 @@ module.exports = {
 
             if (fields) {
                 $.each(fields, function (i, v) {
-                    if (v.type === "bytea") {
-                        fieldNames.push("encode(\"" + i + "\",'escape') as \"" + i + "\"");
-                    } else if (fieldConf?.[i]?.ignore !== true) {
+                    if (fieldConf?.[i]?.ignore !== true) {
                         fieldNames.push("\"" + i + "\"");
                     }
                 });
@@ -883,20 +883,27 @@ module.exports = {
                             } else if (property.value.type === 'bytea' && feature.properties[property.key]) {
                                 let subValue = decodeURIComponent(feature.properties[property.key]);
                                 if (subValue) {
-                                    const type = utils.splitBase64(subValue).contentType;
+                                    let type;
+                                    try {
+                                        type = utils.splitBase64(subValue).contentType;
+                                    } catch (e) {
+                                        type = subValue.split("=")[1];
+                                    }
+                                    // We've to clean the relation name of double quotes
+                                    const cleanValue = subValue.replaceAll('"', '')
                                     if (MIME_TYPES_IMAGES.includes(type)) {
                                         value =
-                                            `<div style="cursor: pointer" onclick="window.open().document.body.innerHTML = '<img src=\\'${subValue}\\' />';">
-                                        <img class="w-100" src='${subValue}'/>
+                                            `<div style="cursor: pointer" onclick="window.open().document.body.innerHTML = '<img src=\\'${cleanValue}\\' />';">
+                                        <img class="w-100" src='${cleanValue}'/>
                                      </div>`;
                                     } else if (MIME_TYPES_APPS.includes(type)) {
                                         value = `<embed
-                                        src=${subValue}
+                                        src=${cleanValue}
                                         type=${type}
                                         width="100%"
                                         height="200px"
                                     />
-                                    <a download href=${subValue}>${__("Download the file")}</a>
+                                    <a download target="_blank" href=${cleanValue}>${__("Download the file")}</a>
                                     `;
                                     } else {
                                         value = `
@@ -920,7 +927,7 @@ module.exports = {
                             fields.push({title: property.value.alias || property.key, value});
                             fieldLabel = (property.value.alias !== null && property.value.alias !== "") ? property.value.alias : property.key;
                             if (feature.properties[property.key] !== undefined) {
-                                out.push([property.key, property.value.sort_id, fieldLabel, property.value.link, property.value.template, property.value.content, property.restrictions || null, property.value.linkprefix, property.value.linksuffix]);
+                                out.push([property.key, property.value.sort_id, fieldLabel, property.value.link, property.value.template, property.value.content]);
                             }
                         }
                     });
@@ -1038,9 +1045,11 @@ module.exports = {
             }
         });
         draggable.on('dragstart', function (e) {
+            //on first drag, remove the pop-up tip
             $(".leaflet-popup-tip-container").hide();
         });
         draggable.on('dragend', function (e) {
+            // set the new position
             popup.setLatLng(map.layerPointToLatLng(e.target._newPos));
         });
         draggable.enable();
