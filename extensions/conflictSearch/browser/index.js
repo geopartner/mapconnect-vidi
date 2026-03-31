@@ -6,6 +6,8 @@
 
 'use strict';
 
+import {GEOJSON_PRECISION} from "../../../browser/modules/constants";
+
 /**
  *
  * @type {*|exports|module.exports}
@@ -307,7 +309,7 @@ module.exports = module.exports = {
      * Initiates the module
      */
     init: function () {
-        var metaData, me = this, startBuffer, getProperty;
+        var metaData, me = this, startBuffer, getProperty, searchTxt;
 
         // Set Defaults
         startBuffer = config.extensionConfig?.conflictSearch?.startBuffer ?? 0;
@@ -324,9 +326,15 @@ module.exports = module.exports = {
         cloud.map.addLayer(bufferItems);
         cloud.map.addLayer(dataItems);
 
+
+
         // Create a new tab in the main tab bar
         utils.createMainTab("conflict", "Konfliktsøgning", "Lav en konfliktsøgning ned igennem alle lag. Der kan søges med en adresse/matrikelnr., en tegning eller et objekt fra et lag. Det sidste gøres ved at klikke på et objekt i et tændt lag og derefter på \'Søg med dette objekt\'", require('./../../../browser/modules/height')().max, "bi-check2-square", false, "conflictSearch");
         $("#conflict").append(dom);
+
+        // adjust search text
+        let placeholder = window.vidiConfig?.searchConfig?.placeholderText ?? "Adresse eller matrikelnr.";
+        $(".custom-search-conflict.typeahead.form-control:not(.tt-hint)").attr("placeholder", placeholder);
         $("body").append(`
             <div class="toast-container bottom-0 end-0 p-3 me-5">
             <div id="${TOAST_ID}" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
@@ -1170,7 +1178,7 @@ let dom = `
     <div class="d-flex flex-column gap-4 mb-4">
         <div id="conflict-places" class="places" style="display: none">
             <div class="input-group mb-3">
-                <input class="typeahead form-control custom-search-conflict" type="text" placeholder="Adresse eller matrikelnr.">
+                <input class="typeahead form-control custom-search-conflict" type="text" placeholder="">
                 <button class="btn btn-outline-secondary searchclear" type="button">
                     <i class="bi bi-x-lg"></i>
                 </button>
@@ -1280,7 +1288,7 @@ let dom = `
             </div>
             <div role="tabpanel" class="tab-pane" id="conflict-info-content">
             <div class="d-grid gap-2 mt-2 mb-2">
-                <button style="display: none" class="btn btn-outline-secondary btn-block" id="conflict-search-with-feature">Søg med valgte</button>
+                <button style="display: none" class="btn btn-outline-warning btn-block" id="conflict-search-with-feature">Søg med valgte</button>
             </div>
             <div id="conflict-info-box">
                 <div id="conflict-modal-info-body">

@@ -63,6 +63,8 @@ if (!cowiUrl) {
 const availableServices = ["google", "mapillary", "skraafoto", "maps", "cowi"];
 let mapillaryUrl = config?.extensionConfig?.streetView?.mapillary ||"https://www.mapillary.com/app/?z=17";
 
+import {createRoot} from "react-dom/client";
+
 /**
  *
  * @type {{set: module.exports.set, init: module.exports.init}}
@@ -330,15 +332,8 @@ module.exports = {
         // Append to DOM
         //==============
         try {
-
-            ReactDOM.render(
-                <Streetview/>,
-                document.getElementById(exId)
-            );
-        } catch (e) {
-
-        }
-
+            createRoot(document.getElementById(exId)).render(<Streetview/>);
+        } catch (e) {}
     },
 
     callBack: function (url) {
