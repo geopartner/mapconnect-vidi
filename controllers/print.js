@@ -209,15 +209,9 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
 
         let check = false;
         let delay = 1000;
+        let go;
         const func = () => {
             headless.acquire().then(browser => {
-
-                    // Set status variables
-                    var vidiIsReady = false;
-                    var layersAreLoaded = false;
-                    var legendIsReady = false;
-                    var baselayerIsReady = false;
-
                     setTimeout(() => {
                         if (headless.isBorrowedResource(browser)) {
                             headless.destroy(browser);
@@ -227,30 +221,7 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                     if (!outputPng) {
                         browser.newPage().then(async (page) => {
                             await page.emulateMedia('screen');
-                            
-                            // Listen for page errors
-                            page.on('pageerror', error => {
-                                console.error('PAGE ERROR:', error.message);
-                                console.error('Stack:', error.stack);
-                            });
-                            
-                            // Listen for request failures
-                            page.on('requestfailed', request => {
-                                console.error('REQUEST FAILED:', request.url());
-                                console.error('Failure text:', request.failure().errorText);
-                                console.error('Method:', request.method());
-                                console.error('Resource type:', request.resourceType());
-                            });
-                            
-                            // Listen for responses to catch HTTP errors
-                            page.on('response', response => {
-                                if (!response.ok()) {
-                                    console.error('HTTP ERROR:', response.status(), response.url());
-                                }
-                            });
-                            
                             page.on('console', async msg => {
-
                                 // Log error description
                                 const args = await msg.args()
                                 for (const arg of args) {
@@ -263,31 +234,18 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                 }
 
                                 console.log(msg.text());
-
-                                // Check statuses 
-                                if (msg.text().indexOf(`Vidi is now loaded`) !== -1) {
-                                    vidiIsReady = true;
-                                } else if (msg.text().indexOf(`Layers all loaded L`) !== -1) {
-                                    layersAreLoaded = true;
-                                // If no layers are active, we skip waiting for layers to load
-                                } else if (msg.text().indexOf(`0 active layers in saved state`) !== -1) {
-                                    layersAreLoaded = true;
-                                } else if (msg.text().indexOf(`Legend is ready`) !== -1) {
-                                    legendIsReady = true;
-                                } else if (msg.text().indexOf(`Done loading base layer`) !== -1) {
-                                    baselayerIsReady = true;
+                                if (msg.text().indexOf(`No active layers in print`) !== -1) { // Print as soon Vidi is loaded
+                                    go = true;
                                 }
-
-                                // Make sure we dont wait forever
-                                if (msg.text().indexOf(`Versioning:`) !== -1) {
-                                    vidiIsReady = true;
-                                    layersAreLoaded = true;
-                                    legendIsReady = true;
-                                    baselayerIsReady = true;
+                                if (msg.text().indexOf(`Active layers in print`) !== -1) { // Wait until layers from snapshot is loaded
+                                    go = false; // Wait for overlays to load
                                 }
-
-                                // for each console line, check if all are ready - then print
-                                if (layersAreLoaded && legendIsReady && vidiIsReady && baselayerIsReady) {
+                                if (
+                                    // Print as soon Vidi is done loading
+                                    (msg.text().indexOf(`Vidi is now loaded`) !== -1 && go) ||
+                                    // Wait until all overlays and basemap are loaded
+                                    (msg.text().indexOf(`Legend loaded`) !== -1 && !go)
+                                ) {
                                     if (!check) {
                                         check = true;
                                         console.log('App was loaded, generating PDF');
@@ -470,31 +428,7 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                 
                                 page.on('console', msg => {
                                     console.log(msg.text());
-
-                                    // Check statuses 
                                     if (msg.text().indexOf(`Vidi is now loaded`) !== -1) {
-                                        vidiIsReady = true;
-                                    } else if (msg.text().indexOf(`Layers all loaded L`) !== -1) {
-                                        layersAreLoaded = true;
-                                    // If no layers are active, we skip waiting for layers to load
-                                    } else if (msg.text().indexOf(`0 active layers in saved state`) !== -1) {
-                                        layersAreLoaded = true;
-                                    } else if (msg.text().indexOf(`Legend is ready`) !== -1) {
-                                        legendIsReady = true;
-                                    } else if (msg.text().indexOf(`Done loading base layer`) !== -1) {
-                                        baselayerIsReady = true;
-                                    }
-
-                                    // Make sure we dont wait forever
-                                    if (msg.text().indexOf(`Versioning:`) !== -1) {
-                                        vidiIsReady = true;
-                                        layersAreLoaded = true;
-                                        legendIsReady = true;
-                                        baselayerIsReady = true;
-                                    }
-                                
-                                    // for each console line, check if all are ready - then print
-                                    if (layersAreLoaded && legendIsReady && vidiIsReady) {
                                         console.log('App was loaded, generating PNG');
                                         setTimeout(() => {
                                             page.evaluate(`$('.leaflet-top').remove();$('#loadscreen').remove();`).then(() => {
