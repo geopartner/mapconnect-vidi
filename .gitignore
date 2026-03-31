@@ -131,3 +131,6 @@ public/version*
 # MapConnect files
 config/gp/*.js
 .vscode/
+
+# built .map files
+*.map
