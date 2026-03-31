@@ -32,3 +32,100 @@
   $primary: #ff6633;
   // Then import Bootstrap’s main SCSS
 }
+
+// MapConnect theme
+/* adjust colors for geopartner */
+[data-bs-theme="light"] .btn-primary {
+    color: var(--bs-white);
+}
+[data-bs-theme="dark"] .btn-primary {
+    color: var(--bs-white);
+}
+
+/* adjust background color for tables while in dark mode */
+[data-bs-theme="dark"] .table-primary {
+    --bs-table-bg: rgb(120 149 146);
+}
+
+/* fix leaflet-par-part beeing offset slightly */
+#map > div.leaflet-control-container > div.leaflet-top.leaflet-right > div.leaflet-control-boxzoom.leaflet-bar.leaflet-control-custom.leaflet-control > a > span {
+    color: unset !important;
+    vertical-align: unset !important;
+}
+
+/* fix for dropdown z */
+.dropdown-menu {
+    z-index: 1050;
+}
+
+/* Dark mode for maps */
+
+/* Forvaltningskort */
+[data-bs-theme="dark"] img.leaflet-tile[src^="/api/dataforsyningen/forvaltning2"] {
+    filter: invert(1) hue-rotate(180deg) brightness(1.5);
+}
+
+/* Matrikelkort */
+[data-bs-theme="dark"] img.leaflet-tile[src^="/api/datafordeler/Matrikel/MatrikelGaeldendeOgForeloebigWMS/1.0.0/WMS"] {
+    filter: invert(1) hue-rotate(180deg) brightness(1.5);
+}
+
+/* Topografisk kort */
+[data-bs-theme="dark"] img.leaflet-tile[src^="https://dk.gc2.io/mapcache/baselayers/tms/1.0.0/geodk.bright"]
+{
+    filter: invert(1) hue-rotate(180deg) brightness(1.5);
+}
+
+/* leaflet*/
+[data-bs-theme="dark"] .leaflet-control-locate a,
+[data-bs-theme="dark"] .leaflet-control-zoom a,
+[data-bs-theme="dark"] .leaflet-bar a,
+[data-bs-theme="dark"] .leaflet-control a,
+[data-bs-theme="dark"] .leaflet-draw-draw-polyline,
+[data-bs-theme="dark"] .leaflet-draw-draw-polygon,
+[data-bs-theme="dark"] .leaflet-draw-draw-rectangle,
+[data-bs-theme="dark"] .leaflet-draw-draw-circle,
+[data-bs-theme="dark"] .leaflet-draw-draw-marker,
+[data-bs-theme="dark"] .leaflet-draw-draw-circlemarker,
+[data-bs-theme="dark"] .leaflet-draw-edit-edit,
+[data-bs-theme="dark"] .leaflet-control-attribution,
+[data-bs-theme="dark"] .leaflet-control-scale-line,
+[data-bs-theme="dark"] .leaflet-draw-edit-remove {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-dark-text-emphasis);
+}
+
+[data-bs-theme="dark"] .leaflet-control-scale-line {
+    text-shadow: none;
+}
+
+[data-bs-theme="dark"] .leaflet-draw-toolbar a {
+    /* background-image: url(../images/spritesheet.png); not created yet */
+    background-image: linear-gradient(transparent, transparent), url(../../../../images/spritesheet-dark.svg);
+}
+
+[data-bs-theme="dark"] a.leaflet-disabled {
+    background-color: var(--bs-light-border-subtle);
+}
+
+/* Fix text color in toasts */
+[data-bs-theme="dark"] #info-toast-body {
+    color: var(--bs-white);
+}
+
+[data-bs-theme="light"] #info-toast-body {
+    color: var(--bs-white);
+} 
+
+[data-bs-theme="dark"] .toast-body p {
+    color: var(--bs-white);
+} 
+
+[data-bs-theme="light"] .toast-body p {
+    color: var(--bs-white);
+} 
+
+/* fix for typeahead beeing duplicated */
+input.custom-search.typeahead.form-control.tt-hint {
+    display: none;
+}
