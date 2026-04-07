@@ -273,11 +273,12 @@ const swBuildOptions = {
     define: {
         'process.env.NODE_ENV': isProd ? '"production"' : '"development"',
         'process.env': '{}',
+        'global': 'globalThis',
     },
     alias: {
         'urls-to-cache': swCacheFile,
     },
-    external: ['os', 'crypto', 'stream', 'util', 'buffer', 'assert', 'http', 'https', 'net', 'tls', 'fs', 'path', 'url', 'querystring', 'zlib', 'dgram'],
+    external: ['os'],
     plugins: [requireGlobifyPlugin()],
     logLevel: 'info',
 };
@@ -296,6 +297,7 @@ const buildOptions = {
     define: {
         'process.env.NODE_ENV': isProd ? '"production"' : '"development"',
         'process.env': '{}',
+        'global': 'globalThis',
     },
     inject: [],
     alias: {
@@ -304,7 +306,7 @@ const buildOptions = {
         '@x0k/json-schema-merge/dist/lib/array.js': './node_modules/@x0k/json-schema-merge/dist/lib/array.js',
         '@x0k/json-schema-merge': './node_modules/@x0k/json-schema-merge/dist/index.js',
     },
-    external: ['os', 'crypto', 'stream', 'util', 'buffer', 'assert', 'http', 'https', 'net', 'tls', 'fs', 'path', 'url', 'querystring', 'zlib', 'dgram'],
+    external: ['os'],
     plugins: [requireGlobifyPlugin()],
     logLevel: 'info',
 };

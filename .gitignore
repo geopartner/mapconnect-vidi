@@ -134,3 +134,4 @@ config/gp/*.js
 
 # built .map files
 *.map
+public/css/img/markers_*.png
