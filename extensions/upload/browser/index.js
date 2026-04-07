@@ -9,6 +9,7 @@
 let cloud;
 let utils;
 let backboneEvents;
+let transformPoint;
 let draw = require("../../../browser/modules/draw");
 let drawTools = require("../../../browser/modules/drawTools");
 let drawToolsGp = require("../../../browser/modules/gp/drawTools");
@@ -18,6 +19,7 @@ let dict = require("./i18n");
 
 // defaults
 const maxCount = 200;
+
 
 /**
  *

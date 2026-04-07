@@ -44,6 +44,12 @@ var utils;
  *
  * @type {*|exports|module.exports}
  */
+var transformPoint;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
 var backboneEvents;
 
 /**
