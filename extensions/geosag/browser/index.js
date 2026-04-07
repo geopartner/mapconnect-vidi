@@ -5,6 +5,7 @@
  */
 "use strict";
 
+import React from "react";
 import { isNull, isSet } from "lodash";
 import MatrikelTable from "./MatrikelTable";
 import DAWASearch from "./DAWASearch";
@@ -73,6 +74,12 @@ var mapObj;
  * Draw module
  */
 var draw;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var transformPoint;
 
 var config = require("../../../config/config.js");
 

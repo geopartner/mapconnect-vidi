@@ -32,6 +32,30 @@ var backboneEvents;
  *
  * @type {*|exports|module.exports}
  */
+var meta;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var draw;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var socketId;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var transformPoint;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
 var layerTree = require("./../../../browser/modules/layerTree");
 
 /**

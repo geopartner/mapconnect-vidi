@@ -29,6 +29,11 @@ const MAPSTATUS_MODULE_NAME = `mapstatus`;
 require("./style.js");
 
 let backboneEvents;
+let bindEvent;
+let draw;
+let layers;
+let serializeLayers;
+let state;
 let qstore = [];
 
 let _self = false;
