@@ -348,7 +348,7 @@ if (isWatch) {
     server.listen(LIVERELOAD_PORT);
 
     buildOptions.banner = {
-        js: '(() => { if (typeof window !== "undefined") { const es = new EventSource("http://localhost:' + LIVERELOAD_PORT + '/livereload"); es.onmessage = () => window.location.reload(); } })();'
+        js: '(() => { if (typeof window !== "undefined") { const es = new EventSource("http://localhost:' + LIVERELOAD_PORT + '/livereload"); es.onmessage = () => window.location.reload(true); } })();'
     };
 
     buildOptions.plugins.push({
