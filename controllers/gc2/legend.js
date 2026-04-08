@@ -41,7 +41,7 @@ router.get('/api/legend/:db', function (req, response) {
                 }
                 data = JSON.parse(body);
             } catch (e) {
-                console.error("JSON parse error:", e.message, "Response body:", body);
+                console.error("[Legend] JSON parse error:", e.message, "Response body:", body);
                 response.header('content-type', 'application/json');
                 response.status(400).send({
                     success: false,
