@@ -9,6 +9,7 @@ import React from "react";
 import { isNull, isSet } from "lodash";
 import MatrikelTable from "./MatrikelTable";
 import DAWASearch from "./DAWASearch";
+import {createRoot} from "react-dom/client";
 
 const geosagRef = React.createRef();
 
@@ -1373,7 +1374,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<GeoSag ref={geosagRef} />, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<GeoSag ref={geosagRef} />);
     } catch (e) {
       throw "Failed to load DOM";
     }
