@@ -93,6 +93,7 @@ module.exports = {
         "Get as PDF": "Hent som PDF",
         "Conflicts": "Konflikter",
         "No Conflicts": "Ingen konflikter",
+        "Conflict": "Konfliktsøgning",
         "Conflict with selected": "Konflikt med valgte",
         "Conflict with all": "Konflikt med alle",
         "Prints completed": "Antal print udført",
