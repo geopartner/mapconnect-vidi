@@ -561,7 +561,7 @@ module.exports = module.exports = {
      */
     off: function () {
         // Clean up
-        console.info("Stopping conflict");
+        //console.info("Stopping conflict");
         _clearAllItems();
         $("#conflict-buffer").hide();
         $("#conflict-main-tabs-container").hide();
