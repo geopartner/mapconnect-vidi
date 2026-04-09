@@ -349,7 +349,7 @@ module.exports = {
         gc2i18n.dict._displayScreenshot = urlVars?.scr || "inline";
         gc2i18n.dict._displayBrand = urlVars?.bra || "inline";
         gc2i18n.dict._displayToggler = urlVars?.tog || "inline";
-        gc2i18n.dict._displayConfigSwitcher = window.vidiConfig.configSwitcher ? "inline" : "none";
+        gc2i18n.dict._displayConfigSwitcher = window.vidiConfig.configSwitcher ? "block" : "none";
 
         // Render the page
         // ===============
