@@ -192,6 +192,20 @@
                             </div>
                         </div>
                     </li>
+                    <li class="px-3 pb-2">
+                        <div class="theme-group-wrap">
+                            <div class="small text-muted d-flex align-items-center mb-2">
+                                <svg width="16" height="16" fill="currentColor" class="bi me-2 opacity-75">
+                                    <use href="/fonts/bootstrap-icons.svg#translate"></use>
+                                </svg>
+                                {{Languages}}
+                            </div>
+                            <div id="bd-locale-group" class="btn-group w-100" role="group" aria-label="Locale selector">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-gc2-locale="da_DK" aria-pressed="false" aria-label="Danish" title="Danish">DA</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-gc2-locale="en_US" aria-pressed="false" aria-label="English" title="English">EN</button>
+                            </div>
+                        </div>
+                    </li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#about-modal">{{About}}</a></li>
                     <li><a class="dropdown-item" href="#" id="btn-reset">{{Reset}}</a></li>

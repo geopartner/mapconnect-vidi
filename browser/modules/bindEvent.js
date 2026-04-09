@@ -662,6 +662,52 @@ module.exports = {
                     showActiveTheme(nextTheme, true)
                 })
             }
+        })();
+
+        (() => {
+            const localeButtons = document.querySelectorAll('[data-gc2-locale]')
+            if (localeButtons.length === 0) {
+                return
+            }
+
+            const languages = window.vidiConfig?.extensionConfig?.languages || {}
+            const activeLocale = window._vidiLocale || urlparser.urlVars?.locale || 'da_DK'
+
+            const setActiveLocaleButton = (locale) => {
+                localeButtons.forEach(button => {
+                    const isActive = button.getAttribute('data-gc2-locale') === locale
+                    button.classList.toggle('active', isActive)
+                    button.setAttribute('aria-pressed', isActive ? 'true' : 'false')
+                })
+            }
+
+            const getLocaleUrl = (locale) => {
+                const nextUrl = new URL(window.location.href)
+                nextUrl.searchParams.set('locale', locale)
+
+                const schema = languages[locale]?.schema
+                if (schema) {
+                    const pathSegments = nextUrl.pathname.split('/')
+                    if (pathSegments.length > 3) {
+                        pathSegments[3] = schema
+                        nextUrl.pathname = pathSegments.join('/')
+                    }
+                }
+
+                return nextUrl.toString()
+            }
+
+            setActiveLocaleButton(activeLocale)
+            localeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const locale = button.getAttribute('data-gc2-locale')
+                    if (!locale || locale === activeLocale) {
+                        return
+                    }
+
+                    window.location.href = getLocaleUrl(locale)
+                })
+            })
         })()
     },
     showOffcanvasLayers: () => {
