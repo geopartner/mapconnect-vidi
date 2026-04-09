@@ -978,20 +978,6 @@ module.exports = {
         });
       }
 
-      toggleMapClick = () => {
-        const _self = this;
-        const newState = !_self.state.isMapClickActive;
-        _self.setState({
-          isMapClickActive: newState,
-        });
-        
-        if (newState) {
-          utils.cursorStyle().crosshair();
-        } else {
-          utils.cursorStyle().reset();
-        }
-      }
-
       findMatrikel(id) {
         const _self = this;
         _self
@@ -1094,7 +1080,6 @@ module.exports = {
         fillOpacity: 0.75,
         color: "#009688",
         dashArray: 3,
-        fillOpacity: 3,
       };
 
       matrikelOnEachFeature(feature, layer) {
