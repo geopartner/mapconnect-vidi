@@ -23,6 +23,7 @@ import SelectedFeaturesManager from '../manager/SelectedFeaturesManager.js';
 import ProjectManager from '../manager/ProjectManager.js';
 // 
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
+import { createRoot } from 'react-dom/client';
 
 const MAPSTATUS_MODULE_NAME = `mapstatus`;
 
@@ -499,8 +500,7 @@ module.exports = {
         }
 
         try {
-            ReactDOM.render(<MapStatus nodeManager={nodeManager} pipeManager={pipeManager} map={cloud.get().map} />, document.getElementById(exId));
-
+            createRoot(document.getElementById(exId)).render(<MapStatus nodeManager={nodeManager} pipeManager={pipeManager} map={cloud.get().map} />);
         } catch
         (e) {
             console.error("Error in MapStatus:", e);
