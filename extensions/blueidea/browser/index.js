@@ -2571,21 +2571,21 @@ module.exports = {
                 <details open={openResult} className="col">
                   <summary>Resultat</summary>
                   { hasBlueIdeaProfile &&
-                    <div className="row mx-auto gap-3 my-2">
-                      <label className="col-4">SMS Profil</label>
+                    <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                      <label className="col-4 col-form-label text-nowrap">SMS Profil</label>
                       <select
-                       className="col-7"
-                       onChange={this.setSelectedProfileid}
-                       value={s.selected_profileid}
-                       placeholder={__("Select profile")}
-                       disabled={!this.readyToBlueIdea()}
+                        className="col form-select"
+                        onChange={this.setSelectedProfileid}
+                        value={s.selected_profileid}
+                        placeholder={__("Select profile")}
+                        disabled={!this.readyToBlueIdea()}
                       >
-                      {this.profileidOptions().map((option) => (
-                        <option key={option.value} value={option.value}>
+                        {this.profileidOptions().map((option) => (
+                          <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
                         ))}
-                          </select>
+                      </select>
                     </div>
                   }
                   <div className="row mx-auto gap-3 my-2">
