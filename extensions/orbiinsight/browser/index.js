@@ -6,6 +6,8 @@
 
 "use strict";
 
+import { createRoot } from "react-dom/client";
+
 var React = require("react");
 const ToastUtils = require("./utils/toastUtils");
 const OrbiInsightRef = React.createRef();
@@ -710,7 +712,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<OrbiInsight ref={OrbiInsightRef}/>, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<OrbiInsight ref={OrbiInsightRef}/>);
     } catch (e) {
       throw "Failed to load DOM";
     }
