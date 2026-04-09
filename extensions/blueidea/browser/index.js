@@ -23,6 +23,7 @@ import {
   applyFilter,
 } from "@turf/turf";
 import _, { has } from "underscore";
+import { createRoot } from "react-dom/client";
 
 
 var React = require("react");
@@ -1471,9 +1472,7 @@ module.exports = {
           results_matrikler: [],
           results_ventiler: [],
           results_ledninger: [],
-          results_adresser: [],
           edit_matr: false,
-          editProject: false,
           TooManyFeatures: false,
           selectedVentiler: [],
           beregnuuid: null,
@@ -2697,7 +2696,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<BlueIdea ref={blueIdeaRef} />, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<BlueIdea ref={blueIdeaRef} />);
     } catch (e) {
       throw "Failed to load DOM";
     }
