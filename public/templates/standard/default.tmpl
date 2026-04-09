@@ -76,6 +76,14 @@
     .leaflet-control-custom, .history-control, .leaflet-control-boxzoom {
         display: inline;
     }
+
+    .theme-group-wrap {
+        min-width: 13rem;
+    }
+
+    #bd-theme-group .btn {
+        min-width: 3.75rem;
+    }
 </style>
 <!-- map -->
 <div id="pane">
@@ -159,46 +167,32 @@
         <div class="collapse navbar-collapse justify-content-end flex-grow-0 pe-auto mt-2 mt-sm-0 gap-2"
              id="navbarSupportedContent">
             <div class="nav-item dropdown mb-2 mb-sm-0">
-                <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false"
-                        data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme (auto)">
-                    <svg width="16" height="16" fill="currentColor" class="bi my-1 theme-icon-active">
-                        <use href="/fonts/bootstrap-icons.svg#circle-half"></use>
-                    </svg>
-                    <span class="d-lg-none ms-2" id="bd-theme-text"></span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text">
-                    <li>
-                        <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
-                            <svg class="bi me-2 opacity-50" width="16" height="16" fill="currentColor">
-                                <use href="/fonts/bootstrap-icons.svg#sun-fill"></use>
-                            </svg>
-                            Light
-                        </button>
-                    </li>
-                    <li>
-                        <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
-                            <svg class="bi me-2 opacity-50" width="16" height="16" fill="currentColor">
-                                <use href="/fonts/bootstrap-icons.svg#moon-stars-fill"></use>
-                            </svg>
-                            Dark
-                        </button>
-                    </li>
-                    <li>
-                        <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
-                            <svg class="bi me-2 opacity-50" width="16" height="16" fill="currentColor">
-                                <use href="/fonts/bootstrap-icons.svg#circle-half"></use>
-                            </svg>
-                            Auto
-                        </button>
-                    </li>
-                </ul>
-
-            </div>
-            <div class="nav-item dropdown mb-2 mb-sm-0">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-three-dots-vertical"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
+                    <li class="px-3 pb-2">
+                        <div class="theme-group-wrap">
+                            <div class="small text-muted d-flex align-items-center mb-2">
+                                <svg width="16" height="16" fill="currentColor" class="bi me-2 opacity-75 theme-icon-active">
+                                    <use href="/fonts/bootstrap-icons.svg#circle-half"></use>
+                                </svg>
+                                {{Theme}}
+                            </div>
+                            <div id="bd-theme-group" class="btn-group w-100" role="group" aria-label="Theme selector">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-theme-value="light" aria-pressed="false" aria-label="Light" title="Light">
+                                    <i class="bi bi-sun-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-theme-value="dark" aria-pressed="false" aria-label="Dark" title="Dark">
+                                    <i class="bi bi-moon-stars-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-theme-value="auto" aria-pressed="false" aria-label="Auto" title="Auto">
+                                    <i class="bi bi-circle-half"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#about-modal">{{About}}</a></li>
                     <li><a class="dropdown-item" href="#" id="btn-reset">{{Reset}}</a></li>
                     <li><a class="dropdown-item configuration" href="#" data-bs-toggle="modal" data-bs-target="#config-switcher-modal">{{Configurations}}</a></li>

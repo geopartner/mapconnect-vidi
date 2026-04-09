@@ -536,9 +536,28 @@ module.exports = {
 
         (() => {
             const themeSwitcher = document.querySelector('#bd-theme')
-            if (!themeSwitcher) {
+
+            // Move theme-switcher login into menu.
+            const themeSelect = document.querySelector('#bd-theme-select')
+            const themeOptionToggles = document.querySelectorAll('[data-bs-theme-value]')
+            if (!themeSwitcher && !themeSelect && themeOptionToggles.length === 0) {
                 return
             }
+            const themeConfig = {
+                light: {
+                    icon: '/fonts/bootstrap-icons.svg#sun-fill',
+                    label: 'Light'
+                },
+                dark: {
+                    icon: '/fonts/bootstrap-icons.svg#moon-stars-fill',
+                    label: 'Dark'
+                },
+                auto: {
+                    icon: '/fonts/bootstrap-icons.svg#circle-half',
+                    label: 'Auto'
+                }
+            }
+            const themeOrder = ['light', 'dark', 'auto']
             const getStoredTheme = () => localStorage.getItem('theme')
             const setStoredTheme = theme => localStorage.setItem('theme', theme)
 
@@ -564,18 +583,48 @@ module.exports = {
                 const themeSwitcherText = document.querySelector('#bd-theme-text')
                 const activeThemeIcon = document.querySelector('.theme-icon-active use')
                 const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
-                const svgOfActiveBtn = btnToActive.querySelector('svg use').getAttribute('href')
-                document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+                const optionToggles = document.querySelectorAll('[data-bs-theme-value]')
+                optionToggles.forEach(element => {
                     element.classList.remove('active')
                     element.setAttribute('aria-pressed', 'false')
                 })
-                btnToActive.classList.add('active')
-                btnToActive.setAttribute('aria-pressed', 'true')
-                activeThemeIcon.setAttribute('href', svgOfActiveBtn)
-                const themeSwitcherLabel = `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`
-                themeSwitcher.setAttribute('aria-label', themeSwitcherLabel)
 
-                if (focus) {
+                let themeLabel = themeConfig[theme]?.label || 'Auto'
+                if (btnToActive) {
+                    const svgOfActiveBtn = btnToActive.querySelector('svg use')?.getAttribute('href')
+                    btnToActive.classList.add('active')
+                    btnToActive.setAttribute('aria-pressed', 'true')
+                    themeLabel = btnToActive.dataset.bsThemeValue
+                    if (activeThemeIcon && svgOfActiveBtn) {
+                        activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+                    }
+                } else {
+                    const fallbackIcon = themeConfig[theme]?.icon || themeConfig.auto.icon
+                    if (activeThemeIcon) {
+                        activeThemeIcon.setAttribute('href', fallbackIcon)
+                    }
+                }
+
+                if (themeSelect) {
+                    themeSelect.value = theme
+                }
+
+                if (themeSwitcherText) {
+                    if (themeSelect) {
+                        themeSwitcherText.textContent = 'Theme'
+                    } else {
+                        themeSwitcherText.textContent = themeLabel.charAt(0).toUpperCase() + themeLabel.slice(1)
+                    }
+                }
+                const themeControlLabel = themeSelect ? `Select theme (${themeLabel})` : `Toggle theme (${themeLabel})`
+                if (themeSwitcher) {
+                    themeSwitcher.setAttribute('aria-label', themeControlLabel)
+                }
+                if (themeSelect) {
+                    themeSelect.setAttribute('aria-label', themeControlLabel)
+                }
+
+                if (focus && themeSwitcher) {
                     themeSwitcher.focus()
                 }
             }
@@ -583,11 +632,12 @@ module.exports = {
                 const storedTheme = getStoredTheme()
                 if (storedTheme !== 'light' && storedTheme !== 'dark') {
                     setTheme(getPreferredTheme())
+                    showActiveTheme('auto')
                 }
             })
             showActiveTheme(getPreferredTheme())
-            document.querySelectorAll('[data-bs-theme-value]')
-                .forEach(toggle => {
+            if (themeOptionToggles.length > 0) {
+                themeOptionToggles.forEach(toggle => {
                     toggle.addEventListener('click', () => {
                         const theme = toggle.getAttribute('data-bs-theme-value')
                         setStoredTheme(theme)
@@ -595,6 +645,23 @@ module.exports = {
                         showActiveTheme(theme, true)
                     })
                 })
+            } else if (themeSelect) {
+                themeSelect.addEventListener('change', () => {
+                    const theme = themeSelect.value
+                    setStoredTheme(theme)
+                    setTheme(theme)
+                    showActiveTheme(theme, false)
+                })
+            } else {
+                themeSwitcher.addEventListener('click', () => {
+                    const currentTheme = getStoredTheme() || getPreferredTheme()
+                    const currentThemeIndex = themeOrder.indexOf(currentTheme)
+                    const nextTheme = themeOrder[(currentThemeIndex + 1) % themeOrder.length]
+                    setStoredTheme(nextTheme)
+                    setTheme(nextTheme)
+                    showActiveTheme(nextTheme, true)
+                })
+            }
         })()
     },
     showOffcanvasLayers: () => {

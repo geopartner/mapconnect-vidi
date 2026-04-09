@@ -11,6 +11,7 @@ module.exports = {
         "Startup message": "Startup message",
         "Close and do not show in the future": "Close and do not show in the future",
         "About": "About",
+        "Theme": "Theme",
         "Meters": "Meters",
         "Buffer": "Buffer",
         "Main page": "Main page",

@@ -11,6 +11,7 @@ module.exports = {
         "Startup message": "Besked",
         "Close and do not show in the future": "Luk og vis ikke igen",
         "About": "Om",
+        "Theme": "Tema",
         "Meters": "Meter",
         "Buffer": "Buffer",
         "Main page": "Hovedside",
