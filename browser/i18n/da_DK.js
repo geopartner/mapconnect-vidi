@@ -11,6 +11,7 @@ module.exports = {
         "Startup message": "Besked",
         "Close and do not show in the future": "Luk og vis ikke igen",
         "About": "Om",
+        "Theme": "Tema",
         "Meters": "Meter",
         "Buffer": "Buffer",
         "Main page": "Hovedside",
@@ -92,6 +93,7 @@ module.exports = {
         "Get as PDF": "Hent som PDF",
         "Conflicts": "Konflikter",
         "No Conflicts": "Ingen konflikter",
+        "Conflict": "Konfliktsøgning",
         "Conflict with selected": "Konflikt med valgte",
         "Conflict with all": "Konflikt med alle",
         "Prints completed": "Antal print udført",
@@ -247,6 +249,8 @@ module.exports = {
         "Filter": "Filter",
         "New block": "Ny blok",
         "Filter is required for showing data": "Filter skal anvendes før data vises",
+        "More tools": "Flere værktøjer",
+        "Change layer type": "Skift lagtype",
 
         // Base layers
         "Side-by-side mode": "Dobbelt baggrundskort",
@@ -281,6 +285,7 @@ module.exports = {
         "You need to plot at least two points": "Du skal plotte mindst to punkter",
         "You need to plot at least three points": "Du skal plotte mindst tre punkter",
         "Required": "Skal udfyldes",
+        "Add new feature to layer": "Tilføj nyt objekt til lag",
 
         // Editor - ImageUploadWidget
         "Drop file here, or click to select file to upload": "Slip fil her, eller klik for at vælge fil, der skal uploades",

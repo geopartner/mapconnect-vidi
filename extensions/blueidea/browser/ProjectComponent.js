@@ -129,14 +129,14 @@ class ProjectComponent extends React.Component {
         const showNextStep = pipeSelected && !editProject;
         return (
             <>
-                <div className="row mx-auto gap-3 my-2">
-                    <label className="col-4" >{this.__("Forsyningstype")}</label>
+                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                    <label className="col-4 col-form-label text-nowrap" >{this.__("Forsyningstype")}</label>
                     <select
                         onChange={(e) => { this.handleForsyningsart_selectedChange(e.target.value) }}
                         value={project.forsyningsart_selected}
                         placeholder={this.__("Select utility-type")}
                         disabled={isReadOnly || editProject}
-                        className="col-7"
+                        className="col form-select"
                     >
                         {this.forsyningsart_options().map((option) => (
                             <option key={option.value} value={option.value}>
@@ -147,14 +147,14 @@ class ProjectComponent extends React.Component {
                 </div>
 
 
-                <div className="row mx-auto gap-3 my-2">
-                    <label className="col-4" >{this.__("Break-type")}</label>
+                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                    <label className="col-4 col-form-label text-nowrap" >{this.__("Break-type")}</label>
                     <select
                         onChange={(e) => { this.handleBreakTypeChange(e.target.value) }}
                         value={project.brudtype}
                         placeholder={this.__("Break-type")}
                         disabled={isReadOnly || editProject}
-                        className="col-7"
+                        className="col form-select"
                     >
                         {project.breakTypeOptions().map((option) => (
                             <option key={option.value} value={option.value}>
@@ -164,10 +164,10 @@ class ProjectComponent extends React.Component {
                     </select>
                 </div>
 
-                <div className="row mx-auto gap-3 my-2">
-                    <label className="col-4" >{this.__("Forventet-start")}</label>
+                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                    <label className="col-4 col-form-label text-nowrap" >{this.__("Forventet-start")}</label>
                     <input
-                        className="col-7"
+                        className="col form-control"
                         disabled={isReadOnly}
                         min={minDateTime}
                         onChange={e => this.handleProjectStartChange(new Date(e.target.value))}
@@ -177,21 +177,20 @@ class ProjectComponent extends React.Component {
                     />
                 </div>
 
-                <div className="row mx-auto gap-2 my-2">
-                    <label className="col-3" >{this.__("Forventet-slut")}</label>
+                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                    <label className="col-4 col-form-label text-nowrap" >{this.__("Forventet-slut")}</label>
                     {showTrash ? (
                         <i
-                            className="col-1 bi bi-trash"
+                            className="col-auto bi bi-trash"
                             onClick={this.onHandleDeleteProject}
                             style={{ cursor: 'pointer' }}
                             title="Nulstil dato"
                         ></i>
-                    ) :
-                        (
-                            <label className="col-1"></label>
+                    ) : (
+                        <label className="col-auto" style={{display: 'none'}}></label>
                         )}
                     <input
-                        className="col-7"
+                        className="col form-control"
                         disabled={isReadOnly}
                         min={minDateTime}
                         onChange={e => this.handleProjectEndChange(new Date(e.target.value))}
@@ -199,15 +198,12 @@ class ProjectComponent extends React.Component {
                         value={toDate}
                         type="datetime-local"
                     />
-
                 </div>
 
-
-
-                <div className="row mx-auto gap-3 my-2">
-                    <label className="col-4" >{this.__("admin info")}</label>
+                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                    <label className="col-4 col-form-label text-nowrap" >{this.__("admin info")}</label>
                     <input
-                        className="col-7"
+                        className="col form-control"
                         disabled={isReadOnly || editProject}
                         onChange={this.handleProjectSagsr}
                         placeholder={this.__("project description")}

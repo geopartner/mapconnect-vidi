@@ -66,15 +66,15 @@ class ProjectListComponent extends React.Component {
 
         {!noProjects && (
           <>
-            <div className="row mx-auto gap-3 my-3" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
+            <div className="row mx-auto g-3 my-3 border rounded" style={{ maxHeight: '175px', overflowY: 'auto' }}>
               <table className="table table-sm mb-0 col">
                 <thead style={{ fontWeight: 'bold', position: 'sticky', top: 0 }}>
                   <tr>
                     <th></th>
-                    <th><p style={{ fontWeight: 500, marginBottom: '4px', padding: '2px' }}>Navn</p></th>
-                    <th><p style={{ fontWeight: 500, marginBottom: '4px', padding: '2px' }}>Type</p> </th>
-                    <th><p style={{ fontWeight: 500, marginBottom: '4px', padding: '2px' }}>Start</p></th>
-                    <th><p style={{ fontWeight: 500, marginBottom: '4px', padding: '2px' }}>Slut</p></th>
+                    <th><span className="fw-medium d-block">Navn</span></th>
+                    <th><span className="fw-medium d-block">Type</span></th>
+                    <th><span className="fw-medium d-block">Start</span></th>
+                    <th><span className="fw-medium d-block">Slut</span></th>
                     {/* <th></th> */}
                     <th></th>
                   </tr>
@@ -97,28 +97,26 @@ class ProjectListComponent extends React.Component {
                       </td>
 
                       <td>
-                        <label
-                          className="form-check-label">
+                        <span>
                           {option.properties.sagstekst}
-                        </label>
+                        </span>
                       </td>
                       <td>
-                        <label
-                          className="form-check-label">
+                        <span>
                           {brudType}
-                        </label>
+                        </span>
                       </td>
 
                       <td>
-                        <label>
+                        <span>
                           {fromDate}
-                        </label>
+                        </span>
                       </td>
 
                       <td>
-                        <label>
+                        <span>
                           {toDate}
-                        </label>
+                        </span>
                       </td>
 
                       <td style={{ textAlign: 'center' }}>

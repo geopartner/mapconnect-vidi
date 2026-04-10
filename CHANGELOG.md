@@ -1,38 +1,180 @@
-# Changelog
+# Mapconnect Changelog
+
+The changes and additions made will be reflected by the date which they are deployed to production.
+
+
+
+## 2025-10-3
+- mapstatus. Knudetype configurable for selection
+- mapstatus: simplified dialog for edit.
+- mapstatus:remove memory leak, should be more stabile 
+- mapstatus: minimize option on table view.
+- mapstatus: insuring same order for nodes and pipes in table view.
+## 2025-10-2
+- Seperated lukkeplan/alarmplan extentions.
+- Updated [blueidea] extension to handle breakprojects, recalculations, valves and blueidea.
+- The new [alarm] extension now handles alarmkabler.
+
+
+## previous
+- Vidi now checks for update on launch, and every 30 seconds. If autoUpdate is set - the application will forcibly update. It does however, require the use to update once more to get this functionality in their browser.
+- Centralized the Handlebars-helpers and made them work inside the table-view of the select tool.
+- Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
+- Fixed an issue with printing when using a layer from DF-controller. Somelayers failed the SSL-check. These layers are now printable.
+- Fixed an issue with nested subgroups and their activation. 
+- Fixed an issue where the linkprefix/linksuffix was not used in the table-view of the select tool.
+- [mapstatus] fixed bugs in addFeature, dialog movement, state.
+- [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
+- [embed] New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
+
+
+# Vidi Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
-### unreleased 
-- mapstatus. Knudetype configurable for selection
 
-## [2026.0.1] - 2025-10-3
-- mapstatus: simplified dialog for edit.
-- mapstatus:remove memory leak, should be more stabile 
-- mapstatus: minimize option on table view.
-- mapstatus: insuring same order for nodes and pipes in table view.
-## [2026.0.0] - 2025-10-2s
+## [2026.3.5] - 2026-30-3
 ### Added
-- Seperated lukkeplan/alarmplan extentions.
-- Updated [blueidea] extension to handle breakprojects, recalculations, valves and blueidea.
-- The new [alarm] extension now handles alarmkabler.
-
-### Fixed
-- Fixed an issue with a very small preview windows for prints. ServiceWorker was the culprit.
-- Fixed an issue with printing when using a layer from DF-controller. Somelayers failed the SSL-check. These layers are now printable.
-- Fixed an issue with nested subgroups and their activation. 
-- Fixed an issue where the linkprefix/linksuffix was not used in the table-view of the select tool.
-- [mapstatus] fixed bugs in addFeature, dialog movement, state.
-
-### Added
-- [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
-- [embed] New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
+- Editor: Support for Postgres arrays types. For now only `bytea[]` is supported for image/file fields.
 
 ### Changed
-- Vidi now checks for update on launch, and every 30 seconds. If autoUpdate is set - the application will forcibly update. It does however, require the use to update once more to get this functionality in their browser.
-- Centralized the Handlebars-helpers and made them work inside the table-view of the select tool.
+- Update `@rjsf` dependencies to version 6.4.1 and migrate from `@rjsf/bootstrap-4` to `@rjsf/react-bootstrap`
+- Remove LESS assets and dependencies; migrate styling to SCSS.
+- Replace `base64url` package with custom module.
+- Build script is added (/build.mjs), which uses ESBuild instead of Browserify and can replace Grunt entirely. Minimum changes are done in source code to support ESBuild. Like removing `windowify` usage. 
+  Bundle is now built in about 300 ms. Browserify is still supported.
+  - npm run build — dev build (JS + CSS + templates, ~2s total)
+  - npm run build:production — production build (+ minification + cache bust + version hash)
+  - npm run build:css — only CSS
+  - npm run build:libs — minify libs, ~2s
+  - npm run watch — watch with livereload (JS + CSS + templates)
+- Show alert for unauthorized database access. If a user is not authorized to access the database, an alert is shown and layertree is not shown.
+  Anonymous access is still possible.
+- Signing out will now also sign out from GC2.
+- After auth, Vidi will not refresh the page.
+
+## [2026.3.4] - 2026-17-3
+### Changed
+- Refactor SQL query handling in `geocloud.js` and `sql.js` to switch from URL-encoded form data to JSON payloads. GC2 must be upgraded to latest version.
+
+## [2026.3.3] - 2026-12-3
+### Added
+- Re-try logic on error for non-tiled WMS layers. 1000 ms delay between 3 retries.
+
+## [2026.3.2] - 2026-10-3
+### Changed
+- New tag
+
+## [2026.3.1] - 2026-10-3
+### Changed
+- New tag
+
+## [2026.3.0] - 2026-10-3
+### Changed
+- Login now uses OAuth2. It might be necessary to set the `host` config in GC2, if behind a proxy. The `host` config is the URL of the GC2 instance.
+
+### Fixed
+- Printing now works with MapLibre GL base layers. MapLibre GL is fixed to version 5.7.x.
+- Side-by-side base layer switcher regression.
+
+## [2026.2.1] - 2026-9-2
+### Added
+- Support for not scaling images when uploading to editor using the config option `editor.doNotScaleImages`.
+
+## [2026.2.0] - 2026-2-2
+### Fixed
+- It could happen that the 'More tools' was not activated when using the 'activateLayers' config option.
+
+## [2026.1.4] - 2026-28-1
+### Added
+- Symbols module: Support for deleting symbols in storage and tracking deletions in state sync.
+
+## [2026.1.3] - 2026-22-1
+### Fixed
+- Dynamically added layer would not be filtered on print. E.g., from a snapshot where the layer was not in the layer tree before.
+
+## [2026.1.2] - 2026-19-1
+### Fixed
+- Print now always waits for legend to load.
+- `api.filter` will not try to set widget state, if the widget is not rendered yet in the layer tree. This resulted in an error.
+
+## [2026.1.1] - 2026-15-1
+### Fixed
+- Regressions in print.
+
+## [2026.1.0] - 2026-6-1
+### Added
+- Added retry logic with exponential backoff to SQL requests in `geocloud.js` and improve error handling.
+
+### Fixed
+- Make editor form re-render again between adding/editing features. This was an unwanted effect from upgrading Reactjs to 18 and use of createRoot.
+
+## [2025.12.1] - 2025-12-12
+### Added
+- WMS base layers can now be configured with a `singleTile` option. If set to `true`, the layer will be fetched as a single tile.
+
+## [2025.12.0] - 2025-9-12
+### Added
+- New config option `layerTreeFilterPlaceholder` for setting the placeholder text in the layer tree filter input field.
+- Editor: New config option for setting default values in newly created objects. A value can be set directly or from a user property:
+```json
+{
+    "extensionConfig": {
+        "editor": {
+            "defaultValues": {
+                "my_dynamic_field": "$user.properties.my_property",
+                "my_static_field": "some value"
+            }
+        }
+    }
+}
+```
+- Editor: If a `character varying` field has max length > 255, then a `textarea` widget is used instead of `input`.
+
+### Fixed
+- Tooltips in embed template are now above the layer tree and can be seen.
+- Missing tooltips added.
+
+## [2025.11.3] - 2025-24-11
+### Fixed
+- Print now always waits for overlay to load, instead of relying on the timeout.
+
+## [2025.11.2] - 2025-21-11
+### Added
+- Opacity control for base layers with sliders and manage state persistence
+
+### Fixed
+- Printing and screenshotting now works with MapLibre GL base layers.
+
+## [2025.11.1] - 2025-13-11
+### Changed
+- Upgrade `react` dependencies to version 18.3.1.
+- Replace `ReactDOM.render` with `createRoot` for React 18 compatibility across modules.
+
+## [2025.11.0] - 2025-7-11
+### Fixed
+- Add dynamic placeholder support for the conflict search input field.
+- Assign unique IDs (`_vidi_id`) to drawings created from the search module.
+- Update button style to `btn-outline-warning` in conflict Info section for improved visibility.
+
+_## [2025.10.3] - 2025-22-10
+### Changed_
+- Upgrade React and ReactDOM to v17.0.2.
+- Replace react-autocomplete with react-widgets Combobox in layer tree controls to support React 17.
+- Remove unused packages from package.json (react-addons, react-button, rc-slider, react-color, mutationobserver-shim, grunt-bower-task, esmify, install, npm).
+
+## [2025.10.2] - 2025-21-10
+### Changed
+- Support for GC2 setting `convertDataUrlsToHttp`. Vector layers, editor and feature-info can now deal with both
+  data and http urls. 
+
+## [2025.10.1] - 2025-14-10
+### Changed
+- Support for GC2 setting `convertDataUrlsToHttp`. Vector layers, editor and feature-info can now deal with both
+  data and http urls.  
 
 ## [2025.10.0] - 2025-2-10
 ### Added
@@ -111,7 +253,7 @@ and this project adheres to [CalVer](https://calver.org/).
 }
 ```
 
-## Fixed
+### Fixed
 - In print the EPSG:32632 projection is replaced with EPSG:3857 for consistency and improved accuracy. Introduced a correction factor to adjust for latitude distortions in dimensions. Refactored related calculations to ensure proper map scaling and alignment.
 
 ## [2025.5.2] - 2025-20-5
@@ -253,7 +395,7 @@ and this project adheres to [CalVer](https://calver.org/).
   A new method meta::getLayerNamesFromSchemata will convert the schemata to an array of layer names.
 - A global variable `decimalSeparator` is now set from current locale. It's used in conflictSearch.
 
-## Changed
+### Changed
 
 - Auto hide login modal after successful login.
 - When using `featureInfoTableOnMap` closing the popup wil clear selected features in the map.
@@ -266,7 +408,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [2025.2.1] - 2025-7-2
 
-## Added
+### Added
 
 - In ConflictSearch modul the total length and area is calculated for intersections with lines and polygons and
   reported.

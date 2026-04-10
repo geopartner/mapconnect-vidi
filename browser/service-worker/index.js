@@ -47,7 +47,7 @@ let ignoredExtensionsRegExps = [];
 let forceIgnoredExtensionsCaching = false;
 
 const urlsToCache = require(`urls-to-cache`);
-const base64url = require("base64url");
+import base64url from "../modules/base64url.js";
 
 const urlSubstitution = [{
     requested: 'https://netdna.bootstrapcdn.com/font-awesome/4.5.0/fonts/fontawesome-webfont.ttf?v=4.5.0',
@@ -127,6 +127,9 @@ let urlsIgnoredForCaching = [{
     requested: '/api/v2/(?!configuration)'
 }, {
     regExp: true,
+    requested: '/api/v1/decodeimg'
+}, {
+    regExp: true,
     requested: '/mapcache/'
 }, {
     regExp: true,
@@ -134,6 +137,9 @@ let urlsIgnoredForCaching = [{
 }, {
     regExp: true,
     requested: 'socket\.io'
+}, {
+    regExp: true,
+    requested: "/oauth"
 }, {
     regExp: true,
     requested: "chrome-extension://",
@@ -428,21 +434,12 @@ const normalizeTheURLForFetch = (event) => {
 
             if (browser.name === 'edge') {
                 if (clonedRequest.method === `POST`) {
-                    clonedRequest.text().then(data => {
-                        let mappedObject = {};
-                        let splitDecodeData = data.split(`&`);
-                        if (splitDecodeData.length > 0) {
-                            splitDecodeData.map(item => {
-                                if (item.indexOf(`=`) !== -1) {
-                                    let splitParameter = item.split(`=`);
-                                    if (splitParameter.length === 2) {
-                                        mappedObject[splitParameter[0]] = splitParameter[1];
-                                    }
-                                }
-                            });
-                        }
+                    clonedRequest.json().then(json => {
+                        let mappedObject = json;
+                        let payload = JSON.stringify(json);
 
-                        cleanedRequestURL += '/' + btoa(data);
+                        cleanedRequestURL += '/' + btoa(payload);
+
                         proceedWithRequestData(clonedRequest.method, mappedObject, cleanedRequestURL);
 
                         return;
@@ -458,39 +455,18 @@ const normalizeTheURLForFetch = (event) => {
                 }
             } else if (browser.name === 'safari' || browser.name === 'ios') {
                 if (clonedRequest.method === `POST`) {
-                    let rawResult = ``;
-                    let data = false;
-                    let reader = clonedRequest.body.getReader();
-                    reader.read().then(function processText({done, value}) {
-                        if (done) {
-                            const DecodeUInt8arr = (uint8array) => {
-                                return new TextDecoder("utf-8").decode(uint8array);
-                            };
+                    clonedRequest.json().then(json => {
+                        let mappedObject = json;
+                        let payload = JSON.stringify(json);
 
-                            let mappedObject = {};
-                            let decodedData = DecodeUInt8arr(data);
-                            let splitDecodeData = decodedData.split(`&`);
-                            if (splitDecodeData.length > 0) {
-                                splitDecodeData.map(item => {
-                                    if (item.indexOf(`=`) !== -1) {
-                                        let splitParameter = item.split(`=`);
-                                        if (splitParameter.length === 2) {
-                                            mappedObject[splitParameter[0]] = splitParameter[1];
-                                        }
-                                    }
-                                });
-                            }
+                        cleanedRequestURL += '/' + btoa(payload);
 
-                            cleanedRequestURL += '/' + btoa(rawResult);
-                            proceedWithRequestData(clonedRequest.method, mappedObject, cleanedRequestURL);
+                        proceedWithRequestData(clonedRequest.method, mappedObject, cleanedRequestURL);
 
-                            return;
-                        }
-
-                        data = value;
-                        rawResult += value;
-
-                        return reader.read().then(processText);
+                        return;
+                    }).catch(error => {
+                        console.error(`Unable to read POST data`);
+                        reject();
                     });
                 } else if (clonedRequest.method === `GET`) {
                     processGETRequest(clonedRequest);
@@ -500,23 +476,15 @@ const normalizeTheURLForFetch = (event) => {
                 }
             } else {
                 if (clonedRequest.method === `POST`) {
-                    clonedRequest.formData().then(formdata => {
-                        let mappedObject = {};
-                        let payload = '';
-                        for (var p of formdata) {
-                            let splitParameter = p.toString().split(',');
-                            if (splitParameter.length === 2) {
-                                mappedObject[splitParameter[0]] = splitParameter[1];
-                            }
-
-                            payload += p.toString();
-                        }
+                    clonedRequest.json().then(json => {
+                        let mappedObject = json;
+                        let payload = JSON.stringify(json);
 
                         cleanedRequestURL += '/' + btoa(payload);
 
                         proceedWithRequestData(clonedRequest.method, mappedObject, cleanedRequestURL);
                     }).catch(() => {
-                        console.error(`Unable to get the formData() for request`);
+                        console.error(`Unable to get the JSON for request`);
                         reject();
                     });
                 } else if (clonedRequest.method === `GET`) {

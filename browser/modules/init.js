@@ -102,9 +102,10 @@ module.exports = {
             statelessDraw: false,
             openLayerTreeGroups: [],
             crs: 'EPSG:3857',
-            loadingTimeout: 30000,
+            loadingTimeout: 45000,
             loadCheckingInterval: 15000,
             mode: 0,
+            layerTreeFilterPlaceholder: null,
         };
         // Set default for unset props
         for (let prop in defaults) {
@@ -114,7 +115,7 @@ module.exports = {
         // If Vidi loads, the timeout will be cleared in State
         window.loadingTimeout = setTimeout(() => {
             console.log("Timeout reached. Sending 'Vidi is now loaded' message");
-            console.log('Vidi is now loaded')
+            console.log("Layers all loaded L");
         },  window.vidiConfig.loadingTimeout);
 
         // In a interval of x seconds, check if the app is still loading. If it is, send the 'still loading' message.
@@ -131,12 +132,18 @@ module.exports = {
                                 </div>`;
         document.querySelector('body').insertAdjacentHTML('beforeend', html);
         const toast = new bootstrap.Toast(document.getElementById('load-checking-toast'),  {delay: 99999999, autohide: false});
-        document.querySelector('.close-info-toast').onclick = function () {toast.hide()}
-        window.loadCheckingInterval = setInterval(() => {
-            if (!toast.isShown()) {
-                toast.show();
-            }
-        }, window.vidiConfig.loadCheckingInterval)
+        const pauseTimer = () => {
+            window.loadCheckingInterval = setTimeout(() => {
+                if (!toast.isShown()) {
+                    toast.show();
+                }
+            }, window.vidiConfig.loadCheckingInterval)
+        }
+        document.querySelector('.close-info-toast').onclick = function () {
+            toast.hide();
+            pauseTimer();
+        }
+        pauseTimer();
         // Set session from URL
         if (typeof urlVars.session === "string") {
             const MAXAGE = (config?.sessionMaxAge || 86400) / 86400; // In days
@@ -236,7 +243,37 @@ module.exports = {
             configFile = window.vidiConfig.defaultConfig;
         }
         // Register Handlebars helpers
-        require('./handlebarsHelpers')(Handlebars);
+        Handlebars.registerHelper("formatDate", function (datetime, format = null, inFormat = null) {
+            if (datetime == null) {
+                return null;
+            }
+            const dateFormats = window.vidiConfig.dateFormats;
+            if (format !== null && dateFormats.hasOwnProperty(format)) {
+                return dayjs(datetime.toString(), inFormat).format(dateFormats[format]);
+            } else {
+                return dayjs(datetime.toString(), inFormat).format(format);
+            }
+        });
+        Handlebars.registerHelper('breakLines', function (text) {
+            if (text == null) {
+                return null;
+            }
+            text = Handlebars.Utils.escapeExpression(text);
+            text = text.replace(/(\r\n|\n|\r)/gm, '<br>');
+            return new Handlebars.SafeString(text);
+        });
+        Handlebars.registerHelper('replaceNull', function (value, text) {
+            if (value === null) {
+                return text;
+            }
+            return null;
+        });
+        Handlebars.registerHelper('formatDecimalNumber', function (value) {
+            if (value === null) {
+                return null;
+            }
+            return value.toString().replace('.', window.decimalSeparator);
+        });
 
         if (configFile) {
             loadConfig();
@@ -312,7 +349,7 @@ module.exports = {
         gc2i18n.dict._displayScreenshot = urlVars?.scr || "inline";
         gc2i18n.dict._displayBrand = urlVars?.bra || "inline";
         gc2i18n.dict._displayToggler = urlVars?.tog || "inline";
-        gc2i18n.dict._displayConfigSwitcher = window.vidiConfig.configSwitcher ? "inline" : "none";
+        gc2i18n.dict._displayConfigSwitcher = window.vidiConfig.configSwitcher ? "block" : "none";
 
         // Render the page
         // ===============

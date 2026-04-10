@@ -29,12 +29,28 @@ if (config?.autoLoginPossible === true) {
  */
 
 let start = function (dataToAuthorizeWith, req, response, status) {
-    let options = {
-        headers: {'content-type': 'application/json'},
-        method: 'POST',
-        uri: config.gc2.host + "/api/v2/session/start",
-        body: JSON.stringify(dataToAuthorizeWith)
-    };
+
+    let options;
+    if (dataToAuthorizeWith?.token) {
+        options = {
+            headers: {'content-type': 'application/json'},
+            method: 'POST',
+            uri: config.gc2.host + "/api/v2/session/token",
+            body: JSON.stringify({
+                token: dataToAuthorizeWith.token,
+                database: dataToAuthorizeWith.database,
+                superuser: dataToAuthorizeWith.superuser,
+            })
+        };
+    } else {
+        options = {
+            headers: {'content-type': 'application/json'},
+            method: 'POST',
+            uri: config.gc2.host + "/api/v2/session/start",
+            body: JSON.stringify(dataToAuthorizeWith)
+        };
+
+    }
 
     request(options, function (err, res, body) {
         let data;
@@ -44,9 +60,10 @@ let start = function (dataToAuthorizeWith, req, response, status) {
         response.header('X-Powered-By', 'MapCentia Vidi');
 
         if (err || res.statusCode !== 200) {
+            console.error(err);
             response.status(401).send({
                 success: false,
-                message: "Could not log in"
+                message: JSON.parse(body)
             });
             return;
         }
@@ -73,7 +90,7 @@ let start = function (dataToAuthorizeWith, req, response, status) {
         if (!req.session) {
             response.status(500).send({
                 success: false,
-                message: "Session not available"
+                message: "Session not available - check server configuration"
             });
             return;
         }
@@ -120,6 +137,7 @@ let start = function (dataToAuthorizeWith, req, response, status) {
 
 router.post('/api/session/start', function (req, response) {
     if (req.body) {
+        console.log(req.body);
         start(req.body, req, response);
     }
 });
@@ -165,5 +183,6 @@ router.get('/api/session/status', function (req, response) {
         });
     }
 });
+
 
 module.exports = router;

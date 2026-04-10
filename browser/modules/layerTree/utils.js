@@ -10,7 +10,7 @@ import {GROUP_CHILD_TYPE_LAYER, GROUP_CHILD_TYPE_GROUP} from './LayerSorting';
 
 const utils = require('./../utils')
 
-const base64url = require('base64url');
+import base64url from '../base64url.js';
 
 /**
  * Communicating with the service workied via MessageChannel interface
@@ -49,7 +49,7 @@ const applyOpacityToLayer = (opacity, layerKey, cloud, backboneEvents) => {
                 try {
                     cloud.get().map._layers[key].setOpacity(opacity);
                 } catch (e) {
-                    console.error(e)
+                    // console.error(e)
                 }
                 backboneEvents.get().trigger(`${MODULE_NAME}:opacityChange`);
             }

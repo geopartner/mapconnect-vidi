@@ -23,6 +23,7 @@ import {
   applyFilter,
 } from "@turf/turf";
 import _, { has } from "underscore";
+import { createRoot } from "react-dom/client";
 
 
 var React = require("react");
@@ -45,7 +46,31 @@ var utils;
  *
  * @type {*|exports|module.exports}
  */
+var transformPoint;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
 var backboneEvents;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var meta;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var draw;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var socketId;
 
 /**
  *
@@ -602,44 +627,25 @@ module.exports = {
 
         // On auth change, handle Auth state
         backboneEvents.get().on(`session:authChange`, () => {
-          //console.debug("Auth changed!");
+          console.log('Auth changed!')
           fetch("/api/session/status")
-            .then((r) => r.json())
-            .then((obj) => {
-              return me.setState({
-                authed: obj.status.authenticated,
-              });
-            })
-            .then(() => {
-              // if logged in, get user
+            .then(r => r.json())
+            .then(obj => me.setState({
+              authed: obj.status.authenticated
+            }, () => {
+              // Callback: Setup happens AFTER state update
               if (me.state.authed) {
-                return this.getUser();
+                me.getUser();
               } else {
                 me.setState(resetObj);
                 api.turnOff(BlueIdea.Aktive_brud_layeName);
-              }
-            })
-            .catch((e) => {
-              //console.debug("Error in session:authChange", e);
-              me.setState(resetObj);
-            })
-            .finally(() => {
-              // If logged in, and user_id is not null, show buttons
-              if (me.state.authed && me.state.user_id) {
-                // If user has blueidea, show buttons
-                if (me.state.user_blueidea == true) {
-                  me.listProjects(false);
-                  $("#_draw_blueidea_group").show();
-                } else {
-                  $("#_draw_blueidea_group").hide();
-                }
-                // TODO: Disabled for now, but lists templates
-                //this.getTemplates();
-              } else {
-                // If not logged in, hide buttons
                 $("#_draw_blueidea_group").hide();
               }
-            });
+            }))
+            .catch(e => {
+              me.setState(resetObj);
+              $("#_draw_blueidea_group").hide();
+            })
         });
       }
 
@@ -748,6 +754,14 @@ module.exports = {
                   user_ventil_layer_name_key: data.forsyningsarter[0]?.ventil_layer_name_key || null,
                   user_ventil_export: data.forsyningsarter[0]?.ventil_export || null,
                   layersOnStart: data.layersOnStart || []
+                }, () => {
+                  // Callback: Setup happens AFTER state update
+                  if (me.state.user_blueidea == true) {
+                    me.listProjects(false);
+                    $("#_draw_blueidea_group").show();
+                  } else {
+                    $("#_draw_blueidea_group").hide();
+                  }
                 });
 
                 
@@ -1447,9 +1461,7 @@ module.exports = {
           results_matrikler: [],
           results_ventiler: [],
           results_ledninger: [],
-          results_adresser: [],
           edit_matr: false,
-          editProject: false,
           TooManyFeatures: false,
           selectedVentiler: [],
           beregnuuid: null,
@@ -2559,21 +2571,21 @@ module.exports = {
                 <details open={openResult} className="col">
                   <summary>Resultat</summary>
                   { hasBlueIdeaProfile &&
-                    <div className="row mx-auto gap-3 my-2">
-                      <label className="col-4">SMS Profil</label>
+                    <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                      <label className="col-4 col-form-label text-nowrap">SMS Profil</label>
                       <select
-                       className="col-7"
-                       onChange={this.setSelectedProfileid}
-                       value={s.selected_profileid}
-                       placeholder={__("Select profile")}
-                       disabled={!this.readyToBlueIdea()}
+                        className="col form-select"
+                        onChange={this.setSelectedProfileid}
+                        value={s.selected_profileid}
+                        placeholder={__("Select profile")}
+                        disabled={!this.readyToBlueIdea()}
                       >
-                      {this.profileidOptions().map((option) => (
-                        <option key={option.value} value={option.value}>
+                        {this.profileidOptions().map((option) => (
+                          <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
                         ))}
-                          </select>
+                      </select>
                     </div>
                   }
                   <div className="row mx-auto gap-3 my-2">
@@ -2673,7 +2685,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<BlueIdea ref={blueIdeaRef} />, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<BlueIdea ref={blueIdeaRef} />);
     } catch (e) {
       throw "Failed to load DOM";
     }

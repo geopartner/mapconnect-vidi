@@ -10,11 +10,13 @@ import {LAYER, SYSTEM_FIELD_PREFIX} from '../../../browser/modules/layerTree/con
 import {GEOJSON_PRECISION} from '../../../browser/modules/constants';
 import dayjs from 'dayjs';
 import {withTheme} from '@rjsf/core';
-import {Theme} from '@rjsf/bootstrap-4';
+import {Theme} from '@rjsf/react-bootstrap';
 import validator from "@rjsf/validator-ajv8";
 import SelectWidget from "./SelectWidget.jsx";
 import TimeWidget from "./TimeWidget.jsx";
 import {coordAll} from "@turf/turf";
+import {createRoot} from "react-dom/client";
+import config from "../../../config/config";
 
 /**
  *
@@ -22,7 +24,6 @@ import {coordAll} from "@turf/turf";
  */
 let APIBridgeSingletone = require('../../../browser/modules/api-bridge');
 
-const config = require('../../../config/config.js');
 const drawTooltip = config?.extensionConfig?.editor?.tooltip;
 const alwaysActivate = config?.extensionConfig?.editor?.alwaysActivate ?? true;
 
@@ -30,19 +31,14 @@ const alwaysActivate = config?.extensionConfig?.editor?.alwaysActivate ?? true;
  *
  * @type {*|exports|module.exports}
  */
-let utils, backboneEvents, layerTree, meta, cloud, sqlQuery, layers;
+let utils, backboneEvents, layerTree, meta, cloud, sqlQuery, layers, editorFormRoot;
 
 let apiBridgeInstance = false;
 
 let multiply = require('geojson-multiply');
 
 
-const Theme5 = {
-    ...Theme,
-    widgets: {...Theme.widgets, SelectWidget}
-}
-
-const Form = withTheme(Theme5);
+const Form = withTheme(Theme);
 
 let markers = [];
 
@@ -61,7 +57,7 @@ let session;
 
 const FileUploadWidget = require('./FileUploadWidget');
 
-const widgets = {'fileupload': FileUploadWidget, 'time': TimeWidget};
+const widgets = {'fileupload': FileUploadWidget, 'time': TimeWidget, 'SelectWidget': SelectWidget};
 
 const MODULE_NAME = `editor`;
 const PLACEMENT = window.screen.width >= 768 ? "start" : "bottom"
@@ -160,6 +156,10 @@ module.exports = {
         if (`watsonc` in window.vidiConfig.enabledExtensions) {
             console.log(`Editor extension is disabled due to the enabled watsonc`);
             return;
+        }
+        try {
+            editorFormRoot = createRoot(EDITOR_FORM_CONTAINER_ID);
+        } catch (e) {
         }
 
         if (drawTooltip) {
@@ -271,6 +271,7 @@ module.exports = {
                         }, 200)
                     }
                 }
+
                 poll();
             }
         });
@@ -377,9 +378,10 @@ module.exports = {
      * @param fieldConf
      * @param pkey
      * @param f_geometry_column
+     * @param relType
      * @returns {{}}
      */
-    createFormObj: function (fields, pkey, f_geometry_column, fieldConf) {
+    createFormObj: function (fields, pkey, f_geometry_column, fieldConf, relType) {
         let required = [];
         let properties = {};
         let uiSchema = {};
@@ -391,8 +393,15 @@ module.exports = {
                     title = fieldConf[key].alias;
                 }
                 properties[key] = {title, type: `string`};
-                if (fields[key]?.is_nullable === false) {
-                    required.push(key);
+                if (relType === 'TABLE' || relType === 'MATVIEW') {
+
+                    if (fields[key]?.is_nullable === false) {
+                        required.push(key);
+                    }
+                } else {
+                    if (fieldConf[key]?.is_nullable === false) {
+                        required.push(key);
+                    }
                 }
 
                 if (fields[key]) {
@@ -424,13 +433,11 @@ module.exports = {
                             uiSchema[key] = {
                                 'ui:widget': 'datetime'
                             };
-                            properties[key].default = dayjs().format("YYYY-MM-DDTHH:mm"); // Default is required in IOS Safari
                             break;
                         case `timestamp with time zone`:
                             uiSchema[key] = {
                                 'ui:widget': 'datetime'
                             };
-                            properties[key].default = dayjs().format("YYYY-MM-DDTHH:mmZ"); // Default is required in IOS Safari
                             break;
                         case `boolean`:
                             properties[key].type = `boolean`;
@@ -441,10 +448,34 @@ module.exports = {
                                 'ui:widget': 'fileupload'
                             };
                             break;
+                        case `bytea[]`:
+                            properties[key].type = `array`;
+                            properties[key].items = {
+                                type: 'string',
+                            };
+                            uiSchema[key] = {
+                                items: {
+                                    'ui:widget': 'fileupload'
+                                }
+                            };
+                            break;
+                        case `integer[]`:
+                            properties[key].type = `array`;
+                            properties[key].items = {
+                                type: 'integer',
+                            };
+                            break;
                         case `text`:
                             uiSchema[key] = {
                                 'ui:widget': 'textarea'
                             };
+                            break;
+                        case `character varying`:
+                            if (fields[key].character_maximum_length > 1024) {
+                                uiSchema[key] = {
+                                    'ui:widget': 'textarea'
+                                };
+                            }
                             break;
                     }
                     uiSchema[key]["ui:placeholder"] = fieldConf[key]?.desc;
@@ -452,17 +483,10 @@ module.exports = {
 
                 // Properties have priority over default types
                 if (fields[key]?.restriction?.length > 0) {
-
-                    // If there is a restriction, then convert the field to a select
-                    uiSchema[key] = {
-                        'ui:widget': 'select'
-                    };
-
                     // if the type is text, change the field to string to get a select
                     if (fields[key].type === `text`) {
                         properties[key].type = `string`;
                     }
-
                     let restrictions = fields[key].restriction;
                     let enumNames = [];
                     let enumValues = [];
@@ -471,9 +495,12 @@ module.exports = {
                         enumValues.push(restrictions[i].value);
                     }
                     if (enumNames.length === enumValues.length) {
-                        properties[key].enumNames = enumNames;
                         properties[key].enum = enumValues;
                     }
+                    // If there is a restriction, then convert the field to a select
+                    uiSchema[key] = {
+                        'ui:enumNames': enumNames
+                    };
                 }
             }
         });
@@ -498,6 +525,7 @@ module.exports = {
     add: function (k, doNotRemoveEditor, isVector = false) {
         if (editedFeature) {
             alert("Ongoing edit. Please stop editing before starting a new one");
+            layerTree.getInfoOffCanvas().hide();
             return;
         }
 
@@ -509,7 +537,8 @@ module.exports = {
         let me = this, React = require('react'), ReactDOM = require('react-dom'),
             schemaQualifiedName = k.split(".")[0] + "." + k.split(".")[1],
             metaDataKeys = meta.getMetaDataKeys(),
-            type = metaDataKeys[schemaQualifiedName].type;
+            type = metaDataKeys[schemaQualifiedName].type,
+            relType = metaDataKeys[schemaQualifiedName].rel_type;
 
         let fields = false;
         if (metaDataKeys[schemaQualifiedName].fields) {
@@ -534,7 +563,7 @@ module.exports = {
 
             backboneEvents.get().trigger('block:infoClick');
             // Create schema for attribute form
-            let formBuildInformation = this.createFormObj(fields, metaDataKeys[schemaQualifiedName].pkey, metaDataKeys[schemaQualifiedName].f_geometry_column, fieldconf);
+            let formBuildInformation = this.createFormObj(fields, metaDataKeys[schemaQualifiedName].pkey, metaDataKeys[schemaQualifiedName].f_geometry_column, fieldconf, relType);
             const schema = formBuildInformation.schema;
             const uiSchema = formBuildInformation.uiSchema;
 
@@ -581,14 +610,13 @@ module.exports = {
                     if (geoJson.properties[key] === undefined) {
                         geoJson.properties[key] = null;
                     }
-                    if ((fields[key].type === "bytea" ||
+                    if (fields[key]?.type && (fields[key].type === "bytea" ||
                             fields[key].type.startsWith("time") ||
                             fields[key].type.startsWith("time") ||
                             fields[key].type.startsWith("character") ||
                             fields[key].type.startsWith("json") ||
                             fields[key].type.startsWith("text")) &&
                         geoJson.properties[key] !== null) {
-                        geoJson.properties[key] = encodeURIComponent(geoJson.properties[key]);
                     }
                 });
 
@@ -627,17 +655,40 @@ module.exports = {
                 });
             };
 
+            const defaultValuesConf = window.vidiConfig?.extensionConfig?.editor?.defaultValues;
+            let defaultValues = {};
+            if (defaultValuesConf) {
+                for (const [key, value] of Object.entries(defaultValuesConf)) {
+                    let v;
+                    if (typeof value === 'string' && value.startsWith("$user.properties.")) {
+                        v = session.getProperties()?.[value.split(".")[2]];
+                    } else if (typeof value === 'string' && value.startsWith("$user.name")) {
+                        v = session.getUserName();
+                    } else {
+                        v = defaultValuesConf[key];
+                    }
+                    if (!v) {
+                        defaultValues[key] = "";
+                        console.warn(`No default value for ${key}`);
+                    } else {
+                        defaultValues[key] = v;
+                    }
+
+                }
+            }
             // Slide panel with attributes in and render form component
-            ReactDOM.unmountComponentAtNode(document.querySelector(`#${EDITOR_OFFCANVAS_CONTAINER_ID} .offcanvas-body`));
-            ReactDOM.render((
+            editorFormRoot.render(
                 <Form
+                    key={Date.now()}
                     validator={validator}
                     className="feature-attribute-editing-form"
                     schema={schema} noHtml5Validate
                     uiSchema={uiSchema}
                     widgets={widgets}
                     onSubmit={onSubmit}
-                    transformErrors={transformErrors}>
+                    transformErrors={transformErrors}
+                    formData={defaultValues}
+                    focusOnFirstError={false}>
                     <div className="buttons">
                         <button type="submit"
                                 className="btn btn btn-success mb-2 mt-2 w-100">{__("Submit")}</button>
@@ -645,8 +696,7 @@ module.exports = {
                                 className="btn btn btn-outline-secondary mb-2 mt-2 w-100">{__("Cancel")}</button>
                     </div>
                 </Form>
-            ), EDITOR_FORM_CONTAINER_ID);
-
+            );
             _self.openAttributesDialog();
         };
 
@@ -787,8 +837,10 @@ module.exports = {
     edit: function (e, k, isVector = false) {
         if (editedFeature) {
             alert("Ongoing edit. Please stop editing before starting a new one");
+            layerTree.getInfoOffCanvas().hide();
             return;
         }
+        layerTree.getInfoOffCanvas().hide();
         isVectorLayer = isVector;
         _self.stopEdit();
         editedFeature = e;
@@ -800,10 +852,10 @@ module.exports = {
             serviceWorkerCheck();
             let React = require('react');
 
-            let ReactDOM = require('react-dom');
-
             let me = this, schemaQualifiedName = k.split(".")[0] + "." + k.split(".")[1],
-                metaDataKeys = meta.getMetaDataKeys();
+                metaDataKeys = meta.getMetaDataKeys(),
+                relType = metaDataKeys[schemaQualifiedName].rel_type;
+
 
             let fields = false;
             if (metaDataKeys[schemaQualifiedName].fields) {
@@ -916,26 +968,10 @@ module.exports = {
                             eventFeatureCopy.properties[key] = parseFloat(eventFeatureCopy.properties[key]);
                         }
                         break
-                    case `date`:
-                    case `bytea`:
-                    case `timestamp with time zone`:
-                    case `timestamp without time zone`:
-                    case `time with time zone`:
-                    case `time without time zone`:
-                        if (eventFeatureCopy.properties[key]) {
-                            eventFeatureCopy.properties[key] = decodeURIComponent(eventFeatureCopy.properties[key]);
-                        }
-                        break;
-                    case `text`:
-                    case `character varying`:
-                    case `json`:
-                    case `jsonb`:
-                        if (eventFeatureCopy.properties[key]) {
-                            try { // If string is not
-                                eventFeatureCopy.properties[key] = decodeURIComponent(eventFeatureCopy.properties[key]);
-                            } catch (e) {
-                            }
-                            eventFeatureCopy.properties[key] = eventFeatureCopy.properties[key].replace(/\\"/g, '"');
+                    case `bytea[]`:
+                    case `integer[]`:
+                        if (typeof eventFeatureCopy.properties[key] !== 'object') {
+                            eventFeatureCopy.properties[key] = "[" + eventFeatureCopy.properties[key].slice(1, -1) + "]";
                         }
                         break;
                 }
@@ -984,14 +1020,13 @@ module.exports = {
                         if (GeoJSON.properties[key] === undefined) {
                             GeoJSON.properties[key] = null;
                         }
-                        if ((fields[key].type === "bytea" ||
+                        if (fields[key]?.type && (fields[key].type === "bytea" ||
                                 fields[key].type.startsWith("time") ||
                                 fields[key].type.startsWith("time") ||
                                 fields[key].type.startsWith("character") ||
                                 fields[key].type.startsWith("json") ||
                                 fields[key].type.startsWith("text")) &&
                             GeoJSON.properties[key] !== null) {
-                            GeoJSON.properties[key] = encodeURIComponent(GeoJSON.properties[key]);
                         }
                     } else {
                         // Remove system fields, which should not be updated by the user
@@ -1029,23 +1064,19 @@ module.exports = {
             };
 
             // Create schema for attribute form
-            let formBuildInformation = this.createFormObj(fields, metaDataKeys[schemaQualifiedName].pkey, metaDataKeys[schemaQualifiedName].f_geometry_column, fieldconf);
+            let formBuildInformation = this.createFormObj(fields, metaDataKeys[schemaQualifiedName].pkey, metaDataKeys[schemaQualifiedName].f_geometry_column, fieldconf, relType);
             const schema = formBuildInformation.schema;
             const uiSchema = formBuildInformation.uiSchema;
 
             cloud.get().map.closePopup();
-            ReactDOM.unmountComponentAtNode(EDITOR_FORM_CONTAINER_ID);
             let eventFeatureParsed = {};
             for (let [key, value] of Object.entries(eventFeatureCopy.properties)) {
-                if (fields[key].type.includes("timestamp with time zone")) {
-                    value = value ? dayjs(value).format("YYYY-MM-DDTHH:mmZ") : dayjs().format("YYYY-MM-DDTHH:mmZ"); // Default is required in IOS Safari
-                } else if (fields[key].type.includes("timestamp without time zone")) {
-                    value = value ? dayjs(value).format("YYYY-MM-DDTHH:mm") : dayjs().format("YYYY-MM-DDTHH:mm"); // Default is required in IOS Safari
-                }
                 eventFeatureParsed[key] = value;
             }
-            ReactDOM.render((
+            console.log('Editor: eventFeatureParsed', eventFeatureParsed);
+            editorFormRoot.render(
                 <Form
+                    key={Date.now()}
                     validator={validator}
                     className="feature-attribute-editing-form"
                     schema={schema} noHtml5Validate
@@ -1053,14 +1084,16 @@ module.exports = {
                     uiSchema={uiSchema}
                     formData={eventFeatureParsed}
                     onSubmit={onSubmit}
-                    transformErrors={transformErrors}>
+                    transformErrors={transformErrors}
+                    experimental_defaultFormStateBehavior={{emptyObjectFields: 'skipDefaults'}}
+                    focusOnFirstError={false}>
                     <div className="buttons">
                         <button type="submit" className="btn btn btn-success mb-2 mt-2 w-100">{__("Submit")}</button>
                         <button type="button" onClick={_self.stopEditWithConfirm}
                                 className="btn btn btn-outline-secondary mb-2 mt-2 w-100">{__("Cancel")}</button>
                     </div>
                 </Form>
-            ), EDITOR_FORM_CONTAINER_ID);
+            );
             _self.openAttributesDialog();
         };
         let confirmMessage = __(`Application is offline, tiles will not be updated. Proceed?`);
@@ -1078,6 +1111,8 @@ module.exports = {
             }).catch(() => {
                 if (confirm(confirmMessage)) {
                     editFeature();
+                } else {
+                    _self.stopEdit();
                 }
             });
         }
