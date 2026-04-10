@@ -23,12 +23,18 @@ import SelectedFeaturesManager from '../manager/SelectedFeaturesManager.js';
 import ProjectManager from '../manager/ProjectManager.js';
 // 
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
+import { createRoot } from 'react-dom/client';
 
 const MAPSTATUS_MODULE_NAME = `mapstatus`;
 
 require("./style.js");
 
 let backboneEvents;
+let bindEvent;
+let draw;
+let layers;
+let serializeLayers;
+let state;
 let qstore = [];
 
 let _self = false;
@@ -494,8 +500,7 @@ module.exports = {
         }
 
         try {
-            ReactDOM.render(<MapStatus nodeManager={nodeManager} pipeManager={pipeManager} map={cloud.get().map} />, document.getElementById(exId));
-
+            createRoot(document.getElementById(exId)).render(<MapStatus nodeManager={nodeManager} pipeManager={pipeManager} map={cloud.get().map} />);
         } catch
         (e) {
             console.error("Error in MapStatus:", e);

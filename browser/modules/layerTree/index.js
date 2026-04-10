@@ -46,6 +46,10 @@ import {
 import MetaSettingForm from "./MetaSettingForm";
 import Download from './Download';
 import {getResolutions} from "../crs";
+import { createRoot } from 'react-dom/client';
+import config from '../../../config/config';
+
+
 
 
 let _self, meta, layers, sqlQuery, switchLayer, cloud, legend, state, backboneEvents,
@@ -55,8 +59,7 @@ let _self, meta, layers, sqlQuery, switchLayer, cloud, legend, state, backboneEv
 
 const {v4: uuidv4} = require('uuid');
 const React = require('react');
-const ReactDOM = require('react-dom');
-const base64url = require('base64url');
+import base64url from '../base64url.js';
 
 const urlparser = require('./../urlparser');
 const download = require('./../download');
@@ -102,6 +105,7 @@ let moduleState = {
     labelSettings: {},
     vectorStyles: {}
 };
+window.moduleState = moduleState;
 let infoOffCanvas;
 let bindEvent;
 let initialFilterIsApplied = false;
@@ -129,7 +133,9 @@ module.exports = {
         // expose api
         api.filter = (l, f) => {
             _self.onApplyArbitraryFiltersHandler({"layerKey": l, "filters": f});
-            filterComp[l].setState({"arbitraryFilters": f});
+            if (typeof filterComp[l] === "object") {
+                filterComp[l].setState({"arbitraryFilters": f});
+            }
         }
 
         return this;
@@ -216,7 +222,7 @@ module.exports = {
         });
         $("#layers").before(`
                                 <div class="input-group mb-3 layer-filter">
-                                    <input placeholder="${__('Filter')}" class="form-control" type="text" id="layers-filter" autocomplete="off">
+                                    <input placeholder="${window.vidiConfig?.layerTreeFilterPlaceholder ?? __('Filter')}" class="form-control" type="text" id="layers-filter" autocomplete="off">
                                     <button id="layers-filter-reset" class="btn btn-outline-secondary" type="button" id="button-addon2">
                                         <i class="bi bi-x-lg"></i>
                                         <div id="layers-filter-busy" style="display: none" class="spinner-border spinner-border-sm text-primary" role="status"></div>
@@ -263,7 +269,7 @@ module.exports = {
             });
         }
 
-        queueStatistsics = new QueueStatisticsWatcher({switchLayer, offlineModeControlsManager, layerTree: _self});
+        queueStatistsics = new QueueStatisticsWatcher({switchLayer, offlineModeControlsManager, layerTree: _self, extensions});
         apiBridgeInstance = APIBridgeSingletone((statistics, forceLayerUpdate) => {
             _self._statisticsHandler(statistics, forceLayerUpdate);
         });
@@ -378,7 +384,7 @@ module.exports = {
         if (overallFilters.length > 0) {
             let data = {};
             data[layerKey] = overallFilters;
-            parameterString = `filters=` + base64url(JSON.stringify(data));
+            parameterString = `filters=` + base64url.encode(JSON.stringify(data));
         }
         _self.activeFiltersChange(layerKey)
 
@@ -717,7 +723,7 @@ module.exports = {
             let layer = cloud.get().map._layers[key];
             if (`id` in layer && layer.id) {
                 if (`options` in layer && layer.options && `opacity` in layer.options) {
-                    if (isNaN(layer.options.opacity) === false) {
+                    if (isNaN(layer.options.opacity) === false && typeof opacitySettings !== 'undefined') {
                         opacitySettings[layer.id] = layer.options.opacity;
                     }
                 }
@@ -727,7 +733,7 @@ module.exports = {
         let preparedVirtualLayers = [];
         moduleState.virtualLayers.map(layer => {
             let localLayer = Object.assign({}, layer);
-            localLayer.store.sqlEncoded = base64url(localLayer.store.sql);
+            localLayer.store.sqlEncoded = base64url.encode(localLayer.store.sql);
             preparedVirtualLayers.push(localLayer);
         });
 
@@ -761,6 +767,7 @@ module.exports = {
     /**
      * Applies externally provided state
      * @param newState
+     * @param dt
      * @returns {newState}
      */
     applyState: (newState, dt = false) => {
@@ -787,7 +794,7 @@ module.exports = {
         }
 
         // Setting tile filters
-        if (newState !== false && `predefinedFilters` in newState && typeof newState.predefinedFilters === `array`) {
+        if (newState !== false && `predefinedFilters` in newState && typeof newState.predefinedFilters === `object`) {
             moduleState.predefinedFilters = newState.predefinedFilters;
         } else {
             moduleState.predefinedFilters = {};
@@ -844,6 +851,9 @@ module.exports = {
      * @param {Object} forcedState             Externally provided state of the layerTree
      * @param {Array}  ignoredInitialStateKeys Keys of the initial state that should be ignored
      *
+     * @param dontRegisterEvents
+     * @param filter
+     * @param dt
      * @returns {Promise}
      */
     create: (forcedState = false, ignoredInitialStateKeys = [], dontRegisterEvents = false, filter = null, dt = false) => {
@@ -1527,15 +1537,13 @@ module.exports = {
         let layerKey = layer.f_table_schema + '.' + layer.f_table_name;
         const layerSpecificQueryLimit = layerTreeUtils.getQueryLimit(meta.parseLayerMeta(layerKey));
         const metaDataKeys = meta.getMetaDataKeys();
+        let fieldConf = {};
         let fields = metaDataKeys?.[layerKey]?.fields || null;
         let fieldStr;
         let fieldNames = [];
         if (fields) {
             Object.keys(fields).forEach(function (i) {
-                let v = fields[i];
-                if (v.type === 'bytea') {
-                    fieldNames.push(`encode("${i}",'escape') as "${i}"`);
-                } else if (fieldConf?.[i]?.ignore !== true) {
+                if (fieldConf?.[i]?.ignore !== true) {
                     fieldNames.push(`"${i}"`);
                 }
             });
@@ -1543,8 +1551,9 @@ module.exports = {
         } else {
             fieldStr = '*';
         }
+        const qoutedRelation = utils.quoteRelation(layerKey);
         let sql = `SELECT ${fieldStr}
-                   FROM ${layerKey} LIMIT ${layerSpecificQueryLimit}`;
+                   FROM ${qoutedRelation} LIMIT ${layerSpecificQueryLimit}`;
         if (isVirtual) {
             let storeWasFound = false;
             moduleState.virtualLayers.map(item => {
@@ -1589,11 +1598,7 @@ module.exports = {
             }
         }
 
-        let custom_data = ``;
-        if (`virtual_layer` in layer && layer.virtual_layer) {
-            custom_data = encodeURIComponent(JSON.stringify({virtual_layer: layerKey}));
-        }
-
+        let custom_data = null;
         let trackingLayerKey = (LAYER.VECTOR + ':' + layerKey);
 
         /*
@@ -1613,7 +1618,6 @@ module.exports = {
             template = defaultTemplate;
         }
         tooltipTemplate = typeof moduleState.vectorStyles?.[layerKey]?.tooltipTmpl !== 'undefined' ? moduleState.vectorStyles[layerKey].tooltipTmpl === '' ? undefined : moduleState.vectorStyles[layerKey].tooltipTmpl : parsedMeta?.tooltip_template && parsedMeta.tooltip_template !== "" ? parsedMeta.tooltip_template : null;
-        let fieldConf;
         try {
             fieldConf = JSON.parse(metaData[layerKey].fieldconf);
         } catch (e) {
@@ -2286,6 +2290,7 @@ module.exports = {
             }
             // Set select call when opening a panel
             let selectCallBack = () => {
+                backboneEvents.get().trigger("feature:selected", layer, layerKey, feature);
             };
             if (typeof parsedMeta.select_function !== "undefined" && parsedMeta.select_function !== "") {
                 try {
@@ -2299,7 +2304,7 @@ module.exports = {
                     selectCallBack = Function('"use strict";return (' + f + ')')();
                 }
             }
-            let func = selectCallBack.bind(this, null, layer, layerKey, _self);
+            let func = selectCallBack.bind(this, null, layer, layerKey, _self, feature);
             $(document).arrive(`#a-collapse${randText}`, function () {
                 const e = $(`#collapse${randText}`);
                 const bsCollapse = document.getElementById(`collapse${randText}`);
@@ -3042,25 +3047,17 @@ module.exports = {
      *
      * @returns {Object}
      */
-    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true, parentPath = '') => {
+    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true) => {
         let base64SubgroupName = Base64.encode(`subgroup_${subgroup.id}_level_${level}_${uuidv4()}`).replace(/=/g, "");
-        const fullPath = parentPath ? `${parentPath}|${subgroup.id}` : subgroup.id;
-        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox, fullPath);
+        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox);
 
         $(parentNode).append(markup);
-        
-        // Find the newly added subgroup container using its unique ID
-        let container = $(parentNode).find(`[id="${base64SubgroupName}"]`).last();
-        if (container.length !== 1) {
-            throw new Error(`Error while locating parent node for group children`);
-        }
-        
-        container.closest(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-id`).append(`
+        $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-id`).append(`
                 ${subgroup.id}
                 <i class="bi-grip-vertical layer-move-vert layer-move-vert-subgroup ms-auto"></i>
         `);
 
-        container.closest(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-toggle-button`).click((event) => {
+        $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-toggle-button`).click((event) => {
             // Checking if the subgroup was already drawn
             let subgroupRootElement = $(event.target).closest(`[data-gc2-subgroup-id]`).first();
             if (subgroupRootElement.find(`.js-subgroup-children`).children().length === 0) {
@@ -3076,7 +3073,12 @@ module.exports = {
             }
         });
 
-        container.hide();
+        $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-children[id="${base64SubgroupName}"]`).hide();
+
+        let container = $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-children[id="${base64SubgroupName}"]`);
+        if ($(container).length !== 1) {
+            throw new Error(`Error while locating parent node for group children`);
+        }
 
         const renderSubgroupChildren = () => {
             subgroup.children.map(child => {
@@ -3087,7 +3089,7 @@ module.exports = {
                     } = _self.checkIfLayerIsActive(forcedState, precheckedLayers, child.layer);
                     _self.createLayerRecord(child.layer, container, layerIsActive, activeLayerName, subgroup.id);
                 } else if (child.type === GROUP_CHILD_TYPE_GROUP) {
-                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel, initiallyClosed, fullPath);
+                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel);
                 } else {
                     throw new Error(`Invalid layer group`);
                 }
@@ -3295,16 +3297,20 @@ module.exports = {
                 let html,
                     name = layer.f_table_name || null,
                     title = layer.f_table_title || null,
+                    lastmodified = layer.lastmodified || null,
                     abstract = layer.f_table_abstract || null;
+
+                if (lastmodified) {
+                    dayjs.locale('da');
+                    lastmodified = dayjs(lastmodified).format('DD.MM.YYYY HH:mm');
+                }
 
                 html = (parsedMeta !== null
                     && typeof parsedMeta.meta_desc !== "undefined"
                     && parsedMeta.meta_desc !== "") ?
                     marked(parsedMeta.meta_desc) : abstract;
 
-                dayjs.locale('da');
-
-                html = html ? mustache.render(html, parsedMeta) : "";
+                html = html ? mustache.render(html, {lastmodified}) : "";
 
                 $("#offcanvas-layer-desc-container").html(html);
                 $("#offcanvasLayerDesc h5").html(title || name);
@@ -3445,11 +3451,10 @@ module.exports = {
                     $(layerContainer).find('.js-layer-settings-labels').append(`<div id="${componentContainerId}"></div>`);
                     setTimeout(() => {
                         if (document.getElementById(componentContainerId)) {
-                            ReactDOM.render(<LabelSettingToggle
-                                    layerKey={layerKey}
-                                    initialValue={value}
-                                    onChange={_self.onChangeLabelsHandler}/>,
-                                document.getElementById(componentContainerId));
+                            createRoot(document.getElementById(componentContainerId)).render(<LabelSettingToggle
+                                layerKey={layerKey}
+                                initialValue={value}
+                                onChange={_self.onChangeLabelsHandler}/>);
                             $(layerContainer).find('.js-layer-settings-labels').hide(0);
                             $(layerContainer).find(`.js-toggle-labels`).click(() => {
                                 _self._selectIcon($(layerContainer).find('.js-toggle-labels'));
@@ -3527,8 +3532,9 @@ module.exports = {
                     _self.activeFiltersChange(layerKey)
                     setTimeout(() => {
                         if (document.getElementById(componentContainerId)) {
-                            filterComp[layerKey] = ReactDOM.render(
+                            createRoot(document.getElementById(componentContainerId)).render(
                                 <LayerFilter
+                                    ref={instance => { filterComp[layerKey] = instance }}
                                     layer={layer}
                                     layerMeta={meta.parseLayerMeta(layerKey)}
                                     presetFilters={presetFilters}
@@ -3546,9 +3552,9 @@ module.exports = {
                                     editorFilters={localEditorFilters}
                                     editorFiltersActive={localEditorFiltersActive}
                                     isFilterImmutable={isFilterImmutable}
-                                    db={db}
+                                    db={urlparser.db}
                                     getActiveLayerFilters={_self.getActiveLayerFilters}
-                                />, document.getElementById(componentContainerId));
+                                />);
                             $(layerContainer).find('.js-layer-settings-filters').hide(0);
 
                             $(layerContainer).find(`.js-toggle-filters`).click(() => {
@@ -3572,11 +3578,11 @@ module.exports = {
                         $(layerContainer).find('.js-layer-settings-load-strategy').append(`<div id="${componentContainerId}"></div>`);
                         setTimeout(() => {
                             if (document.getElementById(componentContainerId)) {
-                                ReactDOM.render(<LoadStrategyToggle
-                                        layerKey={layerKey}
-                                        initialValue={value}
-                                        onChange={_self.onChangeLoadStrategyHandler}/>,
-                                    document.getElementById(componentContainerId));
+                                createRoot(document.getElementById(componentContainerId)).render(<LoadStrategyToggle
+                                    layerKey={layerKey}
+                                    initialValue={value}
+                                    onChange={_self.onChangeLoadStrategyHandler}/>
+                                );
                                 $(layerContainer).find('.js-layer-settings-load-strategy').hide(0);
                                 $(layerContainer).find(`.js-toggle-load-strategy`).click(() => {
                                     _self._selectIcon($(layerContainer).find('.js-toggle-load-strategy'));
@@ -3624,11 +3630,11 @@ module.exports = {
 
                 setTimeout(() => {
                     if (document.getElementById(componentContainerId)) {
-                        ReactDOM.render(<MetaSettingForm
-                                layerKey={layerKey}
-                                initialValues={values}
-                                onChange={_self.onChangeStylesHandler}/>,
-                            document.getElementById(componentContainerId));
+                        createRoot(document.getElementById(componentContainerId)).render(<MetaSettingForm
+                            layerKey={layerKey}
+                            initialValues={values}
+                            onChange={_self.onChangeStylesHandler}/>
+                        );
                     } else {
                         console.error(`Unable to find the labels control container`);
                     }
@@ -3698,11 +3704,11 @@ module.exports = {
                     let componentContainerId = `layer-settings-download-${layerKey.replace('.', '-')}`;
                     $(layerContainer).find('.js-layer-settings-download').append(`<div id="${componentContainerId}"></div>`);
                     if (document.getElementById(componentContainerId)) {
-                        ReactDOM.render(<Download
+                        createRoot(document.getElementById(componentContainerId)).render(<Download
                                 layer={layer}
                                 onApplyDownload={_self.onApplyDownloadHandler}
-                            />,
-                            document.getElementById(componentContainerId));
+                            />
+                        );
                     } else {
                         console.error(`Unable to find the download container`);
                     }
@@ -3722,7 +3728,7 @@ module.exports = {
                     } else {
                         $(search).find('.searchable-fields').show();
                         $.each(countSearchFields, function (i, val) {
-                            $(search).find('.searchable-fields').append(`<span class="label label-default" style="margin-right: 3px">${fieldConf[val].alias || val}</span>`)
+                            $(search).find('.searchable-fields').append(`<span class="badge text-bg-secondary me-1">${fieldConf[val].alias || val}</span>`)
                         });
                     }
 
@@ -3849,16 +3855,15 @@ module.exports = {
                          FROM ${layerKey}
                          WHERE ${whereClause}) as foo`;
         let q = {
-            q: base64url(sql),
+            q: base64url.encode(sql),
             base64: true
         }
         $.ajax({
             url: '/api/sql/' + urlparser.db,
-            contentType: 'application/x-www-form-urlencoded',
-            scriptCharset: "utf-8",
+            contentType: 'application/json; charset=utf-8',
             dataType: 'json',
             type: 'POST',
-            data: q,
+            data: JSON.stringify(q),
             success: function (response) {
                 let e = response.features[0].properties;
                 cloud.get().map.fitBounds([[e.tymin, e.txmin], [e.tymax, e.txmax]], {maxZoom: 18})
@@ -4180,8 +4185,8 @@ module.exports = {
                     return false;
                 }).length;
                 activeLayersInSubGroups += activeLayers.filter(e => JSON.parse(metaDataKeys[layerTreeUtils.stripPrefix(e)].meta)?.vidi_sub_group?.match(re) && metaDataKeys[layerTreeUtils.stripPrefix(e)].layergroup === layerGroup).length;
-                const fullPath = split.join('|');
-                const el = document.querySelector(`[data-gc2-group-id="${layerGroup}"] [data-gc2-subgroup-path="${fullPath}"] input[type="checkbox"]`);
+                const searchPath = `[data-gc2-group-id="${layerGroup}"]` + ' ' + split.map(e => `[data-gc2-subgroup-id="${e}"]`).join(' ') + ` [data-gc2-subgroup-name="${split[split.length - 1]}"]`;
+                const el = document.querySelector(searchPath);
                 if (el) {
                     el.indeterminate = activeLayersInSubGroups > 0 && !(activeLayersInSubGroups === layersInSubGroups);
                     el.checked = activeLayersInSubGroups > 0;

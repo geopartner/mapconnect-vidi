@@ -34,19 +34,19 @@ class VentilListComponent extends React.Component {
         return (
              <details open  className="col">
                 <summary>{this.__("Valves")} ({ventilList.length})</summary>
-                <div className="row mx-auto gap-1 my-2" style={{ maxHeight: '175px', overflowY: 'auto', border: '1px solid #ccc', borderRadius: '4px' }}>
+                <div className="row mx-auto g-1 my-2 border rounded" style={{ maxHeight: '175px', overflowY: 'auto' }}>
                     <table className="table table-sm mb-0 col-11">
                         <thead style={{ fontWeight: 'bold', position: 'sticky', top: 0 }}>
                             <tr>
                                 <th style={{ width: '10px' }}>
                                 </th>
-                                <th><p style={{ fontWeight: 500 }}>Navn</p></th>
-                                <th><p style={{ fontWeight: 500 }}>Type</p></th>
-                                <th><p style={{ fontWeight: 500 }}>Funktion</p></ th>
+                                <th><span className="fw-medium">Navn</span></th>
+                                <th><span className="fw-medium">Type</span></th>
+                                <th><span className="fw-medium">Funktion</span></th>
                                 <th style={{ verticalAlign: 'text-top' }} >
                                     <i className="bi bi-download "
                                      onClick={onDownloadVentiler}
-                                     style={{ pointer: 'cursor' }}
+                                     style={{ cursor: 'pointer' }}
                                      title={this.__("Download valves")}>
                                    </i>
                                 </th>
@@ -54,7 +54,7 @@ class VentilListComponent extends React.Component {
                         </thead>
                         <tbody>
                             {ventilList.map((ventil) => {
-                                const bg = ventil.label === clickedTableVentil ? 'table-primary' : 'table-light';
+                                const bg = ventil.label === clickedTableVentil ? 'table-primary' : 'table';
                                 const textColor = ventil.textColor;
                                 const ventilIsDisabled = ventil.ventilIsDisabled;
                                 const ventilTitle = ventil.ventilTooltip
@@ -86,15 +86,15 @@ class VentilListComponent extends React.Component {
                                     </td>
                                     {/* 3 Type */}
                                     <td>
-                                        <label style={{ color: textColor }}>
+                                        <span style={{ color: textColor }}>
                                             {ventil.type}
-                                        </label>
+                                        </span>
                                     </td>
                                     {/* 4 Funtion */}
                                     <td>
-                                        <label style={{ color: textColor }}>
+                                        <span style={{ color: textColor }}>
                                             {ventil.funktion}
-                                        </label>
+                                        </span>
                                     </td>
 
                                     {/* 5 Zoom icon */}

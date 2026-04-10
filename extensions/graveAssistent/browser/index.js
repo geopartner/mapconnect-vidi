@@ -11,19 +11,17 @@ import {
 } from 'uuid';
 import Dropzone from 'react-dropzone';
 import JSZip from 'jszip';
+import parser from 'fast-xml-parser';
 import LedningsEjerStatusTable from "./LedningsEjerStatusTable";
 import LedningsProgress from "./LedningsProgress";
 import LedningsDownload from "./LedningsDownload";
 
+import {createRoot} from "react-dom/client";
+
 // Get information from config.json
+let config = require('../../../config/config.js');
 
-var schema_override = undefined;
-
-if (window.config?.extensionConfig?.graveAssistent) {
-    if (window.config?.extensionConfig?.graveAssistent?.schema) {
-        schema_override = window.config.extensionConfig.graveAssistent.schema;
-    }
-}
+var schema_override = config?.extensionConfig?.graveAssistent?.schema;
 
 console.log('[Graveassistent] Schema override:', schema_override)
 
@@ -39,6 +37,12 @@ var cloud;
  * @type {*|exports|module.exports}
  */
 var utils;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var transformPoint;
 
 /**
  *
@@ -90,7 +94,6 @@ var mapObj;
 
 var DClayers = []
 //var gc2host = 'http://localhost:3000'
-var config = require('../../../config/config.js');
 
 /**
  * Slice array into chunks
@@ -298,8 +301,7 @@ module.exports = {
                     };
 
                     try {
-                        var parser = new XMLParser(options);
-                        jsonObj = parser.parse(xmlData);
+                        jsonObj = parser.parse(xmlData, options);
                     } catch (error) {
                         Err = error
                         console.log(Err)
@@ -1365,7 +1367,7 @@ module.exports = {
                             // Append to DOM
                             //==============
                             try {
-                                ReactDOM.render( <GraveAssistent/> , document.getElementById(exId));
+                                createRoot(document.getElementById(exId)).render(<GraveAssistent/>);
                             } catch (e) {
                                 throw 'Failed to load DOM'
                             }

@@ -30,19 +30,19 @@ class FeatureTableNode extends React.Component {
             urlDialog: ''
         };
         this.columns = [
-            { key: '-', label: '', isNumeric: false },
-            { key: '#', label: '', isNumeric: false },
-            { key: 'knudenavn', label: 'Brønd', isNumeric: false },
-            { key: 'system', label: 'System', isNumeric: false },
-            { key: 'kategori', label: 'Kategori.', isNumeric: false },
-            { key: 'knudetype', label: 'Type', isNumeric: false },
-            { key: 'dimension', label: 'Dimension', isNumeric: true },
-            { key: 'brøndmateriale', label: 'Materiale', isNumeric: true },
-            { key: 'dybde', label: 'Dybde', isNumeric: true },
-            { key: 'metode', label: 'Metode', isNumeric: false },
-            { key: 'terraen', label: 'Terræn', isNumeric: false },
-            { key: 'bem', label: 'Bemærkning', isNumeric: false },
-            { key: 'pdf', label: <i className="bi bi-file-pdf"></i>, isNumeric: false },
+            { key: '-', label: '', isNumeric: false, visible: !this.props.isReadOnly },
+            { key: '#', label: '', isNumeric: false, visible: !this.props.isReadOnly },
+            { key: 'knudenavn', label: 'Brønd', isNumeric: false, visible: true },
+            { key: 'system', label: 'System', isNumeric: false, visible: true },
+            { key: 'kategori', label: 'Kategori.', isNumeric: false, visible: true },
+            { key: 'knudetype', label: 'Type', isNumeric: false, visible: true   },
+            { key: 'dimension', label: 'Dimension', isNumeric: true, visible: true },
+            { key: 'brøndmateriale', label: 'Materiale', isNumeric: true, visible: true },
+            { key: 'dybde', label: 'Dybde', isNumeric: true, visible: true },
+            { key: 'metode', label: 'Metode', isNumeric: false, visible: true },
+            { key: 'terraen', label: 'Terræn', isNumeric: false, visible: true },
+            { key: 'bem', label: 'Bemærkning', isNumeric: false,    visible: true },    
+            { key: 'pdf', label: <i className="bi bi-file-pdf"></i>, isNumeric: false, visible: true },
         ];
         this.tableContainerRef = React.createRef();
     };
@@ -355,7 +355,7 @@ class FeatureTableNode extends React.Component {
                         <table className="table table-striped table-bordered table-hover table-sm" >
                             <thead onClick={(e) => this.handleHeaderClick(e)}>
                                 <tr style={styleObject.headerRow} >
-                                    {this.columns.map((col, index) => (
+                                    {this.columns.filter(col => col.visible === true).map((col, index) => (
                                         <th key={index}
                                             style={index === 0 || index === this.columns.length - 1 ? styleObject.tableHeaderSmall : styleObject.tableHeader} >
                                             {col.label}
@@ -389,7 +389,8 @@ class FeatureTableNode extends React.Component {
                                                 border: selectedFeatureIds.contains(feature.properties.id) ? '4px solid rgb(0, 150, 130)' : '1px solid gray',
                                             }}
                                         >
-                                            <td
+                                             {!isReadOnly &&  ( 
+                                              <td
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     this.onDeleteFeature(feature)
@@ -401,8 +402,10 @@ class FeatureTableNode extends React.Component {
                                                     disabled={isReadOnly}
                                                 >
                                                 </i>
-                                            </td>
-                                            <td
+                                             </td>
+                                            )}
+                                            {!isReadOnly &&  (
+                                              <td
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     feature.properties.isSelected = !feature.properties.isSelected;
@@ -415,7 +418,8 @@ class FeatureTableNode extends React.Component {
                                                     disabled={isReadOnly}
                                                 >
                                                 </i>
-                                            </td>
+                                              </td>
+                                            )}
                                             <td style={styleToUse}>{feature.properties.knudenavn}</td>
                                             <td style={styleToUse}>{feature.properties.system}</td>
                                             <td style={styleToUse}>{feature.properties.kategori}</td>

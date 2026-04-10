@@ -11,13 +11,13 @@ let backboneEvents;
 let layerTree;
 let sessionInstance = false;
 let userName = null;
+let properties = null;
 let isStatusChecked = false;
+let anchor;
 let exId = `login-modal-body`;
-const config = require('./../../../config/config.js');
-const urlparser = require('./../../../browser/modules/urlparser');
-const urlVars = urlparser.urlVars;
-const cookie = require('js-cookie');
 const React = require("react");
+const {createRoot} = require("react-dom/client");
+let authWin;
 
 /**
  *
@@ -25,15 +25,39 @@ const React = require("react");
  */
 module.exports = {
     set: function (o) {
+        let parent = this;
         utils = o.utils;
         backboneEvents = o.backboneEvents;
         layerTree = o.layerTree;
+        anchor = o.anchor;
+        window.addEventListener("message", (event) => {
+            if (event.data.type === 'gc2-auth-complete') {
+                const data = event.data.data;
+                backboneEvents.get().trigger(`session:authChange`, true);
+                if (sessionInstance) {
+                    sessionInstance.setState({
+                        statusText: `${__("Signed in as")} ${data.screen_name} (${data.email})`,
+                        alertClass: "success",
+                        btnText: __("Sign out"),
+                        auth: true
+                    });
+                }
+                $(".gc2-session-lock").show();
+                $(".gc2-session-unlock").hide();
+                $(".gc2-session-btn-text").html(data.screen_name)
+                userName = data.screen_name;
+                properties = data.properties;
+                parent.update();
+                if (authWin) {
+                    authWin.close();
+                }
+            }
+        });
         return this;
     },
     init: function () {
         let parent = this;
         let React = require('react');
-        let ReactDOM = require('react-dom');
         let modal;
         try {
             modal = new bootstrap.Offcanvas('#login-modal');
@@ -87,49 +111,15 @@ module.exports = {
                 let me = this;
                 event.preventDefault();
                 if (!me.state.auth) {
-                    let dataToAuthorizeWith = {
-                        "user": me.state.sessionScreenName,
-                        "password": me.state.sessionPassword,
-                        "schema": "public"
-                    };
-
-                    if (vidiConfig.appDatabase) {
-                        dataToAuthorizeWith.database = vidiConfig.appDatabase;
-                    }
-
-                    $.ajax({
-                        dataType: 'json',
-                        url: "/api/session/start",
-                        type: "POST",
-                        contentType: "application/json; charset=utf-8",
-                        scriptCharset: "utf-8",
-                        data: JSON.stringify(dataToAuthorizeWith),
-                        success: function (data) {
-                            backboneEvents.get().trigger(`session:authChange`, true);
-                            me.setState({statusText: `Signed in as ${data.screen_name} (${data.email})`});
-                            me.setState({alertClass: "success"});
-                            me.setState({btnText: __("Sign out")});
-                            me.setState({auth: true});
-                            $(".gc2-session-lock").show();
-                            $(".gc2-session-unlock").hide();
-                            $(".gc2-session-btn-text").html(data.screen_name)
-                            userName = data.screen_name;
-                            parent.update();
-                            // Close the off canvas
-                            setTimeout(() => modal.hide(), 400);
-                        },
-
-                        error: function () {
-                            me.setState({statusText: __("Wrong user name or password")});
-                            me.setState({alertClass: "danger"});
-                        }
-                    });
+                    authWin = utils.popupCenter("/openid.html", 600, 800, "Sign in");
                 } else {
                     $.ajax({
                         dataType: 'json',
                         url: "/api/session/stop",
                         type: "GET",
                         success: function () {
+                            localStorage.removeItem('gc2_tokens')
+
                             backboneEvents.get().trigger(`session:authChange`, false);
 
                             me.setState({statusText: __("Not signed in")});
@@ -141,6 +131,7 @@ module.exports = {
                             $(".gc2-session-btn-text").html(__("Sign in"))
                             userName = null;
                             parent.update();
+                            authWin = utils.popupCenter(window.gc2Options.host + '/signout?redirect_uri=' + decodeURIComponent( window.location.origin + '/openid.html'), 600, 800, "Sign out");
                         },
                         error: function (error) {
                             console.error(error.responseJSON);
@@ -167,6 +158,7 @@ module.exports = {
                             $(".gc2-session-lock").show();
                             $(".gc2-session-unlock").hide();
                             userName = data.status.screen_name;
+                            properties = data.status.properties;
                             $(".gc2-session-btn-text").html(userName);
                             // True if auto login happens. When reload meta
                             if (data?.screen_name && data?.status?.authenticated) {
@@ -203,39 +195,10 @@ module.exports = {
                         <form onSubmit={this.handleSubmit}>
                             <Status statusText={this.state.statusText} alertClass={this.state.alertClass}/>
                             <div className="row g-3 align-items-center">
-                                <div className="col-4"
-                                     style={{
-                                         display: this.state.auth ? 'none' : 'block',
-                                         minWidth: '250px'
-                                     }}>
-                                    <input
-                                        id="sessionScreenName"
-                                        className="form-control"
-                                        defaultValue={this.state.sessionScreenName}
-                                        onChange={this.handleChange}
-                                        placeholder={__("User name")}
-                                        autoComplete="username"
-                                    />
-                                </div>
-                                <div className="col-4"
-                                     style={{
-                                         display: this.state.auth ? 'none' : 'block',
-                                         minWidth: '250px'
-                                     }}>
-                                    <input
-                                        id="sessionPassword"
-                                        className="form-control"
-                                        defaultValue={this.state.sessionPassword}
-                                        onChange={this.handleChange}
-                                        type="password"
-                                        placeholder={__("Password")}
-                                        autoComplete="current-password"
-                                    />
-                                </div>
                                 <div className="col-2">
                                     <button
                                         type="submit"
-                                        disabled={!this.validateForm()}
+                                        // disabled={!this.validateForm()}
                                         className="btn btn-outline-primary text-nowrap"
                                     >
                                         {this.state.btnText}
@@ -249,7 +212,9 @@ module.exports = {
         }
 
         if (document.getElementById(exId)) {
-            sessionInstance = ReactDOM.render(<Session/>, document.getElementById(exId));
+            createRoot(document.getElementById(exId)).render(<Session
+                ref={instance => { sessionInstance = instance }}
+            />)
         } else {
             console.warn(`Unable to find the container for session extension (element id: ${exId})`);
         }
@@ -263,6 +228,21 @@ module.exports = {
         }
     },
 
+    isAuthenticatedPromise: function () {
+        return new Promise((resolve, reject) => {
+            fetch("/api/session/status").then(response => {
+                response.json().then(data => {
+                    if (data.status.authenticated) {
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                })
+            })
+        })
+    },
+
+
     update: function () {
         backboneEvents.get().trigger("refresh:auth");
         backboneEvents.get().trigger("refresh:meta");
@@ -270,6 +250,10 @@ module.exports = {
 
     getUserName: function () {
         return userName;
+    },
+
+    getProperties: function () {
+        return properties;
     },
 
     isStatusChecked: () => {

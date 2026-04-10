@@ -281,8 +281,8 @@ var dict = {
   },
 
   "No utility lines found": {
-    da_DK: "Der er ikke fundet nogen ledninger i nærheden af det valgte punkt.Prøv at vælge et andet punkt",
-    en_US: "No utility lines found near the selected point.Please try selecting a different point",
+    da_DK: "Der er ikke fundet nogen ledninger i nærheden af det valgte punkt. Prøv at vælge et andet punkt",
+    en_US: "No utility lines found near the selected point. Please try selecting a different point",
   },
   "Project stopped successfully": {
     da_DK: "Bruddet er inaktivt",

@@ -25,7 +25,30 @@ router.get('/api/legend/:db', function (req, response) {
 
     request.get(options,
         function (err, res, body) {
-            if (err) console.error(err);
+            if (err) {
+                console.error("Request error:", err);
+                response.header('content-type', 'application/json');
+                response.status(400).send({
+                    success: false,
+                    message: "Could not get the legend data."
+                });
+                return;
+            }
+            let data;
+            try {
+                if (!body || body.trim() === '') {
+                    throw new Error('Empty response body');
+                }
+                data = JSON.parse(body);
+            } catch (e) {
+                console.error("[Legend] JSON parse error:", e.message, "Response body:", body);
+                response.header('content-type', 'application/json');
+                response.status(400).send({
+                    success: false,
+                    message: "Could not get the legend data."
+                });
+                return;
+            }
             if (res.statusCode !== 200) {
                 response.header('content-type', 'application/json');
                 response.status(400).send({
@@ -34,7 +57,7 @@ router.get('/api/legend/:db', function (req, response) {
                 });
                 return;
             }
-            response.send(JSON.parse(body));
+            response.send(data);
         }
     )
 });

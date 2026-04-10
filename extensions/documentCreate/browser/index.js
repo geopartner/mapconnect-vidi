@@ -42,6 +42,12 @@ var backboneEvents = require("./../../../browser/modules/backboneEvents");
  *
  * @type {*|exports|module.exports}
  */
+var transformPoint;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
 var search = require("./../../../browser/modules/search/danish");
 
 /**
@@ -97,7 +103,6 @@ var id = "documentCreate-custom-search";
 var select_id = "documentCreate-service";
 var form_id = "document-feature-form";
 var currentSearch = undefined;
-var request = require("request");
 var coords;
 
 // VMR

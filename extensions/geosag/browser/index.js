@@ -5,9 +5,11 @@
  */
 "use strict";
 
+import React from "react";
 import { isNull, isSet } from "lodash";
 import MatrikelTable from "./MatrikelTable";
 import DAWASearch from "./DAWASearch";
+import {createRoot} from "react-dom/client";
 
 const geosagRef = React.createRef();
 
@@ -73,6 +75,12 @@ var mapObj;
  * Draw module
  */
 var draw;
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var transformPoint;
 
 var config = require("../../../config/config.js");
 
@@ -970,20 +978,6 @@ module.exports = {
         });
       }
 
-      toggleMapClick = () => {
-        const _self = this;
-        const newState = !_self.state.isMapClickActive;
-        _self.setState({
-          isMapClickActive: newState,
-        });
-        
-        if (newState) {
-          utils.cursorStyle().crosshair();
-        } else {
-          utils.cursorStyle().reset();
-        }
-      }
-
       findMatrikel(id) {
         const _self = this;
         _self
@@ -1086,7 +1080,6 @@ module.exports = {
         fillOpacity: 0.75,
         color: "#009688",
         dashArray: 3,
-        fillOpacity: 3,
       };
 
       matrikelOnEachFeature(feature, layer) {
@@ -1366,7 +1359,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<GeoSag ref={geosagRef} />, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<GeoSag ref={geosagRef} />);
     } catch (e) {
       throw "Failed to load DOM";
     }

@@ -120,6 +120,7 @@ config/_variables.less
 
 # Ignore the docs build folder
 docs/_build
+/venv/
 
 # Generated files
 public/js/templates.*.js
@@ -130,3 +131,7 @@ public/version*
 # MapConnect files
 config/gp/*.js
 .vscode/
+
+# built .map files
+*.map
+public/css/img/markers_*.png
