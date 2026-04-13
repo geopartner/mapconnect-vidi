@@ -1256,16 +1256,16 @@ var loadAndInitFilters = function (active_state) {
     // query for last synchronization and put in user information
     var qrystr =
       "WITH cte1 (lastSynchronization) as" +
-      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastsynchronization from vmr.dnsync.log" +
+      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastsynchronization from dnsync.log" +
       " order by syncend desc" +
       " limit (1))" +
       " , cte2 (lastData) as" +
-      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastdata from vmr.dnsync.log" +
+      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastdata from dnsync.log" +
       " where rowsupdated > 0" +
       " order by syncend desc" +
       " limit (1))" +
       " , cte3 (showalert) as" +
-      " (Select CASE WHEN count(*) > 0 THEN false ELSE true END from vmr.dnsync.log" +
+      " (Select CASE WHEN count(*) > 0 THEN false ELSE true END from dnsync.log" +
       " where syncend > (NOW() at time zone 'gmt' - INTERVAL '10 MINUTE')" +
       " limit (1))" +
       " select lastSynchronization, lastData, showalert FROM cte1, cte2, cte3";
