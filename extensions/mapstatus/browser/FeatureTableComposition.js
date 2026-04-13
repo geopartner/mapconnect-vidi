@@ -8,11 +8,13 @@ import React from "react";
 import DraggableBox from "./DraggableBox.js";
 import FeatureTablePipe from "./FeatureTablePipe.js";
 import FeatureTableNode from "./FeatureTableNode.js";
+import styleObject from "./style.js";
 import { getResolutions } from '../../../browser/modules/crs';
 import { booleanIntersects as turfIntersects, buffer as turfBuffer } from "@turf/turf";
 import { feature as turfFeature, point as turfPoint } from "@turf/helpers";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
 
+const MAPSTATUS_MODULE_NAME = `mapstatus`;
 
 class FeatureTableComposition extends React.Component {
     static get Ledninger() {  return 'ledninger';  }

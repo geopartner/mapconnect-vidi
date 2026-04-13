@@ -106,10 +106,10 @@ class CreateProjectForm extends React.Component {
                         <details open className="mb-4 p-2">
                             <summary className="fw-bold">Projekt</summary>
 
-                            <div className="row mt-2 ml-1 mb-1">
-                                <label htmlFor="kunde-select" className="fw-bold col-4" >Kunde</label>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <label htmlFor="kunde-select" className="form-label fw-bold" style={{minWidth: '140px'}}>Kunde</label>
                                 <select
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     id="kunde-select"
                                     value={this.props.activeProject?.kundeid || ''}
                                     onChange={(e) => {
@@ -130,10 +130,10 @@ class CreateProjectForm extends React.Component {
                                 </select>
                             </div>
 
-                            <div className="row ml-1 mb-1">
-                                <label className="col-4">Afdelingsnavn</label>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <label className="form-label" style={{minWidth: '140px'}}>Afdelingsnavn</label>
                                 <input
-                                    className=" col-7"
+                                    className="form-control flex-grow-1"
                                     placeholder="Afdelingsnavn"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
@@ -143,10 +143,10 @@ class CreateProjectForm extends React.Component {
                                 />
                             </div>
 
-                            <div className="row ml-1 mb-1">
-                                <label className="col-4">Projekttype</label>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <label className="form-label" style={{minWidth: '140px'}}>Projekttype</label>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     placeholder="Projekt type "
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
@@ -156,10 +156,10 @@ class CreateProjectForm extends React.Component {
                                 />
                             </div>
 
-                            <div className="row ml-1 mb-1">
-                                <><label className="col-4" >Oprettet dato</label></>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <><label className="form-label" style={{minWidth: '140px'}}>Oprettet dato</label></>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
                                     value={this.props.activeProject?.oprettet || ''}
@@ -168,10 +168,10 @@ class CreateProjectForm extends React.Component {
                                 />
                             </div>
 
-                            <div className="row ml-1  mb-1">
-                                <><label className="col-4" >Revision dato</label></>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <><label className="form-label" style={{minWidth: '140px'}}>Revision dato</label></>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
                                     value={this.props.activeProject?.editdate || ''}
@@ -179,10 +179,10 @@ class CreateProjectForm extends React.Component {
                                     onChange={(e) => this.handleFieldChange("editdate", e.target.value)}
                                 />
                             </div>
-                            <div className="row ml-1 mb-1">
-                                <><label className="col-4" >Revision nr</label></>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <><label className="form-label" style={{minWidth: '140px'}}>Revision nr</label></>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     placeholder="Revision nr"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
@@ -192,10 +192,10 @@ class CreateProjectForm extends React.Component {
                                     onChange={(e) => this.handleFieldChange("revision", e.target?.value)}
                                 />
                             </div>
-                            <div className="row ml-1 mb-2">
-                                <><label className="col-4">Status</label></>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <><label className="form-label" style={{minWidth: '140px'}}>Status</label></>
                                 <select
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
                                     value={this.props.activeProject?.status || ''}
@@ -207,10 +207,10 @@ class CreateProjectForm extends React.Component {
                                     <option value="4">Afsluttet</option>
                                 </select>
                             </div>
-                            <div className="row ml-1 mb-1">
-                                <label style={{ fontWeight: "bold" }} className="col-4">Bygherre</label>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <label style={{ fontWeight: "bold", minWidth: '140px' }} className="form-label">Bygherre</label>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     placeholder="Bygherre navn"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
@@ -220,10 +220,10 @@ class CreateProjectForm extends React.Component {
                                 />
                             </div>
 
-                            <div className="row ml-1 mb-1">
-                                <label className="col-4">Afdeling</label>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <label className="form-label" style={{minWidth: '140px'}}>Afdeling</label>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     placeholder="Bygherre afdlingsnavn"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
@@ -233,10 +233,10 @@ class CreateProjectForm extends React.Component {
                                 />
                             </div>
 
-                            <div className="row ml-1 mb-1">
-                                <label className="col-4">Adresse</label>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <label className="form-label" style={{minWidth: '140px'}}>Adresse</label>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     placeholder="Bygherre adresse"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
@@ -246,10 +246,10 @@ class CreateProjectForm extends React.Component {
                                 />
                             </div>
 
-                            <div className="row ml-1 mb-2">
-                                <label className="col-4">Postnr</label>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                                <label className="form-label" style={{minWidth: '140px'}}>Postnr</label>
                                 <input
-                                    className="col-7"
+                                    className="form-control flex-grow-1"
                                     placeholder="Bygherre postnr og by"
                                     disabled={isReadOnly}
                                     readOnly={isReadOnly}
@@ -264,10 +264,10 @@ class CreateProjectForm extends React.Component {
                     <hr></hr>
                     <details open className="mb-4 p-2">
                         <summary className="fw-bold" >Underprojekt</summary>
-                        <div className="row mt-2 ml-1 mb-1">
-                            <label className="col-4 fw-bold">Navn</label>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <label className="form-label fw-bold" style={{minWidth: '140px'}}>Navn</label>
                             <input
-                                className="col-7"
+                                className="form-control flex-grow-1"
                                 placeholder="Navn på underprojekt"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
@@ -277,10 +277,10 @@ class CreateProjectForm extends React.Component {
                             />
                         </div>
 
-                        <div className="row ml-1 mb-1">
-                            <><label className="col-4">Projektadresse</label></>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <><label className="form-label" style={{minWidth: '140px'}}>Projektadresse</label></>
                             <input
-                                className="col-7"
+                                className="form-control flex-grow-1"
                                 placeholder="Projektadresse"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
@@ -290,10 +290,10 @@ class CreateProjectForm extends React.Component {
                             />
                         </div>
 
-                        <div className="row ml-1 mb-1">
-                            <label className="col-4">Postnr</label>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <label className="form-label" style={{minWidth: '140px'}}>Postnr</label>
                             <input
-                                className="col-7"
+                                className="form-control flex-grow-1"
                                 placeholder="Underprojekt postnr og by"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
@@ -302,10 +302,10 @@ class CreateProjectForm extends React.Component {
                                 onChange={(e) => this.handleFieldChange("projektpostnr", e.target?.value)}
                             />
                         </div>
-                        <div className="row ml-1 mb-1">
-                            <><label className="col-4">Status</label></>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <><label className="form-label" style={{minWidth: '140px'}}>Status</label></>
                             <select
-                                className="col-7"
+                                className="form-control flex-grow-1"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
                                 value={this.props.activeProject?.underprojektstatus || ''}
@@ -317,11 +317,11 @@ class CreateProjectForm extends React.Component {
                                 <option value="4">Afsluttet</option>
                             </select>
                         </div>
-                        <div className="row ml-1 mb-1">
-                            <><label className="col-4" >Oprettet dato</label></>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <><label className="form-label" style={{minWidth: '140px'}}>Oprettet dato</label></>
                             <input
 
-                                className="col-7"
+                                className="form-control flex-grow-1"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
                                 value={this.props.activeProject?.underprojektoprettet || ''}
@@ -329,10 +329,10 @@ class CreateProjectForm extends React.Component {
                                 onChange={(e) => this.handleFieldChange("underprojektoprettet", e.target.value)}
                             />
                         </div>
-                        <div className="row ml-1 mb-1">
-                            <><label className="col-4" >Revision dato</label></>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <><label className="form-label" style={{minWidth: '140px'}}>Revision dato</label></>
                             <input
-                                className="col-7"
+                                className="form-control flex-grow-1"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
                                 value={this.props.activeProject?.underprojektediteret || ''}
@@ -341,10 +341,10 @@ class CreateProjectForm extends React.Component {
                             />
                         </div>
 
-                        <div className="row ml-1 mb-1">
-                            <><label className="col-4" >Revision nr</label></>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <><label className="form-label" style={{minWidth: '140px'}}>Revision nr</label></>
                             <input
-                                className="col-7"
+                                className="form-control flex-grow-1"
                                 placeholder="Revision nr"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
@@ -355,16 +355,16 @@ class CreateProjectForm extends React.Component {
                             />
                         </div>
 
-                        <div className="row">
-                            <label className="d-block ml-1 mb-1 col-12">Bemærkning</label>
+                        <div className="mb-2">
+                            <label className="form-label">Bemærkning</label>
                         </div>
-                        <div className="row ml-1 mr-2 mb-2">
+                        <div className="mb-2">
                             <textarea
-                                className=" col-11 mr-2 ml-1"
+                                className="form-control"
                                 placeholder="Bemærkning"
                                 disabled={isReadOnly}
                                 readOnly={isReadOnly}
-                                style={{ marginLeft:  '0.7rem' }}
+
                                 value={this.props.activeProject?.beskrivelse || ''}
                                 onChange={(e) => this.handleFieldChange("beskrivelse", e.target.value)}
                             />
@@ -373,22 +373,17 @@ class CreateProjectForm extends React.Component {
                 </>
                 <>
                     {!isReadOnly && (
-                        <div className="row">
-                            <div className="col-md-4">
-                                <button disabled={!canCreateProject} className="btn btn-primary mt-2" onClick={onSaveClick}>
-                                    {isNewProject ? 'Opret' : 'Gem'}
-                                </button>
-                            </div>
-                            <div className="col-md-4">
-                                <button className="btn btn-primary mt-2 mr-2 ml-2" onClick={onRejectClick}>
-                                    Fortryd
-                                </button>
-                            </div>
-                            <div className="col-md-4">
-                                <button className="btn btn-primary mt-2 " title="Tegn projekt" onClick={onDrawNewProject}>
-                                    <i className="leaflet-draw-draw-rectangle" onClick={onDrawNewProject}></i> Tegn
-                                </button>
-                            </div>
+                        <div className="d-flex gap-2 mt-2">
+                            <button className="btn btn-outline-primary" title="Tegn projekt" onClick={onDrawNewProject}>
+                                <i className="leaflet-draw-draw-rectangle" onClick={onDrawNewProject}></i> Tegn
+                            </button>
+                            <div className="flex-grow-1"></div>
+                            <button className="btn btn-outline-danger" onClick={onRejectClick}>
+                                Annuller
+                            </button>
+                            <button disabled={!canCreateProject} className="btn btn-primary" onClick={onSaveClick}>
+                                {isNewProject ? 'Opret' : 'Gem'}
+                            </button>
                         </div>
                     )}
                 </>
