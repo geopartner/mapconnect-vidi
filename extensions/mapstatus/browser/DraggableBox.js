@@ -7,7 +7,7 @@
 import { Minimize } from "@material-ui/icons";
 import { toPathSchema } from "@rjsf/utils";
 import React from "react";
-import { max } from "underscore";
+import { max, min } from "underscore";
 
 
 class DraggableBox extends React.Component {
@@ -127,7 +127,7 @@ class DraggableBox extends React.Component {
             minimizedStyle } = this.props;
      
         const baseStyle = {
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--bs-body-bg)',
             border: '1px solid #000',
             cursor: 'move',
             display: 'flex',
@@ -139,7 +139,8 @@ class DraggableBox extends React.Component {
             position: 'absolute',
             resize: 'both',
             userSelect: 'none',
-            zIndex: 10200
+            zIndex: 10200,
+            minWidth: '1100px',
         };
         const activeStyle = maximized ? initialStyle : minimizedStyle;    
         return (
