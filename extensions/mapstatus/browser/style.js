@@ -45,14 +45,12 @@ const styleObject = {
     },
 
     tableHeader: {
-        backgroundColor: '#d3d3d3',
         fontWeight: 'bold',
         position: 'sticky',
         top: 0
     },
 
     tableHeaderSmall: {
-        backgroundColor: '#d3d3d3',
         fontWeight: 'bold',
         position: 'sticky',
         top: 0,

@@ -354,7 +354,7 @@ class FeatureTableNode extends React.Component {
                     <div ref={this.tableContainerRef} style={{ cursor: 'pointer', flex: '1 1 auto', minHeight: '0', overflowY: 'auto'  }} >
                         <table className="table table-striped table-bordered table-hover table-sm" >
                             <thead onClick={(e) => this.handleHeaderClick(e)}>
-                                <tr style={styleObject.headerRow} >
+                                <tr style={styleObject.headerRow} className="bg-body-tertiary">
                                     {this.columns.filter(col => col.visible === true).map((col, index) => (
                                         <th key={index}
                                             style={index === 0 || index === this.columns.length - 1 ? styleObject.tableHeaderSmall : styleObject.tableHeader} >
