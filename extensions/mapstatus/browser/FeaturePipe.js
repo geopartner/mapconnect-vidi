@@ -101,9 +101,9 @@ class FeaturePipe extends React.Component {
                     onClose={() => this.setState({ urlDialog: '' })}
                 >  </UrlDialog>)
             }           
-            <div style={{ height: '550px', width: '350px', padding: '10px', margin: '10px' }}>
-            <div className="row">
-                <div className="col">
+            <div style={{ padding: '10px' }}>
+            <div className="d-flex gap-3">
+                <div className="flex-grow-1">
                     <p><strong>Fra brønd:</strong> {fra_brønd}</p>
                     <p><strong>Fra brønd dybde:</strong> {fra_broend_dybde} m</p>
                     <p><strong>Fra kote:</strong> {fra_kote} m</p>
@@ -124,10 +124,10 @@ class FeaturePipe extends React.Component {
                     
                     </div>
                 </div>
-                <div className="col">
+                <div className="flex-grow-1">
                     <p><strong>Til brønd:</strong> {til_brønd}</p>
                     <p><strong>Til brønd dybde:</strong> {til_broend_dybde} m</p>
-                    <p><    strong>Til kote:</strong> {til_kote} m</p>
+                    <p><strong>Til kote:</strong> {til_kote} m</p>
                     <p><strong>Længde:</strong> {længde} m</p>
                     <p><strong>Fysisk indeks:</strong> {fysiskindeks}</p>
                     <p><strong>Antal stik:</strong> {antalstik_ledning}</p>
@@ -146,16 +146,11 @@ class FeaturePipe extends React.Component {
                 </div>      
             </div>
 
-            <div className="row">
-                <div className="col-12">
-                    <p><strong>Bemærkninger:</strong></p>
-                </div>
-            </div>
-            <div className="row">
-                <div className="col-12">
-                    <textarea 
-                    rows="4" 
-                    cols="50" 
+            <div className="mb-2">
+                <p className="mb-2"><strong>Bemærkninger:</strong></p>
+                <textarea 
+                    className="form-control w-100"
+                    rows="4"
                     value={bemark}
                     onChange={(e) => this.setState({ bem: e.target.value })}  
                     onBlur={() => {
@@ -163,23 +158,14 @@ class FeaturePipe extends React.Component {
                         this.updateData();
                     }}  
                    /> 
-                </div>
             </div>
-            <div className="row">
-                <div className="col">
-                    <button className="btn btn-primary" onClick={() => this.handleVideoLink(ledningid)}>Video</button>
-                </div>
-                <div className="col">
-                    <button className="btn btn-secondary" onClick={() => this.handlePdfLink(ledningid)}>Rapport</button>
-                </div>
-                <div className="col">
-                    <button className="btn btn-secondary" onClick={() => this.props.onClose()}>Luk</button>
-                </div>
+            <div className="d-flex gap-2 mt-3">
+                <button className="btn btn-secondary" onClick={() => this.handleVideoLink(ledningid)}>Video</button>
+                <button className="btn btn-secondary" onClick={() => this.handlePdfLink(ledningid)}>Rapport</button>
+                <button className="btn btn-primary ms-auto" onClick={() => this.props.onClose()}>Luk</button>
             </div>
-            
-            
         </div>
-        </>);
+    </>);
     }
 };
 export  default FeaturePipe;

@@ -215,7 +215,9 @@ module.exports = {
             componentDidUpdate() {
             }
 
+
             buildProjectList = () => {
+
                 const skema = this.getSkema();
 
                 this.state.projectManager?.getAllProjects(skema)
@@ -460,7 +462,7 @@ module.exports = {
                             ReactDOM.createPortal(
                                 <DraggableBox
                                     headerText='Ledning'
-                                    initialStyle={{bottom: '100px', height: '550px', maxHeight: '600px', right: '100px', width: '400px' }}
+                                    initialStyle={{bottom: '100px', height: '550px', right: '100px', minWidth: '10px', minHeight: '560px', maxWidth: '400px' }}
                                     onExcel={() => {}}
                                     onMouseDown={(e) => {e.stopPropagation();}}
                                     showMinimizeButton={false}
@@ -479,7 +481,7 @@ module.exports = {
                             ReactDOM.createPortal(
                                 <DraggableBox
                                     headerText='Knude'
-                                    initialStyle={{bottom: '100px', height: '500px', maxHeight: '600px', right: '100px', width: '400px' }}
+                                    initialStyle={{bottom: '100px', height: '500px', maxHeight: '600px', right: '100px', width: '400px', minWidth: '1100px' }}
                                     onMouseDown={(e) => {e.stopPropagation();}}
                                     showMinimizeButton={false}
                                 >

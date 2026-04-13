@@ -208,7 +208,7 @@ class CreateProjectForm extends React.Component {
                                 </select>
                             </div>
                             <div className="d-flex align-items-center gap-2 mb-2">
-                                <label style={{ fontWeight: "bold" }} className="form-label" style={{minWidth: '140px'}}>Bygherre</label>
+                                <label style={{ fontWeight: "bold", minWidth: '140px' }} className="form-label">Bygherre</label>
                                 <input
                                     className="form-control flex-grow-1"
                                     placeholder="Bygherre navn"
