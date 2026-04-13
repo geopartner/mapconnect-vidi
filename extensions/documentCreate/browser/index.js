@@ -5,6 +5,9 @@
  */
 
 "use strict";
+
+import { createRoot } from "react-dom/client";
+
 const config = require("../../../config/config.js");
 
 /**
@@ -1916,7 +1919,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<DocumentCreate />, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<DocumentCreate />);
     } catch (e) {}
   },
 };
