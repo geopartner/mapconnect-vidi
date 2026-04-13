@@ -568,7 +568,7 @@ module.exports = {
 
         drawControl = _self.createDrawControl();
         //  cloud.get().map.addControl(drawControl); skal ikke tilføjes, da det er en del af mapstatus
-        searchOn = true;
+        //searchOn = true; -- TODO: Unused
         _self.bindDrawEvents();
 
         const po = $('.leaflet-draw-toolbar-top').popover({
