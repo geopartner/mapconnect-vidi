@@ -16,9 +16,11 @@ const { VERSION } = require("underscore");
 
 var GC2_HOST = config.gc2.host;
 
+// TODO: What is up with this? Why is it even done? Get rid of it!
 // GC2_HOST = (GC2_HOST.split("http://").length > 1 ? GC2_HOST.split("http://")[1] : GC2_HOST);
 // Hardcoded host - config has internal name in docker-compose
-GC2_HOST = "https://mapgogc2.geopartner.dk";
+//GC2_HOST = "https://mapgogc2.geopartner.dk";
+GC2_HOST = "https://test-mapgogc2.geopartner.dk";
 
 // Set locale for date/time string
 moment.locale("da_DK");

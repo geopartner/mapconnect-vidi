@@ -5,6 +5,9 @@
  */
 
 "use strict";
+
+import { createRoot } from "react-dom/client";
+
 const config = require("../../../config/config.js");
 
 /**
@@ -17,8 +20,10 @@ var moment = require("moment");
 // Set locale for date/time string
 moment.locale("da_DK");
 
+// TODO: What is up with this? Why is it even done? Get rid of it!
 // Hardcode host TODO - migrate all these calls to the backend to improve security and performance!
-var GC2_HOST = 'https://mapgogc2.geopartner.dk';
+//var GC2_HOST = 'https://mapgogc2.geopartner.dk';
+var GC2_HOST = 'https://test-mapgogc2.geopartner.dk';
 
 /**
  *
@@ -1083,9 +1088,9 @@ var FeatureFormFactory = function (order) {
     //Hide element if hidden is set
 
     if (col.hidden !== -1) {
-      var formobj = '<div class="form-group collapse">';
+      var formobj = '<div class="form-group mb-3">';
     } else {
-      var formobj = '<div class="form-group">';
+      var formobj = '<div class="form-group mb-3">';
     }
 
     //create label for input, colName fallback
@@ -1253,16 +1258,16 @@ var loadAndInitFilters = function (active_state) {
     // query for last synchronization and put in user information
     var qrystr =
       "WITH cte1 (lastSynchronization) as" +
-      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastsynchronization from vmr.dnsync.log" +
+      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastsynchronization from dnsync.log" +
       " order by syncend desc" +
       " limit (1))" +
       " , cte2 (lastData) as" +
-      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastdata from vmr.dnsync.log" +
+      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastdata from dnsync.log" +
       " where rowsupdated > 0" +
       " order by syncend desc" +
       " limit (1))" +
       " , cte3 (showalert) as" +
-      " (Select CASE WHEN count(*) > 0 THEN false ELSE true END from vmr.dnsync.log" +
+      " (Select CASE WHEN count(*) > 0 THEN false ELSE true END from dnsync.log" +
       " where syncend > (NOW() at time zone 'gmt' - INTERVAL '10 MINUTE')" +
       " limit (1))" +
       " select lastSynchronization, lastData, showalert FROM cte1, cte2, cte3";
@@ -1800,7 +1805,7 @@ module.exports = {
               >
                 {__("MissingSynchronization")}
               </div>
-              <div id="documentCreate-newfeature-content" className="collapse">
+              <div id="documentCreate-newfeature-content" className="mb-3">
                 <button
                   type="button"
                   onClick={this.newButtonClicked}
@@ -1809,18 +1814,18 @@ module.exports = {
                   {__("NewButton")}
                 </button>
               </div>
-              <div id="documentCreate-feature-content" className="collapse">
+              <div id="documentCreate-feature-content" className="mb-3">
                 <h6>{__("Pick location")}</h6>
                 <div id="documentCreate-places d-flex" className="places">
                   <div className="input-group mb-3">
                     <input
                       id={id}
-                      className={id + " typeahead"}
+                      className={"custom-search typeahead form-control " + id}
                       type="text"
                       placeholder="Adresse"
                     />
                     <button
-                      className="btn btn-outline-secondary-secondary searchclear"
+                      className="btn btn-outline-secondary searchclear"
                       type="button"
                       onClick={() => $("#" + id).val("")}
                     >
@@ -1840,10 +1845,10 @@ module.exports = {
                   >
                     <option value=""></option>
                   </select>
-                  <div id="documentCreate-feature-meta" className=""></div>
+                  <div id="documentCreate-feature-meta" className="hidden"></div>
                 </div>
               </div>
-              <div id="documentCreate-feature-editcontent" className="collapse">
+              <div id="documentCreate-feature-editcontent" className="mb-3">
                 <h6>{__("Edit location")}</h6>
                 <button
                   type="button"
@@ -1862,23 +1867,23 @@ module.exports = {
               </div>
               <div
                 id="documentCreate-feature-filter-header-edit"
-                className="collapse list-group"
+                className="mb-3 list-group"
               >
                 <h6>{__("List selection edit")}</h6>
               </div>
               <div
                 id="documentCreate-feature-filter-header-create"
-                className="collapse list-group"
+                className="mb-3 list-group"
               >
                 <h6>{__("List selection create")}</h6>
               </div>
               <div
                 id="documentCreate-feature-filter"
-                className="collapse list-group"
+                className="mb-3 list-group"
               >
                 <div
                   id="documentList-feature-content"
-                  className="collapse"
+                  className="mb-3"
                 ></div>
               </div>
             </div>
@@ -1916,7 +1921,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<DocumentCreate />, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<DocumentCreate />);
     } catch (e) {}
   },
 };

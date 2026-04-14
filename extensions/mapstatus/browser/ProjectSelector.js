@@ -20,10 +20,11 @@ class ProjectSelector extends React.Component {
             <>
                 {Object.entries(projects).length > 0 && (
                     <>
-                        <div className="row mb-1">
-                            <p className="fw-bold col-4">Underprojekt</p>
+                        <div className="mb-3 align-items-center">
+                            <label htmlFor="project-select" className="form-label fw-bold">Underprojekt</label>
                             <select
-                                className="col-7"
+                                id="project-select"
+                                className="form-select"
                                 value={selectedProject?.id}
                                 onChange={(e) => onSelectChange(e.target.value, true)}>
                                 {projects.map((option, index) => (
@@ -35,13 +36,10 @@ class ProjectSelector extends React.Component {
                                 ))}
                             </select>
                         </div>
-                        <div className="row mb-1">
-                            <div className="col-4"></div>
-                            <div className="col-7" >
-                                {isProjectSelected && (
-                                    <ExcelExport onClickExportExcel={this.props.onClickExportExcel} />
-                                )}
-                            </div>
+                        <div className="row mb-3 align-items-center">
+                            {isProjectSelected && (
+                                <ExcelExport onClickExportExcel={this.props.onClickExportExcel} />
+                            )}
                         </div>
                     </>
                 )}

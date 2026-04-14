@@ -215,7 +215,9 @@ module.exports = {
             componentDidUpdate() {
             }
 
+
             buildProjectList = () => {
+
                 const skema = this.getSkema();
 
                 this.state.projectManager?.getAllProjects(skema)
@@ -460,7 +462,7 @@ module.exports = {
                             ReactDOM.createPortal(
                                 <DraggableBox
                                     headerText='Ledning'
-                                    initialStyle={{bottom: '100px', height: '550px', maxHeight: '600px', right: '100px', width: '400px' }}
+                                    initialStyle={{bottom: '100px', height: '560px', right: '100px', minWidth: '470px',width: '470px', minHeight: '560px', maxWidth: '470px' }}
                                     onExcel={() => {}}
                                     onMouseDown={(e) => {e.stopPropagation();}}
                                     showMinimizeButton={false}
@@ -568,7 +570,7 @@ module.exports = {
 
         drawControl = _self.createDrawControl();
         //  cloud.get().map.addControl(drawControl); skal ikke tilføjes, da det er en del af mapstatus
-        searchOn = true;
+        //searchOn = true; -- TODO: Unused
         _self.bindDrawEvents();
 
         const po = $('.leaflet-draw-toolbar-top').popover({

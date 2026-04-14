@@ -7,7 +7,7 @@
 import { Minimize } from "@material-ui/icons";
 import { toPathSchema } from "@rjsf/utils";
 import React from "react";
-import { max } from "underscore";
+import { max, min } from "underscore";
 
 
 class DraggableBox extends React.Component {
@@ -127,7 +127,7 @@ class DraggableBox extends React.Component {
             minimizedStyle } = this.props;
      
         const baseStyle = {
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--bs-body-bg)',
             border: '1px solid #000',
             cursor: 'move',
             display: 'flex',
@@ -150,12 +150,20 @@ class DraggableBox extends React.Component {
                 }}
                 ref={this.boxRef}
             >   
-                <div className="border-bottom border-2 row" style={{ minHeight: '30px', maxHeight: '30px', overflowY: 'hidden', overflowX: 'hidden' }}>
-                    <div className="col-11">
-                        <h6>{headerText}</h6>   
+                <div className="border-bottom border-2" style={{ 
+                    minHeight: '30px', 
+                    maxHeight: '30px', 
+                    overflowY: 'hidden', 
+                    overflowX: 'hidden', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    marginBottom: '8px' }}>
+                    <div>
+                        <h6 className="m-2">{headerText}</h6>   
                     </div>
                     
-                    <div className="col-1" style={{cursor: 'pointer'}}>
+                    <div style={{cursor: 'pointer'}} className="m-2">
                         <i className="bi bi-dash me-2 window-icon" title="minimer"  hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: false })} ></i>
                         <i className="bi bi-square window-icon" title="maksimer" hidden={!showMinimizeButton} onClick={() => this.setState({ isMaximized: true })}  ></i>
                     </div>
