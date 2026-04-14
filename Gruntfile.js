@@ -244,8 +244,10 @@ module.exports = function (grunt) {
                     sourceMap: true,
                     mangle: true,
                     compress: {
-                        dead_code: false,
-                        drop_debugger: false,
+                        dead_code: true,
+                        drop_debugger: true,
+                        drop_console: true,
+                        passes: 2,
                         global_defs: {
                             "DEBUG": false
                         },
