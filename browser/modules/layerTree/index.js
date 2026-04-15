@@ -3090,7 +3090,7 @@ module.exports = {
                     } = _self.checkIfLayerIsActive(forcedState, precheckedLayers, child.layer);
                     _self.createLayerRecord(child.layer, container, layerIsActive, activeLayerName, subgroup.id);
                 } else if (child.type === GROUP_CHILD_TYPE_GROUP) {
-                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel);
+                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel, true, fullPath);
                 } else {
                     throw new Error(`Invalid layer group`);
                 }
