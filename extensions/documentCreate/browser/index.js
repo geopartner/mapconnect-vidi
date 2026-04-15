@@ -22,8 +22,8 @@ moment.locale("da_DK");
 
 // TODO: What is up with this? Why is it even done? Get rid of it!
 // Hardcode host TODO - migrate all these calls to the backend to improve security and performance!
-//var GC2_HOST = 'https://mapgogc2.geopartner.dk';
-var GC2_HOST = 'https://test-mapgogc2.geopartner.dk';
+var GC2_HOST = 'https://mapgogc2.geopartner.dk';
+//var GC2_HOST = 'https://test-mapgogc2.geopartner.dk';
 
 /**
  *

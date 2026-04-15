@@ -91,7 +91,7 @@ let extensionsIgnoredForCaching = ['JPEG', 'jpeg', 'jpg', 'PNG', 'TIFF', 'BMP'];
 
 let urlsIgnoredForCaching = [{
     regExp: true,
-    requested: '/api/sql/nocache/'
+    requested: '/api/sql/'
 }, {
     regExp: true,
     requested: 'bam.nr-data.net'
