@@ -432,6 +432,12 @@ module.exports = {
                     username: username,
                     ...additionalData
                 };
+
+                // Dont sent metrics if we are printing
+                if (urlVars.px && urlVars.py) {
+                    console.log('Printing detected, skipping user activity tracking');
+                    return;
+                }
                 
                 // Use sendBeacon with proper content type
                 if (navigator.sendBeacon) {

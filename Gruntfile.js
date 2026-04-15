@@ -246,7 +246,7 @@ module.exports = function (grunt) {
                     compress: {
                         dead_code: true,
                         drop_debugger: true,
-                        drop_console: true,
+                        drop_console: false, // The print function relies on console.log, so we cannot drop all console statements
                         passes: 2,
                         global_defs: {
                             "DEBUG": false
