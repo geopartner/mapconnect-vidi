@@ -8,6 +8,7 @@ const express = require("express");
 const request = require("request");
 const router = express.Router();
 const fetch = require("node-fetch");
+const zlib = require("zlib");
 const config = require("../config/config.js");
 
 DATAHUB = {
@@ -37,7 +38,17 @@ const queryDatahub = async (sql, onlyProperties = false) => {
     body: postData,
   };
   const response = await fetch(url, options);
-  let json = await response.json();
+  let bodyBuffer = await response.buffer();
+  const isGzipped =
+    bodyBuffer.length >= 2 &&
+    bodyBuffer[0] === 0x1f &&
+    bodyBuffer[1] === 0x8b;
+
+  if (isGzipped) {
+    bodyBuffer = zlib.gunzipSync(bodyBuffer);
+  }
+
+  let json = JSON.parse(bodyBuffer.toString("utf8"));
 
   // We need something that looks very much like DAWA, so we remove the GC2 wrapper
   let data = {};
@@ -63,7 +74,7 @@ const queryDatahub = async (sql, onlyProperties = false) => {
     data = [];
     if (json.features && json.features.length) {
       for (var i = 0; i < json.features.length; i++) {
-        data.push(JSON.parse(json.features[i].properties.result));
+        data.push(json.features[i].properties.result);
       }
     }
   }

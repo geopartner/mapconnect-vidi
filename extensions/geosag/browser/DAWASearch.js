@@ -7,6 +7,7 @@
 import React from "react";
 import debounce from "lodash.debounce";
 import throttle from "lodash.throttle";
+import proj4 from "proj4";
 
 function uniqBy(a, key) {
   var seen = {};
@@ -81,19 +82,19 @@ class DAWASearch extends React.Component {
    * @returns {Object} - Object with lat and lng properties in WGS84
    */
   transformToWGS84(x, y) {
-    transformPoint = function (x, y, s, d) {
+    const transformPoint = function (x, y, s, d) {
       proj4.defs("EPSG:25832", "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
       let p = proj4(s, d, [parseFloat(x), parseFloat(y)]);
       //console.log("Transformed coordinates:", p);
-      return {lon: p[0], lat: p[1]}
+      return { lon: p[0], lat: p[1] };
     };
-    
+
     try {
       // Transform from UTM Zone 32N (EPSG:25832) to WGS84 (EPSG:4326)
       const transformed = transformPoint(x, y, "EPSG:25832", "EPSG:4326");
       return {
         lat: transformed.lat,
-        lng: transformed.lon
+        lng: transformed.lon,
       };
     } catch (error) {
       console.error("Error transforming coordinates:", error);
@@ -160,7 +161,7 @@ class DAWASearch extends React.Component {
   _fetch = (q) => {
     var _self = this;
     var s = _self.state;
-    var term = s.searchTerm;
+    var term = q;
     // run promises here to return stuff from somewhere
     var calls = [];
 
@@ -233,13 +234,15 @@ class DAWASearch extends React.Component {
           }
         } catch (e) {
           _self.setState({
+            loading: false,
             error: e.toString(),
           });
         }
       })
       .catch((err) => {
         _self.setState({
-          error: e.toString(),
+          loading: false,
+          error: err.toString(),
         });
       });
   };
