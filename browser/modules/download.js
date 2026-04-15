@@ -10,10 +10,12 @@
  *
  */
 
+const urlparser = require('./urlparser');
+
 module.exports = {
-    download: (sql, format, db) => {
+    download: (sql, format) => {
         let request = new XMLHttpRequest();
-        request.open('POST', '/api/sql/' + db, true);
+        request.open('POST', '/api/sql/' + urlparser.db, true);
         request.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
         request.responseType = 'blob';
         request.onload = function () {
