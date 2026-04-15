@@ -11,7 +11,7 @@
  */
 
 module.exports = {
-    download: (sql, format) => {
+    download: (sql, format, db) => {
         let request = new XMLHttpRequest();
         request.open('POST', '/api/sql/' + db, true);
         request.setRequestHeader('Content-Type', 'application/json; charset=utf-8');

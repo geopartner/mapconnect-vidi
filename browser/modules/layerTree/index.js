@@ -3881,7 +3881,7 @@ module.exports = {
         if (whereClause) {
             sql += ` WHERE ${whereClause}`;
         }
-        download.download(sql, format)
+        download.download(sql, format, urlparser.db)
     },
 
     onApplyPredefinedFiltersHandler: ({layerKey, filters}, forcedReloadLayerType = false) => {
