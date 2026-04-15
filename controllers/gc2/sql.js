@@ -11,6 +11,7 @@ var config = require('../../config/config.js').gc2;
 var metrics = require('../../modules/metrics');
 var request = require('request');
 var fs = require('fs');
+const { option } = require('grunt');
 
 var query = function (req, response) {
     // Get SQL metrics if enabled
@@ -68,13 +69,14 @@ var query = function (req, response) {
 
     uri = custom_data !== null && custom_data !== undefined && custom_data !== "null" ? config.host + "/api/v2/sqlwrapper/" + userName : config.host + "/api/v2/sql/" + userName;
 
-    console.log(uri);
-
     options = {
         method: 'POST',
         uri: uri,
         json: postData
     };
+
+    // log out the options object for debugging purposes.
+    console.log(options.method, options.uri, options.json.format);
 
     if (format === "excel") {
         fileName = key + ".xlsx";
