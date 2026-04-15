@@ -570,10 +570,10 @@ module.exports = {
                         });
 
                         $("#_download_excel_" + storeId).click(function () {
-                            download.download(sql, "excel");
+                            download.download(sql, "excel", db);
                         });
                         $("#_download_geojson_" + storeId).click(function () {
-                            download.download(sql, "geojson");
+                            download.download(sql, "geojson", db);
                         });
                         $("#_create_layer_" + storeId).click(function () {
                             let _self = this;
