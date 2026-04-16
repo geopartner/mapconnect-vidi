@@ -5,6 +5,9 @@
  */
 
 "use strict";
+
+import { createRoot } from "react-dom/client";
+
 const config = require("../../../config/config.js");
 
 /**
@@ -37,6 +40,12 @@ var utils;
  * @type {*|exports|module.exports}
  */
 var backboneEvents = require("./../../../browser/modules/backboneEvents");
+
+/**
+ *
+ * @type {*|exports|module.exports}
+ */
+var transformPoint;
 
 /**
  *
@@ -97,7 +106,6 @@ var id = "documentCreate-custom-search";
 var select_id = "documentCreate-service";
 var form_id = "document-feature-form";
 var currentSearch = undefined;
-var request = require("request");
 var coords;
 
 // VMR
@@ -1911,7 +1919,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      ReactDOM.render(<DocumentCreate />, document.getElementById(exId));
+      createRoot(document.getElementById(exId)).render(<DocumentCreate />);
     } catch (e) {}
   },
 };
