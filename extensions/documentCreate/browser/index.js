@@ -90,8 +90,8 @@ const GUI_CONTROL_STATE = {
 /**
  * @type {string}
  */
-var db = urlparser.db;
-var schema = urlparser.schema;
+var db = urlparser.db || "vmr";
+var schema = urlparser.schema || "vmr";
 var gc2ApiVersion = "v2";
 var thePreviousServiceValue = undefined;
 
