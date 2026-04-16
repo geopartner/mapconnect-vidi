@@ -1141,7 +1141,7 @@ var FeatureFormFactory = function (order) {
 
   //Then add a button
   $("#" + form_id).append(
-    '<button id="submitbtn" type="submit" class="btn btn-outline-secondary">' +
+    '<button id="submitbtn" type="submit" class="btn btn-outline-primary">' +
       __("Indsend") +
       "</button>"
   );
@@ -1816,7 +1816,7 @@ module.exports = {
                 <button
                   type="button"
                   onClick={this.newButtonClicked}
-                  className="btn btn-outline-secondary"
+                  className="btn btn-primary"
                 >
                   {__("NewButton")}
                 </button>
