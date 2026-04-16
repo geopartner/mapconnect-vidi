@@ -1846,7 +1846,7 @@ module.exports = {
                   >
                     <option value=""></option>
                   </select>
-                  <div id="documentCreate-feature-meta" className="collapse"></div>
+                  <div id="documentCreate-feature-meta" className=""></div>
                 </div>
               </div>
               <div id="documentCreate-feature-editcontent" className="collapse mb-3">
