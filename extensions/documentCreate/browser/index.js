@@ -1215,7 +1215,7 @@ var SetGUI_ControlState = function (state_Enum) {
     state_Enum -= GUI_CONTROL_STATE.FEATURE_CONTENT_VISIBLE;
   }
 };
-  
+
 
 /**
  * This function is only ron once pr session and initializes filters
@@ -1806,7 +1806,7 @@ module.exports = {
               >
                 {__("MissingSynchronization")}
               </div>
-              <div id="documentCreate-newfeature-content" className="collapse">
+              <div id="documentCreate-newfeature-content" className="collapse mb-3">
                 <button
                   type="button"
                   onClick={this.newButtonClicked}
@@ -1815,18 +1815,18 @@ module.exports = {
                   {__("NewButton")}
                 </button>
               </div>
-              <div id="documentCreate-feature-content" className="collapse">
+              <div id="documentCreate-feature-content" className="collapse mb-3">
                 <h6>{__("Pick location")}</h6>
                 <div id="documentCreate-places d-flex" className="places">
                   <div className="input-group mb-3">
                     <input
                       id={id}
-                      className={id + " typeahead"}
+                      className={id + " custom-search typeahead form-control"}
                       type="text"
                       placeholder="Adresse"
                     />
                     <button
-                      className="btn btn-outline-secondary-secondary searchclear"
+                      className="btn btn-outline-secondary searchclear"
                       type="button"
                       onClick={() => $("#" + id).val("")}
                     >
@@ -1846,10 +1846,10 @@ module.exports = {
                   >
                     <option value=""></option>
                   </select>
-                  <div id="documentCreate-feature-meta" className=""></div>
+                  <div id="documentCreate-feature-meta" className="collapse"></div>
                 </div>
               </div>
-              <div id="documentCreate-feature-editcontent" className="collapse">
+              <div id="documentCreate-feature-editcontent" className="collapse mb-3">
                 <h6>{__("Edit location")}</h6>
                 <button
                   type="button"
@@ -1868,23 +1868,23 @@ module.exports = {
               </div>
               <div
                 id="documentCreate-feature-filter-header-edit"
-                className="collapse list-group"
+                className="collapse list-group mb-3"
               >
                 <h6>{__("List selection edit")}</h6>
               </div>
               <div
                 id="documentCreate-feature-filter-header-create"
-                className="collapse list-group"
+                className="collapse list-group mb-3"
               >
                 <h6>{__("List selection create")}</h6>
               </div>
               <div
                 id="documentCreate-feature-filter"
-                className="collapse list-group"
+                className="collapse list-group mb-3"
               >
                 <div
                   id="documentList-feature-content"
-                  className="collapse"
+                  className="collapse mb-3"
                 ></div>
               </div>
             </div>
