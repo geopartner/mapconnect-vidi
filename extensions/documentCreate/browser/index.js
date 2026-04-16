@@ -85,6 +85,7 @@ const GUI_CONTROL_STATE = {
   AUTHENTICATE_HIDE_ALERT: 32,
   AUTHENTICATE_SHOW_ALERT: 64,
   NO_CONTROLS_VISIBLE: 128,
+  NEW_DOCUMENT_STATE: 130, // NO_CONTROLS_VISIBLE + FEATURE_CONTENT_VISIBLE
 };
 
 /**
@@ -1211,15 +1212,16 @@ var SetGUI_ControlState = function (state_Enum) {
     $("#documentCreate-newfeature-content").show();
 
     // subtract this enumeration, and continue
-    state_Enum -= GUI_CONTROL_STATE.CREATE_CONTROLS_VISIBLE;
+    state_Enum -= GUI_CONTROL_STATE.FEATURE_CONTENT_VISIBLE;
   }
 };
+  
 
 /**
  * This function is only ron once pr session and initializes filters
  * @private
  */
-var loadAndInitFilters = function (active_state) {
+var loadAndInitFilters = function (active_state, componentInstance) {
   // If we already ran
   if (!firstRunner) {
     return;
@@ -1243,8 +1245,10 @@ var loadAndInitFilters = function (active_state) {
         getExistingDocs(fileIdent, true);
       } else {
         console.log("clearing doc filters");
-        SetGUI_ControlState(GUI_CONTROL_STATE.FEATURE_CONTENT_VISIBLE);
-        clearExistingDocFilters();
+        // Initialize to the same state as newButtonClicked
+        if (componentInstance && componentInstance.newButtonClicked) {
+          componentInstance.newButtonClicked();
+        }
       }
     } catch (error) {
       console.log(error.stack);
@@ -1536,12 +1540,12 @@ module.exports = {
           }
         });
 
-        backboneEvents.get().once("ready:serviceWorker", () => {
+        backboneEvents.get().once("ready:meta", () => {
           if (me.state.active) {
               // load with filters
-              loadAndInitFilters(me.state.active);
+              loadAndInitFilters(me.state.active, me);
           } else {
-            console.log("ready:serviceWorker - documentcreate not active");
+            console.log("ready:meta - documentcreate not active");
           }
         });
 
@@ -1685,7 +1689,7 @@ module.exports = {
       }
 
       /**
-       * Invoked, when EditButton is clickerd
+       * Invoked, when EditButton is clicked
        */
       newButtonClicked() {
         removeCosmeticLayers();
@@ -1702,8 +1706,7 @@ module.exports = {
         editingAllowed = false;
 
         // reload map in order to remove selection filters
-        SetGUI_ControlState(GUI_CONTROL_STATE.NO_CONTROLS_VISIBLE);
-        SetGUI_ControlState(GUI_CONTROL_STATE.FEATURE_CONTENT_VISIBLE);
+        SetGUI_ControlState(GUI_CONTROL_STATE.NEW_DOCUMENT_STATE);
         clearExistingDocFilters();
 
         // reset map
