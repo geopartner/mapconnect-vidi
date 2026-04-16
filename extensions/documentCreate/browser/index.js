@@ -1064,7 +1064,7 @@ var FeatureFormFactory = function (order) {
     "<h6>" + __("Henvendelse") + "</h6>"
   );
   $("#documentCreate-feature-meta").append(
-    '<form action="javascript:void(0);" onsubmit="documentCreateFeatureAdd()" id="' +
+    '<form action="javascript:void(0);" id="' +
       form_id +
       '"></form>'
   );
@@ -1146,6 +1146,12 @@ var FeatureFormFactory = function (order) {
       "</button>"
   );
   SetGUI_ControlState(GUI_CONTROL_STATE.ACTIVATE_SUBMIT_CONTROL);
+
+  // Add event listener for form submission
+  $("#" + form_id).on("submit", function (e) {
+    e.preventDefault();
+    documentCreateFeatureAdd();
+  });
 };
 
 /**
