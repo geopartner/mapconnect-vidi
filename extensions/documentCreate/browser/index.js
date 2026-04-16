@@ -1632,7 +1632,7 @@ module.exports = {
 
                     // run method here in order to support switch in event order, when running
                     // extension along with the session object autoLogin feature
-                    //loadAndInitFilters(me.state.active);
+                    loadAndInitFilters(me.state.active);
                   } else {
                     // disable all controls
                     // notify, no user is logged in
