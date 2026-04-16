@@ -117,6 +117,13 @@ var firstRunner = true;
 var editingAllowed = false;
 var allowSubmit = true;
 
+// Initialization state tracking
+var metaReady = false;
+var authChecked = false;
+var initRetryCount = 0;
+var maxInitRetries = 5;
+var searchInitialized = false;
+
 if (urlparser.urlVars.filterKey) {
   filterKey = urlparser.urlVars.filterKey;
 }
@@ -1224,6 +1231,66 @@ var SetGUI_ControlState = function (state_Enum) {
 
 
 /**
+ * Query synchronization status from database
+ * This is called after the extension initializes
+ * @private
+ */
+var querySynchronizationStatus = function () {
+  if (_USERSTR.length === 0) {
+    return; // Don't query if not logged in
+  }
+
+  var qrystr =
+    "WITH cte1 (lastSynchronization) as" +
+    " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastsynchronization from vmr.dnsync.log" +
+    " order by syncend desc" +
+    " limit (1))" +
+    " , cte2 (lastData) as" +
+    " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastdata from vmr.dnsync.log" +
+    " where rowsupdated > 0" +
+    " order by syncend desc" +
+    " limit (1))" +
+    " , cte3 (showalert) as" +
+    " (Select CASE WHEN count(*) > 0 THEN false ELSE true END from vmr.dnsync.log" +
+    " where syncend > (NOW() at time zone 'gmt' - INTERVAL '10 MINUTE')" +
+    " limit (1))" +
+    " select lastSynchronization, lastData, showalert FROM cte1, cte2, cte3";
+  
+  $.ajax({
+    url:
+      GC2_HOST +
+      "/api/" +
+      gc2ApiVersion +
+      "/sql/" +
+      _USERSTR +
+      "?q=" +
+      qrystr,
+    type: "get",
+    async: true,
+    success: function (data) {
+      if (data.features == null || data.features[0].properties == null) {
+        return null;
+      } else {
+        $("#documentCreate-status").show();
+        if (data.features[0].properties.lastsynchronization != null)
+          $("#documentCreate-status-check").html(
+            data.features[0].properties.lastsynchronization
+          );
+        if (data.features[0].properties.lastdata != null)
+          $("#documentCreate-status-case").html(
+            data.features[0].properties.lastdata
+          );
+        if (
+          data.features[0].properties.showalert != null &&
+          data.features[0].properties.showalert
+        )
+          $("#documentCreate-feature-missingsynchronization").show();
+      }
+    },
+  });
+};
+
+/**
  * This function is only ron once pr session and initializes filters
  * @private
  */
@@ -1263,58 +1330,8 @@ var loadAndInitFilters = function (active_state, componentInstance) {
       );
       firstRunner = true;
     }
-    // query for last synchronization and put in user information
-    var qrystr =
-      "WITH cte1 (lastSynchronization) as" +
-      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastsynchronization from vmr.dnsync.log" +
-      " order by syncend desc" +
-      " limit (1))" +
-      " , cte2 (lastData) as" +
-      " (Select to_char(syncend at time zone 'gmt', 'DD-MM-YYYY, kl. HH24:MI') as lastdata from vmr.dnsync.log" +
-      " where rowsupdated > 0" +
-      " order by syncend desc" +
-      " limit (1))" +
-      " , cte3 (showalert) as" +
-      " (Select CASE WHEN count(*) > 0 THEN false ELSE true END from vmr.dnsync.log" +
-      " where syncend > (NOW() at time zone 'gmt' - INTERVAL '10 MINUTE')" +
-      " limit (1))" +
-      " select lastSynchronization, lastData, showalert FROM cte1, cte2, cte3";
-    $.ajax({
-      url:
-        GC2_HOST +
-        "/api/" +
-        gc2ApiVersion +
-        "/sql/" +
-        _USERSTR +
-        "?q=" +
-        qrystr,
-      type: "get",
-      async: false,
-      success: function (data) {
-        //check for stuff
-        if (data.features == null || data.features[0].properties == null) {
-          //nothing.. return null .. do nothing
-          //$("#documentCreate-status").hide();
-          return null;
-        } else {
-          $("#documentCreate-status").show();
-          // put in timestamps for last synchronization
-          if (data.features[0].properties.lastsynchronization != null)
-            $("#documentCreate-status-check").html(
-              data.features[0].properties.lastsynchronization
-            );
-          if (data.features[0].properties.lastdata != null)
-            $("#documentCreate-status-case").html(
-              data.features[0].properties.lastdata
-            );
-          if (
-            data.features[0].properties.showalert != null &&
-            data.features[0].properties.showalert
-          )
-            $("#documentCreate-feature-missingsynchronization").show();
-        }
-      },
-    });
+    // Query synchronization status asynchronously
+    querySynchronizationStatus();
   }
 };
 
@@ -1355,6 +1372,7 @@ module.exports = {
      *
      */
     var React = require("react");
+
 
     /**
      *
@@ -1526,52 +1544,206 @@ module.exports = {
       componentDidMount() {
         let me = this;
 
-        // Stop listening to any events, deactivate controls, but
-        // keep effects of the module until they are deleted manually or reset:all is emitted
-        backboneEvents.get().on("deactivate:all", () => {
-          console.log("Stop listening for documentCreate");
-          me.setState({
-            active: false,
-          });
-        });
-
-        // Activates module
-        backboneEvents.get().on(`on:${exId}`, () => {
-          console.log("Starting documentCreate");
-          me.setState({
-            active: true,
-          });
-          if (_USERSTR.length == 0) {
-            SetGUI_ControlState(GUI_CONTROL_STATE.AUTHENTICATE_SHOW_ALERT);
+        /**
+         * Unified initialization function
+         * Only runs when:
+         * 1. Meta is ready (loaded)
+         * 2. Auth status is checked
+         * 3. Extension is active
+         * 4. First run (not yet initialized)
+         */
+        const tryInitialize = () => {
+          if (!metaReady || !authChecked || !me.state.active || !firstRunner) {
+            return;
           }
-        });
 
+          console.log("documentCreate - Initializing with user:", _USERSTR);
+
+          if (_USERSTR.length === 0) {
+            // Step 2a: User not logged in - show warning and end
+            console.log("documentCreate - User not logged in, showing authentication warning");
+            if (fileIdent || filterKey) {
+              console.log("documentCreate - Ignoring URL parameters (fileIdent/filterKey) because user is not logged in");
+            }
+            SetGUI_ControlState(
+              GUI_CONTROL_STATE.NO_CONTROLS_VISIBLE +
+                GUI_CONTROL_STATE.AUTHENTICATE_SHOW_ALERT
+            );
+            // Clear any existing data from previous session
+            clearExistingDocFilters();
+            $("#documentList-feature-content").html("");
+            DClayers = [];
+            $("#" + id).val("");
+            resultLayer.clearLayers();
+            if (cloud.get().map.hasLayer(resultLayer)) {
+              cloud.get().map.removeLayer(resultLayer);
+            }
+            searchInitialized = false;
+            firstRunner = false;
+            initRetryCount = 0;
+            return;
+          }
+
+          
+          // Step 2b/3: User is logged in
+          SetGUI_ControlState(GUI_CONTROL_STATE.AUTHENTICATE_HIDE_ALERT);
+          firstRunner = false;
+
+          // Initialize search and map layer (only done once when user is logged in)
+          // This is done here instead of componentDidMount to ensure we only show these when authenticated
+          if (!searchInitialized) {
+            console.log("documentCreate - Initializing search and map layer");
+            searchInitialized = true; // Set flag BEFORE initialization to prevent race conditions
+            search.init(onSearchLoad, `.${id}`, true, false);
+            cloud.get().map.addLayer(resultLayer);
+          }
+
+          try {
+            populateLayers();
+
+            // Check if layers were found
+            if (DClayers.length === 0) {
+              console.log("documentCreate - No layers found, retrying... (attempt " + (initRetryCount + 1) + ")");
+              initRetryCount++;
+              
+              if (initRetryCount < maxInitRetries) {
+                // Reset firstRunner to allow retry
+                firstRunner = true;
+                // Retry after a short delay
+                setTimeout(tryInitialize, 500);
+              } else {
+                console.error("documentCreate - Failed to find layers after " + maxInitRetries + " retries");
+                throw new Error(
+                  "No layers found with tag: " +
+                    config.extensionConfig.documentCreate.metaTag +
+                    " (after " + maxInitRetries + " retries)"
+                );
+              }
+              return;
+            }
+
+            // Reset retry counter on success
+            initRetryCount = 0;
+            buildServiceSelect(select_id);
+
+            // Step 3: Check for fileIdent or filterKey in URL
+            if (fileIdent) {
+              console.log("documentCreate - Loading with fileIdent: " + fileIdent);
+              getExistingDocs(fileIdent, true);
+            } else if (filterKey) {
+              console.log("documentCreate - Loading with filterKey: " + filterKey);
+              getExistingDocs(filterKey);
+            } else {
+              console.log("documentCreate - Starting fresh without URL params");
+              // Initialize to the same state as newButtonClicked
+              if (me.newButtonClicked) {
+                me.newButtonClicked();
+              }
+            }
+
+            // Query synchronization status asynchronously
+            querySynchronizationStatus();
+          } catch (error) {
+            console.error("documentCreate - Initialization failed:", error.stack);
+            firstRunner = true;
+            initRetryCount = 0;
+          }
+        };
+
+        // Step 0: Wait for metadata to load
         backboneEvents.get().once("ready:meta", () => {
-          if (me.state.active) {
-              // load with filters
-              loadAndInitFilters(me.state.active, me);
-          } else {
-            console.log("ready:meta - documentcreate not active");
-          }
+          console.log("documentCreate - Meta ready");
+          metaReady = true;
+          tryInitialize();
         });
+
+        // Step 1: Check user authentication
+        backboneEvents.get().on(`session:authChange`, (authenticated) => {
+          console.log("documentCreate - Auth status changed:", authenticated);
+          fetch("/api/session/status")
+            .then((r) => r.json())
+            .then((obj) => {
+              if (authenticated && obj.status.screen_name) {
+                // User is logged in
+                if (obj.status.subuser === false) {
+                  _USERSTR = obj.status.screen_name;
+                } else {
+                  _USERSTR = obj.status.screen_name + "@" + urlparser.db;
+                }
+                console.log("documentCreate - User logged in:", _USERSTR);
+              } else {
+                // User is not logged in
+                _USERSTR = "";
+                console.log("documentCreate - User logged out");
+                // Clean up search and layers when user logs out
+                clearExistingDocFilters();
+                $("#documentList-feature-content").html("");
+                DClayers = [];
+                $("#" + id).val("");
+                resultLayer.clearLayers();
+                if (cloud.get().map.hasLayer(resultLayer)) {
+                  cloud.get().map.removeLayer(resultLayer);
+                }
+                searchInitialized = false;
+              }
+              authChecked = true;
+              // Allow re-initialization if auth status changes
+              firstRunner = true;
+              initRetryCount = 0;
+              tryInitialize();
+            })
+            .catch((e) => {
+              console.error("documentCreate - Failed to check auth status:", e);
+              _USERSTR = "";
+              console.log("documentCreate - User logged out (due to auth check failure)");
+              // Clean up search and layers when user is not authenticated
+              clearExistingDocFilters();
+              $("#documentList-feature-content").html("");
+              DClayers = [];
+              $("#" + id).val("");
+              resultLayer.clearLayers();
+              if (cloud.get().map.hasLayer(resultLayer)) {
+                cloud.get().map.removeLayer(resultLayer);
+              }
+              searchInitialized = false;
+              authChecked = true;
+              // Allow re-initialization if auth status changes
+              firstRunner = true;
+              initRetryCount = 0;
+              tryInitialize();
+            });
+        });
+
+        // Activates module (makes UI visible)
+        backboneEvents.get().on(`on:${exId}`, () => {
+          console.log("documentCreate - Extension activated");
+          me.setState({ active: true }, tryInitialize);
+        });
+
+        // Deactivates module
+        backboneEvents.get().on("deactivate:all", () => {
+          console.log("documentCreate - Deactivating all modules");
+          me.setState({ active: false });
+        });
+
 
         // Disables module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
-          console.log("Stopping documentCreate");
-          me.setState({
-            active: false,
-          });
+          console.log("documentCreate - Extension disabled");
+          me.setState({ active: false });
           firstRunner = true;
+          metaReady = false;
+          authChecked = false;
+          initRetryCount = 0;
+          searchInitialized = false;
           utils.cursorStyle().reset();
         });
 
         console.log("documentCreate - Mounted");
 
-        //Initiate searchBar
-        search.init(onSearchLoad, `.${id}`, true, false);
-        cloud.get().map.addLayer(resultLayer);
+        // Map and search initialization will be deferred until user is authenticated
 
-        // Handle click events on map
+        // Handle click events on map (only active when user is logged in and extension is active)
         // ==========================
 
         mapObj.on("dblclick", function () {
@@ -1579,7 +1751,7 @@ module.exports = {
         });
 
         mapObj.on("click", function (e) {
-          if (me.state.active === false) {
+          if (me.state.active === false || _USERSTR.length === 0) {
             return;
           }
           let event = new geocloud.clickEvent(e, cloud);
@@ -1608,64 +1780,6 @@ module.exports = {
               config.extensionConfig.documentCreate.maxZoom
             );
           }
-        });
-
-        backboneEvents.get().on(`session:authChange`, (authenticated) => {
-          console.log(
-            "inside session:authChang, authenticated: " + authenticated
-          );
-          fetch("/api/session/status")
-            .then((r) => r.json())
-            .then((obj) =>
-              me.setState(
-                {
-                  authed: authenticated,
-                  active: true,
-                  subuser: obj.status.subuser,
-                  screen_name: obj.status.screen_name,
-                },
-                () => {
-                  // Get foresp. if we really logged in.
-                  // TODO: check we're in the right schema! (LKM: ER DET NØDVENDIGT?)
-                  console.log("me.state.authed: " + me.state.authed);
-                  if (me.state.authed) {
-                    if (me.state.subuser === false) {
-                      _USERSTR = me.state.screen_name;
-                    } else {
-                      _USERSTR = me.state.screen_name + "@" + urlparser.db;
-                    }
-                    SetGUI_ControlState(
-                      GUI_CONTROL_STATE.AUTHENTICATE_HIDE_ALERT
-                    );
-
-                    // run method here in order to support switch in event order, when running
-                    // extension along with the session object autoLogin feature
-                    //loadAndInitFilters(me.state.active);
-                  } else {
-                    // disable all controls
-                    // notify, no user is logged in
-                    SetGUI_ControlState(
-                      GUI_CONTROL_STATE.NO_CONTROLS_VISIBLE +
-                        GUI_CONTROL_STATE.AUTHENTICATE_SHOW_ALERT
-                    );
-                    editingAllowed = false;
-                    _USERSTR = "";
-                    clearExistingDocFilters();
-                    $("#documentList-feature-content").html("");
-                    firstRunner = true;
-                    DClayers = [];
-                    $("#" + id).val("");
-                    resultLayer.clearLayers();
-                  }
-                }
-              )
-            )
-            .catch((e) =>
-              me.setState({
-                authed: false,
-                active: true,
-              })
-            );
         });
 
         // Handle change in service type
