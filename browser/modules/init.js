@@ -106,6 +106,8 @@ module.exports = {
             loadCheckingInterval: 15000,
             mode: 0,
             layerTreeFilterPlaceholder: null,
+            allowDownloadLayer: true,
+            showLayerGroupChildren: true,
         };
         // Set default for unset props
         for (let prop in defaults) {
