@@ -269,7 +269,7 @@ module.exports = {
         // Clear all query layers and deactivate tools
         // ===========================================
         backboneEvents.get().on('sqlQuery:clear', () => {
-            console.info('Resting SQL Query');
+            console.info('Resetting SQL Query');
             infoClick.reset();
             advancedInfo.reset();
             layerTree.resetSearch();

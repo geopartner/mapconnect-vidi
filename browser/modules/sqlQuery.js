@@ -695,7 +695,13 @@ module.exports = {
             let filters = layerTree.getFilterStr(keyWithoutGeom) ? layerTree.getFilterStr(keyWithoutGeom) : "1=1";
             const schemaQualifiedName = "\"" + value.split(".")[0] + "\".\"" + value.split(".")[1] + "\"";
             if (!whereClause) {
+                // Query based on a geometry
+
+                // Define the query point in a CTE to only calculate it once, and to be able to use it in both the distance and intersection query. We also transform the point and the raster envelope to the native SRID of the layer, to make sure the query works even if the layer is in a different projection than the map.
+                sql = "WITH vidi_query AS (SELECT ST_Transform(ST_GeomFromText('" + wkt + "'," + proj + ")," + srid + ") as geom, ST_Transform(ST_MakeEnvelope(" + extent.join(',') + ", 4326), " + srid + ") as envelope) ";
+                
                 if (geoType === "RASTER" && (!advancedInfo.getSearchOn())) {
+
                     sql = "SELECT 1 as rid,foo.the_geom,ST_Value(rast, foo.the_geom) As band1, ST_Value(rast, 2, foo.the_geom) As band2, ST_Value(rast, 3, foo.the_geom) As band3 " +
                         "FROM " + value + " CROSS JOIN (SELECT ST_transform(ST_GeomFromText('" + wkt + "'," + proj + ")," + srid + ") As the_geom) As foo " +
                         "WHERE ST_Intersects(rast,the_geom) ";
@@ -709,31 +715,35 @@ module.exports = {
                         ...extent
                     ];
                 } else {
-                    const envelope = `"${f_geometry_column}" && ST_Transform(ST_MakeEnvelope(${extent.join(',')}, 4326), ${srid})`;
                     const type = srid === 4326 ? "geography" : "geometry";
+
+                    // Most general query
                     if (geoType !== "POLYGON" && geoType !== "MULTIPOLYGON" && (!advancedInfo.getSearchOn())) {
-                        sql = "SELECT " + fieldStr + " FROM (SELECT * FROM " + schemaQualifiedName + " WHERE " + filters + ") AS foo WHERE " + envelope + " AND round(ST_Distance(\"" + f_geometry_column + "\", ST_Transform(ST_GeomFromText('" + wkt + "'," + proj + ")," + srid + ")::" + type + ")) < " + distance;
-                        if (versioning) {
-                            sql = sql + " AND gc2_version_end_date IS NULL ";
-                        }
-                        sql = sql + " ORDER BY round(ST_Distance(\"" + f_geometry_column + "\", ST_Transform(ST_GeomFromText('" + wkt + "'," + proj + ")," + srid + ")))";
+                        sql = sql + "SELECT " + fieldStr + ",ST_Distance(\"the_geom\", qp.geom) AS vidi_query_point_distance FROM (SELECT * FROM " + schemaQualifiedName + " WHERE " + filters + ") AS foo CROSS JOIN vidi_query qp WHERE " + f_geometry_column + " && qp.envelope AND ST_DWithin(\"" + f_geometry_column + "\", qp.geom, " + distance + ")";
+                        sql = sql + " ORDER BY vidi_query_point_distance ASC";
+                        qstore[index].custom_data = "";
+
+                    // If polygon, just check for intersection - large polygons can be slow for distance.
                     } else {
-                        sql = "SELECT " + fieldStr + " FROM (SELECT * FROM " + schemaQualifiedName + " WHERE " + filters + ") AS foo WHERE ST_Intersects(ST_Transform(ST_geomfromtext('" + wkt + "'," + proj + ")," + srid + ")," + f_geometry_column + ")";
-                        if (versioning) {
-                            sql = sql + " AND gc2_version_end_date IS NULL ";
-                        }
+                        sql = sql + "SELECT " + fieldStr + " FROM " + schemaQualifiedName + " CROSS JOIN vidi_query qp WHERE " + filters + " AND " + f_geometry_column + " && qp.geom AND ST_Intersects(" + f_geometry_column + ", qp.geom)";
                         qstore[index].custom_data = "";
                     }
                 }
             } else {
+                // If we use an arbitrary where-clause
                 sql = "SELECT " + fieldStr + " FROM " + schemaQualifiedName + " WHERE " + whereClause;
-                if (versioning) {
-                    sql = sql + " AND gc2_version_end_date IS NULL ";
-                }
                 qstore[index].custom_data = "";
             }
 
+            // Add versioning
+            if (versioning) {
+                sql = sql + " AND gc2_version_end_date IS NULL ";
+            }
+            // Add limit
             sql = sql + " LIMIT " + (num || 10000);
+
+            // Debug the query sent
+            //console.log(`SQL for layer ${value}: ${sql}`);
 
             qstore[index].onLoad = onLoad || callBack.bind(this, qstore[index], isEmpty, notQueryable, layerTitle, fieldConf, layers, count);
             qstore[index].sql = sql;
