@@ -2680,7 +2680,13 @@ module.exports = {
 
             // Append to inner group container
             // ===============================
-            $("#group-" + base64GroupName).append(`<div id="collapse${base64GroupName}" class="accordion-body collapse"></div>`);
+
+            // if showLayerGroupChildren is false, forcibly hide the elements - keep the dom
+            if (window.vidiConfig.showLayerGroupChildren) {
+                $("#group-" + base64GroupName).append(`<div id="collapse${base64GroupName}" class="accordion-body collapse"></div>`);
+            } else {
+                $("#group-" + base64GroupName).append(`<div id="collapse${base64GroupName}" class="accordion-body collapse" style="display: none;"></div>`);
+            }
         }
 
         // Get layers that belong to current group

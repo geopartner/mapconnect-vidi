@@ -107,6 +107,7 @@ module.exports = {
             mode: 0,
             layerTreeFilterPlaceholder: null,
             allowDownloadLayer: true,
+            showLayerGroupChildren: false,
         };
         // Set default for unset props
         for (let prop in defaults) {
