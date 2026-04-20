@@ -927,7 +927,7 @@ module.exports = {
                             fields.push({title: property.value.alias || property.key, value});
                             fieldLabel = (property.value.alias !== null && property.value.alias !== "") ? property.value.alias : property.key;
                             if (feature.properties[property.key] !== undefined) {
-                                out.push([property.key, property.value.sort_id, fieldLabel, property.value.link, property.value.template, property.value.content]);
+                                out.push([property.key, property.value.sort_id, fieldLabel, property.value.link, property.value.template, property.value.content, property.restrictions || null]);
                             }
                         }
                     });
