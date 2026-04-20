@@ -10,12 +10,13 @@ const router = express.Router();
 const fetch = require("node-fetch");
 const zlib = require("zlib");
 const config = require("../config/config.js");
+const configExtensions = require("../config/gp/config.extensions.js");
 
 DATAHUB = {
   host: config.gc2.host,
-  user: config.datahub.user,
-  key: config.datahub.key,
-  schema: config.datahub.schema || "api"
+  user: configExtensions.datahub.user,
+  key: configExtensions.datahub.key,
+  schema: configExtensions.datahub.schema || "api"
 };
 
 const queryDatahub = async (sql, onlyProperties = false) => {

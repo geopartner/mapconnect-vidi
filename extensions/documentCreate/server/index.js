@@ -11,6 +11,7 @@ var router = express.Router();
 var fs = require("fs");
 var moment = require("moment");
 var config = require("../../../config/config.js");
+var configExtensions = require("../../../config/gp/config.extensions.js");
 var session = require("../../session/server");
 const { VERSION } = require("underscore");
 
@@ -33,10 +34,10 @@ const ADRCASETYPEID = 50;
 const ADGADRCASETYPEID = 34;
 const SYNCSOURCE = 24;
 const OISSYNCSOURCE = 10;
-const APPKEY = config.extensionConfig.documentCreate.APPKEY;
-const USERKEY = config.extensionConfig.documentCreate.USERKEY;
-const USERNAME = config.extensionConfig.documentCreate.USERNAME;
-const DN_URI = config.extensionConfig.documentCreate.DN_URI;
+const APPKEY = configExtensions.documentCreate.APPKEY;
+const USERKEY = configExtensions.documentCreate.USERKEY;
+const USERNAME = configExtensions.documentCreate.USERNAME;
+const DN_URI = configExtensions.documentCreate.DN_URI;
 const NODETYPECASE = 3;
 // status bør være 5, men fejler ved post til DN
 const STATUSCODE = 5;
