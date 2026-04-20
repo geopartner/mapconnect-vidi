@@ -28,9 +28,10 @@ router.get('/api/dataforsyningen/*', (req, response) => {
     let host = 'https://api.dataforsyningen.dk';
 
     // Due to dataforsyningen modernization, these services change their url, prefixing wms or wmts.
-    // lists updated: 2021-08-21
+    // lists updated: 2026-04-20
     // https://dataforsyningen.dk/news/5042
-    // Live change list: https://dataforsyningen.dk/asset/PDF/Mapningstabel/dataforsyningen_api_2025.xlsx
+    // latest change list: https://dataforsyningen.dk/asset/PDF/Mapningstabel/dataforsyningen_api_2026.xlsx
+
     let changedWMSServices = [
         'orto_sommer_1999',
         'orto_sommer_2002',
@@ -40,10 +41,45 @@ router.get('/api/dataforsyningen/*', (req, response) => {
         'forvaltning2',
         'kommunikation',
         'orto_foraar',
-        'grid'
+        'grid',
+        'dhm',
+        'skikkelsesdata',
+        'au_inspire',
+        'tn_inspire',
+        'sfs_matermay_inspire',
+        'cp_inspire',
+        'elevation_inspire',
+        'building_inspire',
+        'bu_bbr_inspire',
+        'gn_inspire',
+        'am_inspire',
+        'hy_inspire',
+        'lc_inspire',
+        'land_use_inspire',
+        'ad_inspire',
+        'af_inspire',
+        'su_inspire',
+        'oi_inspire',
+        'hip_dtg_500m',
+        'hip_dtg_10m_100m',
+        'hip_gvs_100m',
+        'hip_oplande',
+        'hip_statistics',
+        'hip_time',
+        'hip_vandfoering',
+        'hip_boundary_conditions_period_mean',
+        'ddm'
     ];
+
     let changedWMTSServices = [
-        'dhm_bluespot_ekstremregn'
+        'dhm_bluespot_ekstremregn',
+        'dhm_havvandpaaland',
+        'dhm_flow_ekstremregn',
+
+    ];
+
+    let changedWFSServices = [
+        'skikkelsesdata',
     ];
 
     let serviceName = req.url.substring('/api/dataforsyningen/'.length).split('?')[0];
