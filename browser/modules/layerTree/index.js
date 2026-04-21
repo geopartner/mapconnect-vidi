@@ -1,6 +1,7 @@
 /*
  * @author     Alexander Shumilov
  * @copyright  2013-2023 MapCentia ApS
+ * @copyright  2026-     Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -2679,7 +2680,13 @@ module.exports = {
 
             // Append to inner group container
             // ===============================
-            $("#group-" + base64GroupName).append(`<div id="collapse${base64GroupName}" class="accordion-body collapse"></div>`);
+
+            // if showLayerGroupChildren is false, forcibly hide the elements - keep the dom
+            if (window.vidiConfig.showLayerGroupChildren) {
+                $("#group-" + base64GroupName).append(`<div id="collapse${base64GroupName}" class="accordion-body collapse"></div>`);
+            } else {
+                $("#group-" + base64GroupName).append(`<div id="collapse${base64GroupName}" class="accordion-body collapse" style="display: none;"></div>`);
+            }
         }
 
         // Get layers that belong to current group
@@ -3705,11 +3712,14 @@ module.exports = {
                     let componentContainerId = `layer-settings-download-${layerKey.replace('.', '-')}`;
                     $(layerContainer).find('.js-layer-settings-download').append(`<div id="${componentContainerId}"></div>`);
                     if (document.getElementById(componentContainerId)) {
-                        createRoot(document.getElementById(componentContainerId)).render(<Download
-                                layer={layer}
-                                onApplyDownload={_self.onApplyDownloadHandler}
-                            />
-                        );
+                        //If we allow download, render the component
+                        if (window.vidiConfig.allowDownloadLayer) {
+                            createRoot(document.getElementById(componentContainerId)).render(<Download
+                                    layer={layer}
+                                    onApplyDownload={_self.onApplyDownloadHandler}
+                                />
+                            );
+                        }
                     } else {
                         console.error(`Unable to find the download container`);
                     }

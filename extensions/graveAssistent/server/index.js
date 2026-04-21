@@ -11,6 +11,7 @@ var http = require('http');
 var https = require('https');
 var moment = require('moment');
 var config = require('../../../config/config.js');
+var configExtension = require("../../../config/gp/config.extensions.js");
 var he = require('he');
 var fetch = require('node-fetch');
 const wkt = require('wkt');
@@ -810,8 +811,8 @@ function DONOTHING(contentType, ext, base64) {
 // Use GEOLAMBDA
 function GEOLAMBDA(layername, format, apikey, userstring, foresp, schema = undefined) {
     // hit geolambda function
-    var url = config.extensionConfig.graveAssistent.geolambdaUrl
-    var key = config.extensionConfig.graveAssistent.geolambdaKey
+    var url = configExtension.graveAssistent.geolambdaUrl
+    var key = configExtension.graveAssistent.geolambdaKey
 
     var postData = {
         'parameters': {

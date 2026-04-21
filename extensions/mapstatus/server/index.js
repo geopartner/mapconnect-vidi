@@ -7,6 +7,7 @@
 var express = require("express");
 var router = express.Router();
 var config = require("../../../config/config.js");
+var configExtension = require("../../../config/gp/config.extensions.js");
 var moment = require("moment");
 var fetch = require("node-fetch");
 
@@ -588,7 +589,7 @@ router.post(
     });
 
 async function getExcelFromLambda(projektInfo) {
-    const url = config.extensionConfig.mapstatus.excelLambdaUrl;
+    const url = configExtension.mapstatus.excelLambdaUrl;
     const argBody = (typeof projektInfo === 'string') ? projektInfo : JSON.stringify(projektInfo);
     return new Promise(async (resolve, reject) => {
         try {

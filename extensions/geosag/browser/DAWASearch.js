@@ -337,7 +337,7 @@ class ResultsList extends React.Component {
   render() {
     if (this.props.results.length > 0) {
       return (
-        <div className="list-group position-absolute w-100 mt-3 pt-4" style={{ zIndex: 1050 }}>
+        <div className="list-group position-absolute w-100" style={{ top: "100%", zIndex: 1050 }}>
           {this.props.results.map((r, index) => (
             <button
               key={index}

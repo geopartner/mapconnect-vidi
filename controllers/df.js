@@ -9,11 +9,12 @@ const express = require('express');
 const request = require('request');
 const router = express.Router();
 const config = require('../config/config.js');
+const extensionsConfig = require('../config/gp/config.extensions.js');
 
 router.get('/api/datafordeler/*', (req, response) => {
-    const userName = config?.df?.datafordeler?.username;
-    const pwd = config?.df?.datafordeler?.password;
-    const token = config?.df?.datafordeler?.token;
+    const userName = extensionsConfig?.df?.datafordeler?.username;
+    const pwd = extensionsConfig?.df?.datafordeler?.password;
+    const token = extensionsConfig?.df?.datafordeler?.token;
     const host = 'https://services.datafordeler.dk';
     let creds = token ? `&token=${token}` : `&username=${userName}&password=${pwd}`;
     let requestURL = host + decodeURIComponent(req.url.substr(17)) + creds;
@@ -21,15 +22,16 @@ router.get('/api/datafordeler/*', (req, response) => {
     get(requestURL, response);
 });
 router.get('/api/dataforsyningen/*', (req, response) => {
-    const userName = config?.df?.dataforsyningen?.username;
-    const pwd = config?.df?.dataforsyningen?.password;
-    const token = config?.df?.dataforsyningen?.token;
+    const userName = extensionsConfig?.df?.dataforsyningen?.username;
+    const pwd = extensionsConfig?.df?.dataforsyningen?.password;
+    const token = extensionsConfig?.df?.dataforsyningen?.token;
     let host = 'https://api.dataforsyningen.dk';
 
     // Due to dataforsyningen modernization, these services change their url, prefixing wms or wmts.
-    // lists updated: 2021-08-21
+    // lists updated: 2026-04-20
     // https://dataforsyningen.dk/news/5042
-    // Live change list: https://dataforsyningen.dk/asset/PDF/Mapningstabel/dataforsyningen_api_2025.xlsx
+    // latest change list: https://dataforsyningen.dk/asset/PDF/Mapningstabel/dataforsyningen_api_2026.xlsx
+
     let changedWMSServices = [
         'orto_sommer_1999',
         'orto_sommer_2002',
@@ -39,10 +41,45 @@ router.get('/api/dataforsyningen/*', (req, response) => {
         'forvaltning2',
         'kommunikation',
         'orto_foraar',
-        'grid'
+        'grid',
+        'dhm',
+        'skikkelsesdata',
+        'au_inspire',
+        'tn_inspire',
+        'sfs_matermay_inspire',
+        'cp_inspire',
+        'elevation_inspire',
+        'building_inspire',
+        'bu_bbr_inspire',
+        'gn_inspire',
+        'am_inspire',
+        'hy_inspire',
+        'lc_inspire',
+        'land_use_inspire',
+        'ad_inspire',
+        'af_inspire',
+        'su_inspire',
+        'oi_inspire',
+        'hip_dtg_500m',
+        'hip_dtg_10m_100m',
+        'hip_gvs_100m',
+        'hip_oplande',
+        'hip_statistics',
+        'hip_time',
+        'hip_vandfoering',
+        'hip_boundary_conditions_period_mean',
+        'ddm'
     ];
+
     let changedWMTSServices = [
-        'dhm_bluespot_ekstremregn'
+        'dhm_bluespot_ekstremregn',
+        'dhm_havvandpaaland',
+        'dhm_flow_ekstremregn',
+
+    ];
+
+    let changedWFSServices = [
+        'skikkelsesdata',
     ];
 
     let serviceName = req.url.substring('/api/dataforsyningen/'.length).split('?')[0];

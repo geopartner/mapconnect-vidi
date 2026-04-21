@@ -131,6 +131,8 @@ public/version*
 # MapConnect files
 config/gp/*.js
 .vscode/
+scripts/**
+!scripts/upstream.sh
 
 # built .map files
 *.map
