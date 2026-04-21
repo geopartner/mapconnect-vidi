@@ -35,6 +35,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
+## [2026.4.1] - 2026-20-4
+### Fixed
+- Array property check i Editor, which without an array field will not work.
+- 
+## [2026.4.0] - 2026-15-4
+### Added
+- New config option `extensionConfig.conflictSearch.getParcelFromAddress` for setting how address search is working, when
+  `extensionConfig.conflictSearch.getProperty` is `false`. If set to `true` address search will seacrh with the parcel
+  instead of the address point.
 
 ## [2026.3.5] - 2026-30-3
 ### Added
