@@ -61,4 +61,9 @@ rm -rf "$TEMP_UPSTREAM"
 
 echo "✅ Done! Changed files are in $OUTPUT_DIR/"
 echo ""
-echo "Next: Review and merge the changes into your repo"
+echo "📋 Copying files to repo root for git management..."
+cp -rf "$OUTPUT_DIR"/* ..
+rm -rf "$OUTPUT_DIR"
+
+echo "✅ Files integrated into repo. Run 'git status' to review."
+echo "   Discard changes with 'git checkout .' if needed."
