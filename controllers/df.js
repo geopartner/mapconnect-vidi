@@ -12,9 +12,9 @@ const config = require('../config/config.js');
 const extensionsConfig = require('../config/gp/config.extensions.js');
 
 router.get('/api/datafordeler/*', (req, response) => {
-    const userName = extensionsConfig?.df?.datafordeler?.username;
-    const pwd = extensionsConfig?.df?.datafordeler?.password;
-    const token = extensionsConfig?.df?.datafordeler?.token;
+    const userName = extensionsConfig?.datafordeler?.username;
+    const pwd = extensionsConfig?.datafordeler?.password;
+    const token = extensionsConfig?.datafordeler?.token;
     const host = 'https://services.datafordeler.dk';
     let creds = token ? `&token=${token}` : `&username=${userName}&password=${pwd}`;
     let requestURL = host + decodeURIComponent(req.url.substr(17)) + creds;
@@ -22,9 +22,9 @@ router.get('/api/datafordeler/*', (req, response) => {
     get(requestURL, response);
 });
 router.get('/api/dataforsyningen/*', (req, response) => {
-    const userName = extensionsConfig?.df?.dataforsyningen?.username;
-    const pwd = extensionsConfig?.df?.dataforsyningen?.password;
-    const token = extensionsConfig?.df?.dataforsyningen?.token;
+    const userName = extensionsConfig?.dataforsyningen?.username;
+    const pwd = extensionsConfig?.dataforsyningen?.password;
+    const token = extensionsConfig?.dataforsyningen?.token;
     let host = 'https://api.dataforsyningen.dk';
 
     // Due to dataforsyningen modernization, these services change their url, prefixing wms or wmts.
