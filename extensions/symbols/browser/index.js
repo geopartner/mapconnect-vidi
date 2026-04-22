@@ -178,8 +178,14 @@ const closePopup = () => {
 }
 
 const handleDragEnd = (e) => {
-    const svg = e.target.querySelector("svg-container").shadowRoot.innerHTML;
-    //const svg = e.target.querySelector("svg-container").innerHTML;
+    let svg = '';
+    // if the svg-container has a shadow root, use that instead (for better encapsulation of styles)
+    if (e.target.querySelector("svg-container").shadowRoot) {
+        svg = e.target.querySelector("svg-container").shadowRoot.innerHTML;
+    } else {
+        svg = e.target.querySelector("svg-container").innerHTML;
+    }
+    
     const targetElements = document.elementsFromPoint(e.clientX, e.clientY);
     // Don't do anything if symbols is dropped on container
     for (let i = 0; i < targetElements.length; i++) {
