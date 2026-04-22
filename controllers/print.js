@@ -317,18 +317,17 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                     } else {
                         let width, height;
                         browser.newPage().then(page => {
-                            const check = async () => {
-                                const isWebGLSupported = await page.evaluate(() => {
-                                    const canvas = document.createElement('canvas');
-                                    return !!(window.WebGLRenderingContext && canvas.getContext('webgl'));
-                                });
-
-                                if (!isWebGLSupported) {
-                                    console.error('WebGL is not supported in this environment.');
-                                }
-                            }
-                            //check();
-
+                            // Comment this out because check shadows the outer variable causeing infinite wait.
+                            //const check = async () => {
+                            //    const isWebGLSupported = await page.evaluate(() => {
+                            //        const canvas = document.createElement('canvas');
+                            //        return !!(window.WebGLRenderingContext && canvas.getContext('webgl'));
+                            //    });
+                            //    if (!isWebGLSupported) {
+                            //        console.error('WebGL is not supported in this environment.');
+                            //    }
+                            //}
+                            ////check();
                             const pxWidth = 795;
                             const pxHeight = 1125;
                             switch (q.pageSize) {
@@ -425,69 +424,93 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                         console.error('HTTP ERROR (PNG):', response.status(), response.url());
                                     }
                                 });
-                                
+
                                 page.on('console', msg => {
                                     console.log(msg.text());
-                                    if (msg.text().indexOf(`Vidi is now loaded`) !== -1) {
-                                        console.log('App was loaded, generating PNG');
-                                        setTimeout(() => {
-                                            page.evaluate(`$('.leaflet-top').remove();$('#loadscreen').remove();`).then(() => {
-                                                page.screenshot({
-                                                    encoding: `base64`
-                                                }).then(data => {
-                                                    let img = new Buffer.from(data, 'base64');
+                                    if (msg.text().indexOf(`No active layers in print`) !== -1) { // Print as soon Vidi is loaded
+                                        go = true;
+                                    }
+                                    if (msg.text().indexOf(`Active layers in print`) !== -1) { // Wait until layers from snapshot is loaded
+                                        go = false; // Wait for overlays to load
+                                    }
+                                    if (
+                                        // Print as soon Vidi is done loading
+                                        (msg.text().indexOf(`Vidi is now loaded`) !== -1 && go) ||
+                                        // Wait until all overlays and basemap are loaded
+                                        (msg.text().indexOf(`Legend loaded`) !== -1 && !go)
+                                    ) {
+                                        if (!check) {
+                                            check = true;
+                                            console.log('App was loaded, generating PNG');
+                                            setTimeout(() => {
+                                                page.evaluate(`$('.leaflet-top').remove();$('#loadscreen').remove();`).then(() => {
+                                                    page.screenshot({
+                                                        encoding: `base64`
+                                                    }).then(data => {
+                                                        let img = new Buffer.from(data, 'base64');
 
-                                                    console.log('Only one page. No need to merge.');
-                                                    if (!returnImage) {
-                                                        fs.writeFile(`${__dirname}/../public/tmp/print/png/${key}.png`, img, (err) => {
-                                                            if (q.bounds.length === 1) { // Only one page. No need to merge
-                                                                // Increment print counter for successful PNG
-                                                                const scale = q.scale || 'unknown';
-                                                                const template = q.tmpl || 'default';
-                                                                const db = q.db || 'unknown';
-                                                                if (printMetrics) {
-                                                                    printMetrics.counter.inc({ scale, format: 'png', status: 'success', template, db });
+                                                        console.log('Only one page. No need to merge.');
+                                                        if (!returnImage) {
+                                                            fs.writeFile(`${__dirname}/../public/tmp/print/png/${key}.png`, img, (err) => {
+                                                                if (q.bounds.length === 1) { // Only one page. No need to merge
+                                                                    // Increment print counter for successful PNG
+                                                                    const scale = q.scale || 'unknown';
+                                                                    const template = q.tmpl || 'default';
+                                                                    const db = q.db || 'unknown';
+                                                                    if (printMetrics) {
+                                                                        printMetrics.counter.inc({ scale, format: 'png', status: 'success', template, db });
+                                                                    }
+                                                                    response.send({success: true, key, uri, "format": "png"});
                                                                 }
-                                                                response.send({success: true, key, uri, "format": "png"});
+                                                                // Stop timer for PNG success
+                                                                if (printMetrics) {
+                                                                    const durationMs = Date.now() - startTime;
+                                                                    printMetrics.duration.observe(printLabels, durationMs);
+                                                                }
+                                                                headless.destroy(browser);
+                                                                console.log('Done #', count.n);
+                                                                count.n++;
+                                                            })
+                                                        } else {
+                                                            response.writeHead(200, {
+                                                                'Content-Type': 'image/png',
+                                                                'Content-Length': img.length
+                                                            });
+                                                            // Increment print counter for successful direct PNG return
+                                                            const scale = q.scale || 'unknown';
+                                                            const template = q.tmpl || 'default';
+                                                            const db = q.db || 'unknown';
+                                                            if (printMetrics) {
+                                                                printMetrics.counter.inc({ scale, format: 'png', status: 'success', template, db });
                                                             }
-                                                            // Stop timer for PNG success
+                                                            // Stop timer for direct PNG return
                                                             if (printMetrics) {
                                                                 const durationMs = Date.now() - startTime;
                                                                 printMetrics.duration.observe(printLabels, durationMs);
                                                             }
                                                             headless.destroy(browser);
-                                                            console.log('Done #', count.n);
-                                                            count.n++;
-                                                        })
-                                                    } else {
-                                                        response.writeHead(200, {
-                                                            'Content-Type': 'image/png',
-                                                            'Content-Length': img.length
-                                                        });
-                                                        // Increment print counter for successful direct PNG return
+                                                            response.end(img);
+                                                        }
+                                                    }).catch(error => {
+                                                        console.log(error);
+                                                        // Increment print counter for failed PNG
                                                         const scale = q.scale || 'unknown';
                                                         const template = q.tmpl || 'default';
                                                         const db = q.db || 'unknown';
                                                         if (printMetrics) {
-                                                            printMetrics.counter.inc({ scale, format: 'png', status: 'success', template, db });
+                                                            printMetrics.counter.inc({ scale, format: 'png', status: 'error', template, db });
                                                         }
-                                                        // Stop timer for direct PNG return
+                                                        // Stop timer for PNG error
                                                         if (printMetrics) {
                                                             const durationMs = Date.now() - startTime;
                                                             printMetrics.duration.observe(printLabels, durationMs);
                                                         }
                                                         headless.destroy(browser);
-                                                        response.end(img);
-                                                    }
+                                                        response.status(500);
+                                                        response.send(error);
+                                                    });
                                                 }).catch(error => {
-                                                    console.log(error);
-                                                    // Increment print counter for failed PNG
-                                                    const scale = q.scale || 'unknown';
-                                                    const template = q.tmpl || 'default';
-                                                    const db = q.db || 'unknown';
-                                                    if (printMetrics) {
-                                                        printMetrics.counter.inc({ scale, format: 'png', status: 'error', template, db });
-                                                    }
+                                                    console.log('Error while creating PNG');
                                                     // Stop timer for PNG error
                                                     if (printMetrics) {
                                                         const durationMs = Date.now() - startTime;
@@ -497,18 +520,8 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                                     response.status(500);
                                                     response.send(error);
                                                 });
-                                            }).catch(error => {
-                                                console.log('Error while creating PNG');
-                                                // Stop timer for PNG error
-                                                if (printMetrics) {
-                                                    const durationMs = Date.now() - startTime;
-                                                    printMetrics.duration.observe(printLabels, durationMs);
-                                                }
-                                                headless.destroy(browser);
-                                                response.status(500);
-                                                response.send(error);
-                                            });
-                                        }, delay);
+                                            }, delay);
+                                        }
                                     }
                                 });
                                 page.goto(url);

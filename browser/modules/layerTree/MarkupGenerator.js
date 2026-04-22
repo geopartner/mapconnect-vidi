@@ -186,11 +186,12 @@ class MarkupGenerator {
                                                                                                                     </span>
                                                                                                   </button>
                                                                                                   </span>
-                                                                                                  <span id="layer-tools-download">
-                                                                                                  <button href="javascript:void(0);" class="${toolBtnClass} js-toggle-download js-toggle-btn" data-toggle="tooltip" data-bs-placement="right" title="${__(`Download`)}">
-                                                                                                  <i data-container="body" class="bi bi-download"></i>
-                                                                                                  </button>
-                                                                                                  </span>
+                                                                                                  ${window.vidiConfig?.allowDownloadLayer ? `<span id="layer-tools-download">
+                                                                                                    <button href="javascript:void(0);" class="${toolBtnClass} js-toggle-download js-toggle-btn" data-toggle="tooltip" data-bs-placement="right" title="${__(`Download`)}">
+                                                                                                    <i data-container="body" class="bi bi-download"></i>
+                                                                                                    </button>
+                                                                                                    </span>` : ``}
+                                                                                                    
                                                                                                   </div>
                                                                                                   </div>
                                                                                                   <div class="js-toggle-layer-offline-mode-container" style="display: none;">

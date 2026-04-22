@@ -18,6 +18,10 @@ var Backbone = require('backbone');
 var debounce = require('lodash/debounce');
 const marked = require('marked');
 const mustache = require('mustache');
+
+import config from "../../config/config";
+let session = require('../../extensions/session/browser');
+
 var gc2table = (function () {
     "use strict";
     var isLoaded, object, init;
@@ -217,6 +221,12 @@ var gc2table = (function () {
 
         if (checkBox) {
             $(el + ' thead tr').append("<th data-field='" + pkey + "' data-checkbox='true'></th>");
+        }
+
+        // If the user is not authenticated, and alwaysActivate is true - keep editor element if exist.
+        // If alwaysActivate is false, remove editor element for non-authenticated users.
+        if (!session?.isAuthenticated() && config?.extensionConfig?.editor?.alwaysActivate === false) {
+            cm = cm.filter(column => column.dataIndex !== "editor");
         }
 
         $.each(cm, function (i, v) {
