@@ -338,25 +338,28 @@ module.exports = {
             let defaultTemplateWithBackBtn = false;
 
             // Back arrow to template if featureInfoTableOnMap is true
-            if ((featureInfoTableOnMap || forceOffCanvasInfo) && !backArrowIsAdded) {
+            if (featureInfoTableOnMap || forceOffCanvasInfo) {
                 defaultTemplateWithBackBtn = `
                                 <button class='btn btn-sm btn-outline-secondary mb-2 show-when-multiple-hits'>
                                     <i class='bi bi-arrow-left'></i> ${__("Back")}
                                 </button>` + defaultTemplate;
-                $(document).arrive('.show-when-multiple-hits', function (e, data) {
-                    $(this).on('click', function (e) {
-                        $("#modal-info-body").show();
-                        $("#alternative-info-container").hide();
-                        $("#click-for-info-slide .modal-title").empty();
-                        _self.getQstore()?.forEach(store => {
-                            $.each(store.layer._layers, function (i, v) {
-                                if (store.layer && store.layer.resetStyle) {
-                                    store.layer.resetStyle(v);
-                                }
-                            });
+                if (!backArrowIsAdded) {
+                    $(document).arrive('.show-when-multiple-hits', function (e, data) {
+                        $(this).on('click', function (e) {
+                            $("#modal-info-body").show();
+                            $("#alternative-info-container").hide();
+                            $("#click-for-info-slide .modal-title").empty();
+                            _self.getQstore()?.forEach(store => {
+                                $.each(store.layer._layers, function (i, v) {
+                                    if (store.layer && store.layer.resetStyle) {
+                                        store.layer.resetStyle(v);
+                                    }
+                                });
+                            })
                         })
                     })
-                })
+                    backArrowIsAdded = true;
+                }
             }
 
             if (typeof parsedMeta.tiles_selected_style !== "undefined" && parsedMeta.tiles_selected_style !== "") {
