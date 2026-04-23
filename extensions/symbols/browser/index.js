@@ -52,7 +52,7 @@ const htmlFragments = {
         <div class="tab-pane" role="tabpanel">
             <div class="symbols-cover-text position-absolute" style="top: 50%; left: 50px; display: none; opacity: 0; font-weight: 600; color: #333333">Zoom tættere på</div>
             <div class="symbols-cover position-relative">
-                <div class="d-flex flex-wrap gap-4"></div>
+                <div class="row row-cols-4 g-3"></div>
             </div>
             <div class="symbols-desc"></div>
         </div>
@@ -407,7 +407,43 @@ class SVGContainer extends HTMLElement {
     constructor() {
         super();
         const shadowRoot = this.attachShadow({mode: 'open'});
-        shadowRoot.append(...this.childNodes);
+        
+        // Add styles to constrain SVG within container
+        const style = document.createElement('style');
+        style.textContent = `
+            :host {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            svg {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+                display: none;
+            }
+            ::slotted(svg) {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+            }
+        `;
+        shadowRoot.appendChild(style);
+        
+        const slot = document.createElement('slot');
+        shadowRoot.appendChild(slot);
+        
+        // Move child nodes to shadow DOM (kept for compatibility with existing innerHTML appends)
+        Array.from(this.childNodes).forEach(node => {
+            shadowRoot.appendChild(node.cloneNode(true));
+        });
     }
 }
 
@@ -499,7 +535,7 @@ module.exports = {
         utils.createMainTab(exId, __("Symbols"), __("Info"), require('./../../../browser/modules/height')().max, "bi bi-flower1", false, exId);
 
         const gui = `
-                      <div class="symbol-tools d-flex gap-4 align-items-center mb-4">
+                      <div class="symbol-tools d-flex gap-4 align-items-center mb-4 px-3">
                             <div class="form-check form-switch">
                                 <label >
                                     <input id="vidi-symbols-lock" class="form-check-input" type="checkbox">${__("Lock")}
@@ -513,7 +549,7 @@ module.exports = {
                             <!-- <button class="btn" id="vidi-symbols-store">${__("Save in db")}</button> -->
                     </div>
                     
-                    <div id="vidi_symbols"></div>
+                    <div id="vidi_symbols" class="px-3"></div>
                     `
         $(`#${exId}`).html(gui);
 
@@ -559,16 +595,29 @@ module.exports = {
                                 let id = createId();
                                 for (const id in symbols[group]) {
                                     if (id && symbols[group].hasOwnProperty(id)) {
-                                        const parser = new DOMParser();
-                                        const doc = parser.parseFromString(symbols[group][id].svg, "image/svg+xml");
-                                        let text = doc.getElementsByTagName("desc")?.[0]?.textContent
-                                        let desc = text || '';
+                                        let desc = symbols[group][id].desc || undefined;
                                         let svg = $(inner.clone()[0]).append(`<svg-container>${symbols[group][id].svg}</svg-container>`);
                                         svg.attr('data-file', id);
                                         svg.attr('data-group', group);
-                                        let e = $('<div class="p-1 text-center symbol-text-wrapper">');
-                                        e.append(svg[0], `<div style="font-size: 8pt">${desc}</div>`)
-                                        outer.find('.d-flex').append(e);
+                                        let col = $('<div class="col-3">')
+                                        let card = $('<div class="card h-100" style="transition: all 0.2s ease; cursor: grab;"></div>');
+                                        card.on('mouseenter', function() {
+                                            $(this).addClass('shadow bg-light');
+                                        }).on('mouseleave', function() {
+                                            $(this).removeClass('shadow bg-light');
+                                        });
+                                        let iconWrapper = $('<div class="card-body d-flex align-items-center justify-content-center" style="height: 80px; overflow: hidden;"></div>');
+
+                                        iconWrapper.append(svg[0]);
+                                        card.append(iconWrapper);
+                                        if (desc) {
+                                            let labelWrapper = $('<div class="card-footer bg-body border-top py-2 px-2 text-center w-100" style="min-height: 40px;"></div>');
+                                            let label = $('<small class="text-muted d-block text-truncate" style="overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4;"></small>').text(desc);
+                                            labelWrapper.append(label);
+                                            card.append(labelWrapper);
+                                        }
+                                        col.append(card);
+                                        outer.find('.row').append(col);
                                     }
                                 }
                                 let tab = $(`<li class="nav-item" role="presentation"><a id="symbol-tab-${u}" data-bs-toggle="pill" class="nav-link ` + (first ? ` active` : ``) + `" href="#_${id}" role="tab" data-toggle="tab">${group}</a></li>`);
