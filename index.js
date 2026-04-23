@@ -86,9 +86,53 @@ if (typeof config?.redis?.host === "string") {
         ttl: MAXAGE
     });
 } else {
+    let fs = require('fs');
+    const sessionsPath = "/tmp/sessions";
+    
+    // Ensure sessions directory exists
+    if (!fs.existsSync(sessionsPath)) {
+        fs.mkdirSync(sessionsPath, { recursive: true });
+    }
+    
+    // Clean up empty or corrupted session files
+    try {
+        const files = fs.readdirSync(sessionsPath);
+        for (const file of files) {
+            const filePath = path.join(sessionsPath, file);
+            const stats = fs.statSync(filePath);
+            // Remove empty files or files smaller than 3 bytes (too small to be valid JSON)
+            if (stats.size < 3) {
+                fs.unlinkSync(filePath);
+                console.log(`Removed corrupted session file: ${file}`);
+            }
+        }
+    } catch (error) {
+        console.error('Error cleaning session files:', error.message);
+    }
+    //
+    //// Suppress verbose logging from session-file-store in dev
+    //if (process.env.NODE_ENV !== 'production') {
+    //    const originalError = console.error;
+    //    const originalWarn = console.warn;
+    //    console.error = (...args) => {
+    //        const msg = args[0]?.toString?.() || '';
+    //        if (msg.includes('[session-file-store]')) {
+    //            return; // Silently ignore session-file-store errors in dev
+    //        }
+    //        originalError.apply(console, args);
+    //    };
+    //    console.warn = (...args) => {
+    //        const msg = args[0]?.toString?.() || '';
+    //        if (msg.includes('[session-file-store]')) {
+    //            return; // Silently ignore session-file-store warnings in dev
+    //        }
+    //        originalWarn.apply(console, args);
+    //    };
+    //}
+    
     let fileStore = require('session-file-store')(session);
     store = new fileStore({
-        path: "/tmp/sessions",
+        path: sessionsPath,
         ttl: MAXAGE
     });
 }
