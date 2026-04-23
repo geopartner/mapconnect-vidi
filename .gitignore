@@ -133,6 +133,7 @@ config/gp/*.js
 .vscode/
 scripts/**
 !scripts/upstream.sh
+config/config_constants.js
 
 # built .map files
 *.map
