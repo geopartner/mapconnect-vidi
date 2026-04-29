@@ -18,6 +18,7 @@ let exId = `login-modal-body`;
 const React = require("react");
 const {createRoot} = require("react-dom/client");
 let authWin;
+let modal;
 
 /**
  *
@@ -48,6 +49,7 @@ module.exports = {
                 userName = data.screen_name;
                 properties = data.properties;
                 parent.update();
+                parent.hideLoginModal();
                 if (authWin) {
                     authWin.close();
                 }
@@ -58,7 +60,6 @@ module.exports = {
     init: function () {
         let parent = this;
         let React = require('react');
-        let modal;
         try {
             modal = new bootstrap.Offcanvas('#login-modal');
             document.querySelector(".sign-in-btn")?.classList.remove("d-none");
@@ -66,6 +67,7 @@ module.exports = {
             console.warn("Login modal is not initialized.")
         }
 
+        
 
         // Check if signed in
         //===================
@@ -262,6 +264,12 @@ module.exports = {
 
     isStatusChecked: () => {
         return isStatusChecked;
+    },
+
+    hideLoginModal: function () {
+        if (modal) {
+            modal.hide();
+        }
     }
 
 };
