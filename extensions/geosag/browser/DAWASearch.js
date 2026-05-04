@@ -206,6 +206,15 @@ class DAWASearch extends React.Component {
 
           // Dont bring errors
           all.forEach((obj) => {
+            // Parse if it's a string
+            if (typeof obj === "string") {
+              try {
+                obj = JSON.parse(obj);
+              } catch (e) {
+                console.warn("Failed to parse result:", obj);
+                return;
+              }
+            }
             if (obj.hasOwnProperty("tekst")) {
               cleaned.push(obj);
             }
@@ -295,8 +304,8 @@ class DAWASearch extends React.Component {
     var s = this.state;
 
     return (
-      <div className="d-flex col-12 mx-auto position-relative">
-        <div className="input-group">
+      <div className="d-flex col-12 mx-auto position-relative" style={{ overflow: "visible" }}>
+        <div className="input-group position-relative w-100">
           <input
             type="text"
             id="searchInput"
@@ -315,15 +324,15 @@ class DAWASearch extends React.Component {
               <i className="bi bi-x"></i>
             </button>
           )}
+          {s.searchResults.length > 0 && (
+            <ResultsList
+              results={s.searchResults}
+              _handleResult={this._handleResult}
+              q={s.searchTerm}
+              t={s.triggerAtChar}
+            />
+          )}
         </div>
-        {s.searchResults.length > 0 && (
-          <ResultsList
-            results={s.searchResults}
-            _handleResult={this._handleResult}
-            q={s.searchTerm}
-            t={s.triggerAtChar}
-          />
-        )}
       </div>
     );
   }
