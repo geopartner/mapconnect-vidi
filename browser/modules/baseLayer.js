@@ -698,6 +698,12 @@ module.exports = module.exports = {
                 let BLmaxZoom = bl.maxZoom ? bl.maxZoom : 20;
                 let BLmaxNativeZoom = bl.maxNativeZoom ? bl.maxNativeZoom : 18;
 
+                // If we are printing, make sure to set singleTile true for WMS layers to avoid missing tiles in the print.
+                if ((urlVars.px || urlVars.py) && bl.type === "wms") {
+                    bl.singleTile = true;
+                    console.log(`Forcing base layer with id ${id} into singleTile`);
+                }
+
 
                 if (bl?.type === "WMTS") {
                     result = cloud.get().addWMTSBaselayer(bl.url, {
