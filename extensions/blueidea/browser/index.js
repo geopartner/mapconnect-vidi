@@ -888,7 +888,11 @@ module.exports = {
             this.refreshProjectLayer();
           }
         } catch (error) {
-          this.createSnack(__("Error in list") + ": " + error);
+          if (error && error.responseJSON.message) {
+            this.createSnack(__("Error in list") + ": " + error.responseJSON.message);
+          } else {
+            this.createSnack(__("Error in list") + ": " + error);
+          }
           console.warn(error);
         }
       };
