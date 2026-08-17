@@ -328,9 +328,13 @@ module.exports = {
         }, 5);
         if (ti) {
             $('#print-title').val(decodeURIComponent(ti));
+        } else {
+            $('#print-title').val("");
         }
         if (cm) {
             $('#print-comment').val(decodeURIComponent(cm));
+        } else {
+            $('#print-comment').val("");
         }
         if (l) {
             $("#add-legend-btn").prop("checked", l === "inline");
