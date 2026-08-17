@@ -104,8 +104,25 @@ module.exports = {
         });
         state.listenTo(MODULE_ID, _self);
         state.listen(MODULE_ID, `state_change`);
+
+        // On init, load the print state from the application state if it exists
+        state.getState().then(applicationState => {
+            console.log("Application state loaded for print module", applicationState.modules.print, applicationState.modules.print.sticky);
+            if (typeof applicationState.modules.print !== "undefined") {
+                let params = applicationState.modules.print;
+                for (let i = 0; i < params.bounds.length; i++) {
+                    boxCount = i;
+                    _self.control(false,
+                        params.scales, params.tmpl, params.pageSize,
+                        params.orientation, params.legend,
+                        params.bounds[i], params.scale, params.title, params.comment, params.sticky, false);
+                }
+            }
+        });
+
         backboneEvents.get().on("end:print", function (response) {
-            console.log("Response", response)
+            // When printing is done, show the download and open buttons
+            //console.log("Response", response)
             $("#open-pdf, #open-pdf-toggle").show();
             if (response.format === "pdf") {
                 $("#download-pdf, #open-pdf").attr("href", "/tmp/print/pdf/" + response.key + ".pdf");
@@ -119,9 +136,11 @@ module.exports = {
             $("#start-print-btn").find("span").hide();
             $(".dropdown-toggle.start-print-btn").prop("disabled", false);
             // GeoEnviron
-            console.log("GEMessage:LaunchURL:" + urlparser.urlObj.protocol + "://" + urlparser.urlObj.host + "/tmp/print/pdf/" + response.key + ".pdf");
+            // GeoEnviron
+            //console.log("GEMessage:LaunchURL:" + urlparser.urlObj.protocol + "://" + urlparser.urlObj.host + "/tmp/print/pdf/" + response.key + ".pdf");
         });
         $("#start-print-btn").on("click", function () {
+            // When we start printing, hide the download and open buttons until the print is done
             $("#open-pdf, #open-pdf-toggle").hide();
             const format = $("#start-print-png-btn").val();
             if (_self.print("end:print", null, format === "png")) {
@@ -174,7 +193,8 @@ module.exports = {
         }
         $("#print-sticky").unbind("change");
         $("#print-sticky").change(function (e) {
-            alreadySetFromState = true;
+            //alreadySetFromState = true;
+            backboneEvents.get().trigger(`${MODULE_ID}:state_change`);
         });
         $("#select-scale").unbind("change");
         $("#select-scale").change(function (e) {
