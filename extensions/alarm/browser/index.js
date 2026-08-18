@@ -10,7 +10,7 @@ import proj4 from "proj4";
 import ProjectModel from "./ProjectModel.js";
 
 
-import {VentilModel, VentilProperties } from "./VentilModel.js";
+import { VentilModel, VentilProperties } from "./VentilModel.js";
 
 import {
   buffer as turfBuffer,
@@ -186,18 +186,18 @@ const findMatriklerInPolygon = function (feature, is_wkb = false) {
       if (!is_wkb) {
         query.polygon = JSON.stringify(feature.geometry.coordinates)
 
-      // Send the query to the server
-      $.ajax({
-        url: "/api/datahub/jordstykker",
-        type: "GET",
-        data: query,
-        success: function (data) {
-          resolve(data);
-        },
-        error: function (data) {
-          reject(data);
-        },
-      });
+        // Send the query to the server
+        $.ajax({
+          url: "/api/datahub/jordstykker",
+          type: "GET",
+          data: query,
+          success: function (data) {
+            resolve(data);
+          },
+          error: function (data) {
+            reject(data);
+          },
+        });
 
       } else {
         query.wkb = feature;
@@ -281,25 +281,7 @@ module.exports = {
   init: function () {
     var parentThis = this;
 
-    // Set up draw module for blueIdea
-
-    // We inject the buttons and callbacks here
-    let draw_selector = "#draw-content > div.d-flex.justify-content-around.mb-3"
-
-    // add the buttons
-    $(draw_selector).append(`
-      <div id="_draw_blueidea_group" class="" role="group">
-        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        BlueIdea
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="_draw_blueidea_group">
-        <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_blueidea_with_selected">Send selected to Blueidea</a></li>
-        <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_blueidea_with_all">Send alle til Blueidea</a></li>
-        </ul>
-      </div>
-    `);
-
-    // Define events
+       // Define events
 
     /*
      * This function queries the blueidea API with the selected drawings
@@ -316,7 +298,7 @@ module.exports = {
       // for each layer in drawnItems, get geojson
       let drawnItems = draw.getDrawItems();
       // clear previous results 
-      _clearAll(); 
+      _clearAll();
       backboneEvents.get().trigger(`${exId}:clearAll`);// måske overkill. Denne er sikkert nok og _ clearAll kan undværes
 
       for (const layer of drawnItems.getLayers()) {
@@ -336,7 +318,7 @@ module.exports = {
       }
     };
 
-    const makeBlueIdeaWithAll = function() {
+    const makeBlueIdeaWithAll = function () {
       // get geojson from all drawings
       var geojson = {
         type: "FeatureCollection",
@@ -349,7 +331,7 @@ module.exports = {
       // for each layer in drawnItems, get geojson
       let drawnItems = draw.getDrawItems();
       drawnItems.eachLayer(function (layer) {
-          geojson.features.push(layer.toGeoJSON(GEOJSON_PRECISION));
+        geojson.features.push(layer.toGeoJSON(GEOJSON_PRECISION));
       });
 
       // if no features, return
@@ -363,18 +345,18 @@ module.exports = {
       }
     };
 
-    const showBlueIdea = function() {
+    const showBlueIdea = function () {
       const e = document.querySelector('#main-tabs a[href="#blueidea-content"]');
       if (e) {
-          bootstrap.Tab.getInstance(e).show();
-          e.click();
+        bootstrap.Tab.getInstance(e).show();
+        e.click();
       } else {
-          console.warn(`Unable to locate #blueidea-content`)
+        console.warn(`Unable to locate #blueidea-content`)
       }
     }
 
     // add the event listeners
-    $("#_draw_make_blueidea_with_selected").on("click", function() {
+    $("#_draw_make_blueidea_with_selected").on("click", function () {
       let drawing = draw.getSelectedDrawing();
       if (!drawing) {
         alert("Vælg en tegning");
@@ -383,7 +365,7 @@ module.exports = {
       makeBlueIdeaWithSelected(drawing);
     });
 
-    $("#_draw_make_blueidea_with_all").on("click", function() {
+    $("#_draw_make_blueidea_with_all").on("click", function () {
       makeBlueIdeaWithAll();
     });
 
@@ -443,12 +425,12 @@ module.exports = {
      *
      */
     class Alarm extends React.Component {
-      static get Aktive_brud_layeName() {  return 'lukkeliste.aktive_brud'}
-      static get Forbrugere_layerName() {  return 'lukkeliste.vw_forbrugere'}
-      
+      static get Aktive_brud_layeName() { return 'lukkeliste.aktive_brud' }
+      static get Forbrugere_layerName() { return 'lukkeliste.vw_forbrugere' }
+
       constructor(props) {
         super(props)
-        
+
         this.state = {
           active: false,
           authed: false,
@@ -477,7 +459,7 @@ module.exports = {
           edit_matr: false,
           user_alarmkabel: null,
           user_alarmkabel_distance: config.extensionConfig.blueidea.alarmkabel_distance || 100,
-          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || null, 
+          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || null,
           selected_profileid: '',
           lukkeliste_ready: false,
           TooManyFeatures: false,
@@ -492,27 +474,26 @@ module.exports = {
         };
 
         // Store bound event handlers as class properties to maintain consistent function references
-        this.boundSelectPointLukkeliste = this.selectPointLukkeliste.bind(this);
         this.boundHandleEditClick = this.handleEditClick.bind(this);
         this.boundHandleAlarmkabelClick = this.handleAlarmkabelClick.bind(this);
         this.boundHandleAlarmskabClick = this.handleAlarmskabClick.bind(this);
-        this.buildStyleObject(); 
+        this.buildStyleObject();
       }
 
       buildStyleObject() {
         if (config.extensionConfig.blueidea.afbrudt_ledning_farve) {
           styleObject.selectedLedning.color = config.extensionConfig.blueidea.afbrudt_ledning_farve;
         }
-        if (config.extensionConfig.blueidea.indirekte_ledning_farve) {  
-          styleObject.selectedIndirekteLedning.color = config.extensionConfig.blueidea.indirekte_ledning_farve; 
+        if (config.extensionConfig.blueidea.indirekte_ledning_farve) {
+          styleObject.selectedIndirekteLedning.color = config.extensionConfig.blueidea.indirekte_ledning_farve;
         }
-        if (config.extensionConfig.blueidea.ventil_forbundet_farve) {     
-          styleObject.ventil_forbundet.fillColor = config.extensionConfig.blueidea.ventil_forbundet_farve;  
-        } 
-        if (config.extensionConfig.blueidea.ventil_ikke_forbundet_farve) {  
+        if (config.extensionConfig.blueidea.ventil_forbundet_farve) {
+          styleObject.ventil_forbundet.fillColor = config.extensionConfig.blueidea.ventil_forbundet_farve;
+        }
+        if (config.extensionConfig.blueidea.ventil_ikke_forbundet_farve) {
           styleObject.ventil.fillColor = config.extensionConfig.blueidea.ventil_ikke_forbundet_farve;
-        }     
-       }
+        }
+      }
 
       /**
        * Handle activation on mount
@@ -522,7 +503,7 @@ module.exports = {
         me.turnOnLayer(Alarm.Aktive_brud_layeName);
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is
-        backboneEvents.get().on("deactivate:all", () => {});
+        backboneEvents.get().on("deactivate:all", () => { });
 
         // Activates module
         backboneEvents.get().on(`on:${exId}`, () => {
@@ -534,7 +515,7 @@ module.exports = {
 
           // if logged in, get user
           if (me.state.authed) {
-            
+
             // turn on layersOnStart
             if (me.state.layersOnStart.length > 0) {
               me.state.layersOnStart.forEach((layer) => {
@@ -546,30 +527,30 @@ module.exports = {
             me.setState(resetObj);
           }
         });
-        
+
         backboneEvents.get().on(`${exId}:disableRecalculate`, () => {
-            me.setState({retryIsDisabled: true})
-            me.setState({project: me.state.project.withChanges({isReadOnly: false })});
+          me.setState({ retryIsDisabled: true })
+          me.setState({ project: me.state.project.withChanges({ isReadOnly: false }) });
         });
 
         backboneEvents.get().on(`${exId}:enableRecalculate`, () => {
-            me.setState({retryIsDisabled: false})
-            me.setState({project: me.state.project.withChanges({isReadOnly: true})});
+          me.setState({ retryIsDisabled: false })
+          me.setState({ project: me.state.project.withChanges({ isReadOnly: true }) });
         });
 
         backboneEvents.get().on(`${exId}:setAnalyzingOff`, () => {
-            me.setState({isAnalyzing: false})
-            me.forceUpdate();
+          me.setState({ isAnalyzing: false })
+          me.forceUpdate();
         });
 
         backboneEvents.get().on(`${exId}:setAnalyzingOn`, () => {
-            me.setState({isAnalyzing: true})
-            me.forceUpdate();
+          me.setState({ isAnalyzing: true })
+          me.forceUpdate();
         });
 
         backboneEvents.get().on(`${exId}:clearAll`, () => {
-            me.clearLukkeliste();
-            me.clearProjectState();  
+          me.clearLukkeliste();
+          me.clearProjectState();
         });
 
         // Deactivates module
@@ -584,7 +565,6 @@ module.exports = {
           }
 
           // Make sure to remove bound click event listeners from map
-          cloud.get().map.off("click", me.boundSelectPointLukkeliste);
           cloud.get().map.off("click", me.boundHandleEditClick);
           cloud.get().map.off("click", me.boundHandleAlarmkabelClick);
           cloud.get().map.off("click", me.boundHandleAlarmskabClick);
@@ -617,45 +597,24 @@ module.exports = {
             }, () => {
               // Callback: Setup happens AFTER state update
               if (me.state.authed) {
-                me.getUser();
+                
+                if (me.state.layersOnStart.length > 0) {
+                  me.state.layersOnStart.forEach((layer) => {
+                    api.turnOn(layer);
+                  });
+                }
+                return me.getUser()
               } else {
-                me.setState(resetObj);
-                $("#_draw_blueidea_group").hide();
-              }
+                me.setState(resetObj);  
+              }    
             }))
             .catch(e => {
               me.setState(resetObj);
-              $("#_draw_blueidea_group").hide();
             })
         });
       }
 
-      /**
-       * Get templates from backend
-       * @returns {Promise<void>}
-       * @private
-       */
-      getTemplates() {
-        let me = this;
 
-        // guard against no projectid in state
-        if (!me.state.user_profileid) {
-          return;
-        }
-
-        fetch(
-          "/api/extension/blueidea/" +
-            config.extensionConfig.blueidea.userid +
-            "/GetSmSTemplates"
-        )
-          .then((r) => r.json())
-          .then((obj) => {
-            //console.debug("Got templates", obj);
-          })
-          .catch((e) => {
-            //console.debug("Error in getTemplates", e);
-          });
-      }
 
       /**
        * Get select options from alarmskabe
@@ -678,7 +637,7 @@ module.exports = {
         return options;
       }
 
-      /**
+           /**
        * Get user from backend
        * @returns {Promise<void>}
        * @private
@@ -686,12 +645,12 @@ module.exports = {
       getUser() {
         let me = this;
         // If user is set in extensionconfig, set it in state and get information from backend
-        if (config.extensionConfig.blueidea.userid) {
+        if (config.extensionConfig.blueidea.userid) { // todo! 
           return new Promise(function (resolve, reject) {
             $.ajax({
               url:
-                "/api/extension/blueidea/" +
-                config.extensionConfig.blueidea.userid,
+                "/api/extension/blueidea/" + // todo! 
+                config.extensionConfig.blueidea.userid,// todo! 
               type: "GET",
               success: function (data) {
                 console.log("[Lukkeliste] Got user", data);
@@ -720,7 +679,7 @@ module.exports = {
                 me.setState(  {
                   user_lukkeliste: data.lukkeliste,
                   user_blueidea: data.blueidea,
-                  user_id: config.extensionConfig.blueidea.userid,
+                  user_id: config.extensionConfig.blueidea.userid, // todo! 
                   user_profileid: data.profileid || null,
                   user_db: data.db || false,
                   selected_profileid: userProfiles[0] || '',
@@ -735,14 +694,8 @@ module.exports = {
                   user_ventil_layer_name_key: data.forsyningsarter[0]?.ventil_layer_name_key || null,
                   user_ventil_export: data.forsyningsarter[0]?.ventil_export || null,
                   layersOnStart: data.layersOnStart || []
-                }, () => {
-                  // Callback: Setup happens AFTER state update
-                  if (me.state.user_blueidea == true) {
-                    $("#_draw_blueidea_group").show();
-                  } else {
-                    $("#_draw_blueidea_group").hide();
-                  }
-                });
+                } 
+              );
 
                 
                 resolve(data);
@@ -758,47 +711,8 @@ module.exports = {
         }
       }
 
-      /**
-       * This function queries database for related matrikler and ventiler
-       * @returns uuid string representing the query
-       */
-      queryPointLukkeliste = async (point, ignoreList = []) => {
-        let me = this;
 
-        // Clear results
-        _clearAll();
-
-        me.setState({
-          results_adresser: {},
-          results_log: {},
-          results_matrikler: [],
-          edit_matr: false,
-          TooManyFeatures: false,
-          beregnuuid: null,
-          clickedTableVentil: ''
-        });
-
-        let body = point;
-        body.forsynings_id = me.state.project.forsyningsart_selected; // We use the order fra config to define the numbering
-        body.ignore_ventiler = ignoreList;
-        body.gyldig_fra = me.state.project.projectStartDate;
-        body.beregnaarsag = me.state.project.brudtype;
-        body.gyldig_til = me.state.project.projectEndDate;
-        body.sagstekst = me.state.project?.projectName.trim() ?? '';
-        try {
-          let response = await $.ajax({
-            url: "/api/extension/lukkeliste/" + me.state.user_id + "/query",
-            type: "POST",
-            data: JSON.stringify(body),
-            contentType: "application/json",
-          });
-          return response;
-        } catch (error) {
-          throw error.responseJSON;
-        }
-      };
-
-      /**
+       /**
        * This function queries database for information related to alarmkabel
        * @returns uuid string representing the query
        */
@@ -825,10 +739,10 @@ module.exports = {
         });
       }
 
-            /**
-       * This function queries database for information related to alarmkabel
-       * @returns uuid string representing the query
-       */
+      /**
+ * This function queries database for information related to alarmkabel
+ * @returns uuid string representing the query
+ */
       queryPointAlarmskab = (point, direction, alarmskab_gid) => {
         let me = this;
         let body = point;
@@ -852,16 +766,16 @@ module.exports = {
       }
 
       refreshProjectLayer() {
-        api.turnOff (BlueIdea.Aktive_brud_layeName);
+        api.turnOff(BlueIdea.Aktive_brud_layeName);
         console.log("Refreshing project layer off");
         setTimeout(function () {
           api.turnOn(BlueIdea.Aktive_brud_layeName);
-          console.log("Refreshing project layer on" );
+          console.log("Refreshing project layer on");
         }, 500);
       }
 
 
- 
+
       /**
        * This function is what starts the process of finding relevant addresses, returns array with kvhx
        * @param {*} geojson
@@ -1079,7 +993,7 @@ module.exports = {
        */
       addBufferToMap(geojson) {
         try {
-          var l = L.geoJSON(geojson, {...styleObject.buffer,interactive: false}).addTo(bufferItems);
+          var l = L.geoJSON(geojson, { ...styleObject.buffer, interactive: false }).addTo(bufferItems);
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1092,7 +1006,7 @@ module.exports = {
         try {
           // Make a layer per feature.
           geojson.features.forEach((feature) => {
-            let l = L.geoJSON(feature, {...styleObject.matrikel, interactive: false}).addTo(queryMatrs);
+            let l = L.geoJSON(feature, { ...styleObject.matrikel, interactive: false }).addTo(queryMatrs);
           });
         } catch (error) {
           console.warn(error, geojson);
@@ -1105,33 +1019,33 @@ module.exports = {
       addVentilerToMap(geojson, nameKey) {
         try {
           var l = L.geoJSON(geojson, {
-          pointToLayer: function (feature, latlng) {
+            pointToLayer: function (feature, latlng) {
 
-          const style = feature.properties.forbundet
-          ? styleObject.ventil_forbundet
-          : styleObject.ventil;
+              const style = feature.properties.forbundet
+                ? styleObject.ventil_forbundet
+                : styleObject.ventil;
 
-          return L.circleMarker(latlng, {
-            ...style,
-            interactive: true
-            });
-          },
+              return L.circleMarker(latlng, {
+                ...style,
+                interactive: true
+              });
+            },
 
-          onEachFeature: function (feature, layer) {
-            layer.bindTooltip(
-            `
+            onEachFeature: function (feature, layer) {
+              layer.bindTooltip(
+                `
             <b>Ventil</b><br>
-             ${feature.properties[nameKey]  || '—'}<br>
+             ${feature.properties[nameKey] || '—'}<br>
              Forbundet: ${feature.properties.forbundet ? 'Ja' : 'Nej'}
             `,
-            {
-              sticky: true,
-              direction: 'top',
-              opacity: 0.9
+                {
+                  sticky: true,
+                  direction: 'top',
+                  opacity: 0.9
+                }
+              );
             }
-            );
-          }
-        }).addTo(queryVentils);
+          }).addTo(queryVentils);
 
         } catch (error) {
           console.warn(error, geojson);
@@ -1143,20 +1057,20 @@ module.exports = {
        */
       addSelectedLedningerToMap(geojson) {
         try {
-         
-          var l = L.geoJSON(geojson, 
+
+          var l = L.geoJSON(geojson,
             {
-              ...styleObject.selectedLedning, 
+              ...styleObject.selectedLedning,
               interactive: true,
               onEachFeature: function (feature, layer) {
                 layer.bindTooltip(
-                config.extensionConfig.blueidea.afbrudt_ledning_tooltip || 'Afbrudt ledning ' ,
-                {
-                  sticky: true,
-                  direction: 'top'
-                }
-              );
-            }
+                  config.extensionConfig.blueidea.afbrudt_ledning_tooltip || 'Afbrudt ledning ',
+                  {
+                    sticky: true,
+                    direction: 'top'
+                  }
+                );
+              }
             }).addTo(seletedLedninger);
         } catch (error) {
           console.warn(error, geojson);
@@ -1167,18 +1081,18 @@ module.exports = {
         try {
           var l = L.geoJSON(geojson,
             {
-              ...styleObject.selectedIndirekteLedning, 
+              ...styleObject.selectedIndirekteLedning,
               interactive: true,
               onEachFeature: function (feature, layer) {
                 layer.bindTooltip(
-                config.extensionConfig.blueidea.indirekte_ledning_tooltip || 'Indirekte berørt ledning ',
-                {
-                  sticky: true,
-                  direction: 'top'
-                }
-              );
-            }
-          }).addTo(selectedIndirekteLedninger);
+                  config.extensionConfig.blueidea.indirekte_ledning_tooltip || 'Indirekte berørt ledning ',
+                  {
+                    sticky: true,
+                    direction: 'top'
+                  }
+                );
+              }
+            }).addTo(selectedIndirekteLedninger);
         } catch (error) {
           console.warn(error, geojson);
         }
@@ -1193,14 +1107,14 @@ module.exports = {
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
               return new L.Marker(
-                latlng, { 
-                  icon: myIcon, 
-                  interactive: true,
-                  
-                  onEachFeature: function (feature, layer) {
-                    layer.bindTooltip('Brudpunket', { sticky: true,direction: 'top' })
-                  }
-                });
+                latlng, {
+                icon: myIcon,
+                interactive: true,
+
+                onEachFeature: function (feature, layer) {
+                  layer.bindTooltip('Brudpunket', { sticky: true, direction: 'top' })
+                }
+              });
             },
           }).addTo(selectedPoint);
         } catch (error) {
@@ -1213,9 +1127,10 @@ module.exports = {
           var myIcon = new L.DivIcon(styleObject.selectedForbrugspunkt);
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
-              return new L.Marker(latlng, 
-                { icon: myIcon, 
-                  interactive: true 
+              return new L.Marker(latlng,
+                {
+                  icon: myIcon,
+                  interactive: true
                 });
 
             },
@@ -1255,7 +1170,7 @@ module.exports = {
           html = "<span id='blueidea-progress'>" + text + "</span>"
         }
 
-        utils.showInfoToast(html, { timeout: 5000, autohide: false})
+        utils.showInfoToast(html, { timeout: 5000, autohide: false })
       }
 
 
@@ -1273,110 +1188,29 @@ module.exports = {
         _clearAll();
         const e = document.querySelector('#main-tabs a[href="#draw-content"]');
         if (e) {
-            bootstrap.Tab.getInstance(e).show();
-            e.click();
+          bootstrap.Tab.getInstance(e).show();
+          e.click();
         } else {
-            console.warn(`Unable to locate #draw-content`)
+          console.warn(`Unable to locate #draw-content`)
         }
       }
 
       clearProjectState = () => {
-        const me = this;  
-        const newProject  = new ProjectModel();
+        const me = this;
+        const newProject = new ProjectModel();
         me.setState(prev => ({
           project: newProject.withChanges({
             forsyningsarter: prev.project.forsyningsarter,
             projectName: '',
             isReadOnly: false
           }),
-          
+
         }))
-        me.setState({ 
-          editProject: false, 
+        me.setState({
+          editProject: false,
         });
         backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
       }
-      
-      postSaveProject = () => {
-        const me = this;
-        me.clearProjectState();  
-        me.clearLukkeliste(); // ?  
-        me.refreshProjectLayer();
-        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
-      };
-
-      
-
-      /**
-       * This function builds relevant data for the blueidea API
-       * @returns SmsGroupId for redirecting to the correct page
-       */
-      sendToBlueIdea = () => {
-       // hvis blueidea er false, return
-        if (!this.state.user_blueidea) {
-          this.createSnack(__("NotAllowedBlueIdea"));
-          return;
-        }
-
-        const body = {
-          profileId: parseInt(this.state.selected_profileid) || null,
-          beregnuuid: this.state.beregnuuid,
-          addresses: Object.keys(this.state.results_adresser).map((kvhx) => ({
-           kvhx: kvhx,
-         })),
-        };
-
-        $.ajax({
-          url:"/api/extension/blueidea/" + config.extensionConfig.blueidea.userid + "/CreateMessage",
-          type: "POST",
-          data: JSON.stringify(body),
-          contentType: "application/json",
-          dataType: "json",
-        })
-          .then((data) => {
-            if (data.smsGroupId) {
-              window.open(
-              "https://dk.sms-service.dk/message-wizard/write-message?smsGroupId=" +
-              data.smsGroupId,
-              "_blank");
-            }
-            // success snackbar
-            this.createSnack( __("Project created successfully"));
-            // list projects again to show the new one
-            
-
-            this.postSaveProject();
-          })
-          .fail((error) => {
-            console.error(error);
-            backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
-            this.createSnack("Der opstod en fejl ved afsendelse til BlueIdea.");
-        });
-      };
-
-      handleSaveProject= () => {
-        const me = this;
-         const body = {beregnuuid: this.state.beregnuuid}
-
-        $.ajax({
-          url: `/api/extension/blueidea/${me.state.user_id}/saveproject`,
-          type: "POST",
-          data: JSON.stringify(body),
-          contentType: "application/json",
-          dataType: "json",
-        })
-          .then(() => {
-             
-            this.postSaveProject();
-            
-            me.createSnack(__("Project saved successfully"));
-          })
-          .catch((error) => {
-            console.error(error);
-            me.createSnack(__("Error saving project") + ": " + error.message);
-          });
-      };
-
 
       /**
        * This function turns on a layer, if it is not already on the map, and refreshes the map if there is a filter set.
@@ -1415,215 +1249,18 @@ module.exports = {
         _clearAll();
         api.turnOff(BlueIdea.Forbrugere_layerName);
         try {
-           api.filter(BlueIdea.Forbrugere_layerName, {
-                                "match": "any",
-                                "columns": []
-                            });
+          api.filter(BlueIdea.Forbrugere_layerName, {
+            "match": "any",
+            "columns": []
+          });
         } catch (error) {
           console.warn("Could not clear filter on forbrugere layer", error);
         }
         this.refreshProjectLayer();
       };
 
-     
-      readyPointLukkeliste = () => {
-        let me = this;
-        blocked = false;
-
-        // if udpeg_layer is set, make sure it is turned on
-        if (me.state.user_udpeg_layer) {
-          me.turnOnLayer(me.state.user_udpeg_layer);
-          me.turnOnLayer(BlueIdea.Aktive_brud_layeName);
-        }
-        
-        // change the cursor to crosshair and wait for a click
-        utils.cursorStyle().crosshair();
-        cloud.get().map.on("click", me.boundSelectPointLukkeliste);
-      };
-
-
-      /**
-       * This function selects a point in the map
-       */
-      selectPointLukkeliste = async function (e) {
-        let me = this;
-        let point = null;
-
-        // Remove the click event listener for the map
-        cloud.get().map.off("click", me.boundSelectPointLukkeliste);
-
-        // if the click is blocked, return
-        if (blocked) {
-          return;
-        }
-        
-        backboneEvents.get().trigger(`${exId}:setAnalyzingOn`);
-
-
-        me.createSnack(__("Starting analysis"), true)
-
-        // get the clicked point
-        point = e.latlng;
-        utils.cursorStyle().reset();
-        blocked = true;
-
-        // send the point to the server
-        let data = {}
-        try {
-          data = await me.queryPointLukkeliste(point);
-        }
-        catch (error) {
-          me.createSnack(__("Error in search") + ": " + error.message);
-          console.warn(error);
-          backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
-          return
-        }
-
-        // pass data onto handler
-        me.handleQueryResults(data);
-        return
-      };
-
-      /**
-       * This function reruns a query, using an already defined point
-       */
-      runWithoutSelected = async function () {
-        let me = this;
-        backboneEvents.get().trigger(`${exId}:setAnalyzingOn`);
-        me.setState({
-          retryIsDisabled: true
-        })
-        me.createSnack(__("Starting analysis"), true)
-
-        me.clearLukkeliste();
-        // Because we already know stuff, send it again.
-        // send the point to the server
-        
-        let point = {
-          lat: me.state.results_log[0].geometry.coordinates[1],
-          lng: me.state.results_log[0].geometry.coordinates[0]
-        }
-        let ignoreVentiler = (me.state.selectedVentiler || [])
-          .map(v => parseInt(v, 10))
-          .filter(n => !Number.isNaN(n));
-
-        console.log(point, ignoreVentiler)
-
-        let data = {}
-        try {
-          data = await me.queryPointLukkeliste(point, ignoreVentiler).
-          then((data) => data)
-          {
-            me.setState({retryIsDisabled: true})
-          }
-
-        }
-        catch (error) {
-          me.createSnack(__("Error in search") + ": " + error.message);
-          console.warn(error);
-          return
-        }
-
-        // pass data onto handler
-        me.handleQueryResults(data);
-        return
-      };
-
-      /**
-       * Handle the results from the query
-       * @param {*} data
-       */
-      handleQueryResults = async function (data) {
-        let me = this;
-
-        if (data.log.features[0].properties.status == 1) {
-          me.clearLukkeliste();
-          backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
-          me.createSnack(__("No utility lines found"));
-        } else {
-        // Here we handle data from the query-endpoint
-        this.setState({
-          // selectedVentiler: [],
-          retryIsDisabled: true
-        });
-        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
-        if (data.ledninger) {
-          //console.debug("Got ledninger:", data.ledninger);
-          me.addSelectedLedningerToMap(data.ledninger);
-          me.setState({results_ledninger: data.ledninger.features});
-        }
-        // Add indirekteledninger to map
-        if (data.indirekteledninger) {
-          console.debug("Got indirekteledninger:", data.indirekteledninger);
-          me.addSelectedIndirekteLedningerToMap(data.indirekteledninger);
-          me.setState({
-            results_indirekteledninger: data.indirekteledninger.features,
-          });
-        }
-        // Add the clicked point to the map
-        if (data.log) {
-          //console.debug("Got log:", data.log);
-          me.addSelectedPointToMap(data.log);
-          me.setState({
-            results_log: data.log.features,
-            beregnuuid: data.log.features[0].properties.beregnuuid,
-          });
-        }
-        
-        // add forbrugere
-        if (data.forbrugere) {
-          //console.debug("Got forbrugere:", data.forbrugere);
-          try {
-            api.turnOn(BlueIdea.Forbrugere_layerName);
-            // add filter
-            api.filter(BlueIdea.Forbrugere_layerName, {
-              "match": "any",
-              "columns": [{
-                "fieldname": "beregnuuid",
-                "expression": "=",
-                "value": data.log.features[0].properties.beregnuuid,
-                "restriction": false
-              }]
-            });
-          } catch (error) {
-            console.warn("Could not turn on forbrugere layer or apply filter", error);
-          }
-
-          // me.addSelectedForbrugspunkterToMap(data.forbrugere);
-          // me.setState({
-          //   results_forbrugere: data.forbrugere.features,
-          // });
-        }
-
-        if (data.ventiler) {
-          //console.debug("Got ventiler:", data.ventiler);
-          me.addVentilerToMap(data.ventiler, me.state.user_ventil_layer_name_key);
-          me.setState({
-            results_ventiler: data.ventiler.features,
-          });
-          const key = this.state.user_ventil_layer_key;
-          
-          const selected = this.state.results_ventiler.filter(item => item.properties?.checked).map(item => item.properties[key]).filter(Boolean)
-          this.setState({ selectedVentiler : selected })
-        }
-
-        // Getting matrikler is another task, so we seperate it here in a try-catch to get errors to the frontend
-        try {
-          if (data.matrikler) {
-            let parcelcount = data.matrikler.features[0].properties.matr_count;
-            if (parcelcount > MAXPARCELS) {
-              me.createSnack(__("Large number of parcels found") + " (" + parcelcount + "/" + MAXPARCELS + ")");
-            }
-            me.queryAddresses(data.matrikler, true);
-          }
-        } catch (error) {
-          console.warn(error);
-          return
-        }
-      }
-      };
-
-      /**
+ 
+       /**
        * Handler for alarmkabel click events
        */
       handleAlarmkabelClick = (e) => {
@@ -1866,7 +1503,7 @@ module.exports = {
           edit_matr: !me.state.edit_matr,
         })
       };
-      addSingleMatrikel = async function(point) {
+      addSingleMatrikel = async function (point) {
         let me = this;
 
         // Based on clicked point, query for matrikel and adresse information. add these to map and lists.
@@ -1894,7 +1531,7 @@ module.exports = {
         });
       };
 
-      removeSingleMatrikel = function(layer) {
+      removeSingleMatrikel = function (layer) {
         // Remove matrikel from list and map
 
         // Using the matrikelnr and ejerlavkode, we can remove the matrikel from the list of matrikler
@@ -2113,23 +1750,23 @@ module.exports = {
         return;
       };
 
- 
 
-      
+
+
       /**
        * Renders component
        */
       render() {
         const _self = this;
         const s = _self.state;
-          
-            
+
+
         if (s.authed && s.user_id) {
-    
+
           return (
             <div role="tabpanel">
-          
-              
+
+
               <div
                 style={{ alignSelf: "center" }}
                 hidden={!s.user_alarmkabel}
@@ -2186,11 +1823,11 @@ module.exports = {
                     onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
                   >
                     // for each option in s.alarm_skabe, create an option
-                   {s.alarm_skabe.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                   ))}
+                    {s.alarm_skabe.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                   <button
                     onClick={() => this.selectPointAlarmskab()}
@@ -2201,21 +1838,21 @@ module.exports = {
                   </button>
                 </div>
                 <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
-                </div>
+              </div>
 
-                <div
-                  style={{ alignSelf: "center" }}
-                  hidden={s.results_alarmskabe.length == 0}
-                >
+              <div
+                style={{ alignSelf: "center" }}
+                hidden={s.results_alarmskabe.length == 0}
+              >
                 <div className='list-group'>
-                    {s.results_alarmskabe.map((item, index) => (
-                      <div className='list-group-item' key={index}>
-                        <div className='d-flex w-100 justify-content-between'>
-                          <small>{item.direction}</small>
-                          <small>{item.distance}m</small>
-                        </div>
+                  {s.results_alarmskabe.map((item, index) => (
+                    <div className='list-group-item' key={index}>
+                      <div className='d-flex w-100 justify-content-between'>
+                        <small>{item.direction}</small>
+                        <small>{item.distance}m</small>
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
 
               </div>
@@ -2226,16 +1863,16 @@ module.exports = {
 
         // Not Logged in - or not configured
         return (
-          <div role = "tabpanel" >
-            <div className = "form-group" >
-                <div id = "blueidea-feature-login" className = "alert alert-info" role = "alert" >
-                    {__("MissingLogin")}
-                </div>
-                <div className="d-grid mx-auto">
-                    <button onClick = {() => this.clickLogin()} type="button" className="btn btn-primary">{__("Login")}</button>
-                </div>
+          <div role="tabpanel" >
+            <div className="form-group" >
+              <div id="blueidea-feature-login" className="alert alert-info" role="alert" >
+                {__("MissingLogin")}
+              </div>
+              <div className="d-grid mx-auto">
+                <button onClick={() => this.clickLogin()} type="button" className="btn btn-primary">{__("Login")}</button>
+              </div>
             </div>
-        </div>
+          </div>
         );
       }
     };
