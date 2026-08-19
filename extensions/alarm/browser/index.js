@@ -7,8 +7,6 @@
 "use strict";
 
 
-import ProjectModel from "./ProjectModel.js";
-
 import {
   buffer as turfBuffer,
   point as turfPoint,
@@ -100,7 +98,6 @@ var draw;
 var cloud;
 
 var bufferItems = new L.FeatureGroup();
-
 var selectedPoint = new L.FeatureGroup();
 var alarmPositions = new L.FeatureGroup();
 
@@ -231,29 +228,19 @@ module.exports = {
         this.state = {
           active: false,
           authed: false,
-          project: new ProjectModel(),
-          projectOpen: true,
-          editProject: false,
           isAnalyzing: false,
-          projects: [],
-          projectsIsRefreshing: false,
-          done: false,
           loading: false,
-          results_log: {},
           user_id: null,
           user_db: false,
           user_udpeg_layer: null,
           user_alarmkabel: null,
           user_alarmkabel_distance: config.extensionConfig.alarm.alarmkabel_distance || 100,
-          user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 1,
-          lukkeliste_ready: false,
-          TooManyFeatures: false,
+          user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 2,
           alarm_direction_selected: 'Both',
           alarm_skab_selected: '',
           alarm_skabe: null,
           results_alarmskabe: [],
-          layersOnStart: [],
-          retryIsDisabled: true
+          layersOnStart: []
         };
 
         // Store bound event handlers as class properties to maintain consistent function references
@@ -309,21 +296,7 @@ module.exports = {
           }
         });
 
-        backboneEvents.get().on(`${exId}:enableRecalculate`, () => {
-          me.setState({ retryIsDisabled: false })
-        });
-
-        backboneEvents.get().on(`${exId}:setAnalyzingOff`, () => {
-          me.setState({ isAnalyzing: false })
-          me.forceUpdate();
-        });
-
-        backboneEvents.get().on(`${exId}:setAnalyzingOn`, () => {
-          me.setState({ isAnalyzing: true })
-          me.forceUpdate();
-        });
-
-        // Deactivates module
+         // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
           console.debug("Stopping alarm");
 
@@ -351,7 +324,6 @@ module.exports = {
           me.setState({
             active: false,
           });
-          me.state.project.clearData();
         });
 
         // On auth change, handle Auth state
@@ -430,21 +402,12 @@ module.exports = {
                   alarm_skab_selected = alarmskabe[0].value || '';
                 }
 
-                let lukkestatus = false;
-                if (data.lukkestatus && data.lukkestatus.views_exists) {
-                  lukkestatus = data.lukkestatus.views_exists;
-                }
-                me.setState(prev => ({
-                  project: prev.project.withChanges({ forsyningsarter: data.forsyningsarter })
-                }));
-
                 me.setState({
                   user_id: config.extensionConfig.alarm.userid,
                   user_db: data.db || false,
                   user_alarmkabel: data.alarmkabel,
                   alarm_skabe: alarmskabe,
                   alarm_skab_selected: alarm_skab_selected,
-                  lukkeliste_ready: lukkestatus,
                   forsyningsart_selected: 0,
                   user_udpeg_layer: data.forsyningsarter[0]?.udpeg_layer || null,
                   layersOnStart: data.layersOnStart || []
@@ -519,16 +482,7 @@ module.exports = {
         });
       }
 
-      refreshProjectLayer() {
-        api.turnOff(BlueIdea.Aktive_brud_layeName);
-        console.log("Refreshing project layer off");
-        setTimeout(function () {
-          api.turnOn(BlueIdea.Aktive_brud_layeName);
-          console.log("Refreshing project layer on");
-        }, 500);
-      }
-
-
+     
       /**
        * This function disolves the geometry, and prepares it for querying
        */
