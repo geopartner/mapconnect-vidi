@@ -266,7 +266,7 @@ router.post("/api/extension/blueidea/:userid/StopProject", function (req, respon
 );
 
 // Query alarmkabel-plugin in database
-router.post("/api/extension/alarmkabel/:userid/query", function (req, response) {
+router.post("/api/extension/blueidea/:userid/query", function (req, response) {
     guard(req, response);
 
     // guard against missing lat and lng in body

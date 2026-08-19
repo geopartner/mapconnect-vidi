@@ -6,11 +6,8 @@
 
 "use strict";
 
-import proj4 from "proj4";
+
 import ProjectModel from "./ProjectModel.js";
-
-
-import { VentilModel, VentilProperties } from "./VentilModel.js";
 
 import {
   buffer as turfBuffer,
@@ -103,7 +100,7 @@ var draw;
 var cloud;
 
 var bufferItems = new L.FeatureGroup();
-var queryMatrs = new L.FeatureGroup();
+
 var queryVentils = new L.FeatureGroup();
 var selectedPoint = new L.FeatureGroup();
 var seletedLedninger = new L.FeatureGroup();
@@ -114,9 +111,7 @@ var alarmPositions = new L.FeatureGroup();
 var _clearBuffer = function () {
   bufferItems.clearLayers();
 };
-var _clearMatrs = function () {
-  queryMatrs.clearLayers();
-};
+
 var _clearVentil = function () {
   queryVentils.clearLayers();
 };
@@ -138,7 +133,6 @@ var _clearSelectedForbrugspunkter = function () {
 
 var _clearAll = function () {
   _clearBuffer();
-  _clearMatrs();
   _clearVentil();
   _clearSelectedPoint();
   _clearSeletedLedninger();
@@ -168,86 +162,6 @@ const resetObj = {
 // This element contains the styling for the module
 var styleObject = require("./style.js");
 
-/**
- * async function to query matrikel inside a single buffer
- * @param {*} feature
- */
-const findMatriklerInPolygon = function (feature, is_wkb = false) {
-  return new Promise((resolve, reject) => {
-    // Create a query
-    let query = {
-      srid: 4326,
-      format: "geojson",
-      struktur: "flad",
-    };
-
-    try {
-      if (!is_wkb) {
-        query.polygon = JSON.stringify(feature.geometry.coordinates)
-
-        // Send the query to the server
-        $.ajax({
-          url: "/api/datahub/jordstykker",
-          type: "GET",
-          data: query,
-          success: function (data) {
-            resolve(data);
-          },
-          error: function (data) {
-            reject(data);
-          },
-        });
-
-      } else {
-        query.wkb = feature;
-
-        // Send the query to the server, but using post - as the wkb is too large for a get request
-        $.ajax({
-          url: "/api/datahub/jordstykker",
-          type: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          data: JSON.stringify(query),
-          success: function (data) {
-            resolve(data);
-          },
-          error: function (data) {
-            reject(data);
-          },
-        });
-      }
-    } catch (error) {
-      throw error;
-    }
-  });
-};
-
-/**
- * async function to query addresses inside a single parcel
- * @param {*} feature
- */
-const findAddressesInMatrikel = async function (feature) {
-  try {
-    // Create a query
-    let query = {
-      ejerlavkode: feature.properties.ejerlavkode,
-      matrikelnr: feature.properties.matrikelnr,
-      struktur: "flad",
-    };
-
-    // Send the query to the server
-    let response = await $.ajax({
-      url: "https://api.dataforsyningen.dk/adresser",
-      type: "GET",
-      data: query,
-    });
-
-    return response;
-  } catch (error) {
-    throw error;
-  }
-};
 
 /**
  *
@@ -286,7 +200,6 @@ module.exports = {
      */
     mapObj = cloud.get().map;
     mapObj.addLayer(bufferItems);
-    mapObj.addLayer(queryMatrs);
     mapObj.addLayer(queryVentils);
     mapObj.addLayer(selectedPoint);
     mapObj.addLayer(seletedLedninger);
@@ -354,7 +267,6 @@ module.exports = {
           loading: false,
           results_adresser: {},
           results_ledninger: [],
-          results_matrikler: [],
           results_ventiler: [],
           results_log: {},
           user_lukkeliste: null,
@@ -365,10 +277,9 @@ module.exports = {
           user_ventil_layer_key: null,
           user_udpeg_layer: null,
           user_ventil_export: null,
-          edit_matr: false,
           user_alarmkabel: null,
-          user_alarmkabel_distance: config.extensionConfig.blueidea.alarmkabel_distance || 100,
-          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || 1,
+          user_alarmkabel_distance: config.extensionConfig.alarm.alarmkabel_distance || 100,
+          user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 1,
           selected_profileid: '',
           lukkeliste_ready: false,
           TooManyFeatures: false,
@@ -383,24 +294,23 @@ module.exports = {
         };
 
         // Store bound event handlers as class properties to maintain consistent function references
-        this.boundHandleEditClick = this.handleEditClick.bind(this);
         this.boundHandleAlarmkabelClick = this.handleAlarmkabelClick.bind(this);
         this.boundHandleAlarmskabClick = this.handleAlarmskabClick.bind(this);
         this.buildStyleObject();
       }
 
       buildStyleObject() {
-        if (config.extensionConfig.blueidea.afbrudt_ledning_farve) {
-          styleObject.selectedLedning.color = config.extensionConfig.blueidea.afbrudt_ledning_farve;
+        if (config.extensionConfig.alarm.afbrudt_ledning_farve) {
+          styleObject.selectedLedning.color = config.extensionConfig.alarm.afbrudt_ledning_farve;
         }
-        if (config.extensionConfig.blueidea.indirekte_ledning_farve) {
-          styleObject.selectedIndirekteLedning.color = config.extensionConfig.blueidea.indirekte_ledning_farve;
+        if (config.extensionConfig.alarm.indirekte_ledning_farve) {
+          styleObject.selectedIndirekteLedning.color = config.extensionConfig.alarm.indirekte_ledning_farve;
         }
-        if (config.extensionConfig.blueidea.ventil_forbundet_farve) {
-          styleObject.ventil_forbundet.fillColor = config.extensionConfig.blueidea.ventil_forbundet_farve;
+        if (config.extensionConfig.alarm.ventil_forbundet_farve) {
+          styleObject.ventil_forbundet.fillColor = config.extensionConfig.alarm.ventil_forbundet_farve;
         }
-        if (config.extensionConfig.blueidea.ventil_ikke_forbundet_farve) {
-          styleObject.ventil.fillColor = config.extensionConfig.blueidea.ventil_ikke_forbundet_farve;
+        if (config.extensionConfig.alarm.ventil_ikke_forbundet_farve) {
+          styleObject.ventil.fillColor = config.extensionConfig.alarm.ventil_ikke_forbundet_farve;
         }
       }
 
@@ -419,7 +329,6 @@ module.exports = {
           //console.debug("Starting alarm");
           me.setState({
             active: true,
-            edit_matr: false,
           });
 
           // if logged in, get user
@@ -474,7 +383,6 @@ module.exports = {
           }
 
           // Make sure to remove bound click event listeners from map
-          cloud.get().map.off("click", me.boundHandleEditClick);
           cloud.get().map.off("click", me.boundHandleAlarmkabelClick);
           cloud.get().map.off("click", me.boundHandleAlarmskabClick);
 
@@ -491,7 +399,6 @@ module.exports = {
           me.setState({
             active: false,
             user_lukkeliste: false,
-            edit_matr: false,
           });
           me.state.project.clearData();
         });
@@ -554,12 +461,12 @@ module.exports = {
       getUser() {
         let me = this;
         // If user is set in extensionconfig, set it in state and get information from backend
-        if (config.extensionConfig.blueidea.userid) { // todo! 
+        if (config.extensionConfig.alarm.userid) { // todo! 
           return new Promise(function (resolve, reject) {
             $.ajax({
               url:
-                "/api/extension/blueidea/" + // todo! 
-                config.extensionConfig.blueidea.userid,// todo! 
+                "/api/extension/alarm/" + // todo! 
+                config.extensionConfig.alarm.userid,// todo! 
               type: "GET",
               success: function (data) {
                 console.log("[Lukkeliste] Got user", data);
@@ -587,7 +494,7 @@ module.exports = {
 
                 me.setState({
                   user_lukkeliste: data.lukkeliste,
-                  user_id: config.extensionConfig.blueidea.userid, // todo! 
+                  user_id: config.extensionConfig.alarm.userid, // todo! 
                   user_profileid: data.profileid || null,
                   user_db: data.db || false,
                   selected_profileid: userProfiles[0] || '',
@@ -683,98 +590,6 @@ module.exports = {
       }
 
 
-
-      /**
-       * This function is what starts the process of finding relevant addresses, returns array with kvhx
-       * @param {*} geojson
-       * @returns array with kvhx
-       */
-      queryAddresses(geojson, is_wkb = false) {
-        let me = this;
-        //console.debug("queryAddresses: ", geojson);
-
-        // if no features in featurecollection, return
-        if (!geojson.features.length) {
-          console.log("No features in geojson");
-          return;
-        }
-
-        try {
-          let promises = [];
-          // if the geometry is not wkb, act as if it is geojson
-          if (!is_wkb) {
-            // Disolve geometry
-            let geom = this.geometryDisolver(geojson);
-
-            // show buffers on map
-            this.addBufferToMap(geom);
-
-            // Let user know we are starting
-            me.createSnack(__("Waiting to start"), true);
-
-            // For each flattened element, start a query for matrikels intersected
-            for (let i = 0; i < geom.features.length; i++) {
-              let feature = geom.features[i];
-              promises.push(findMatriklerInPolygon(feature));
-            }
-
-          } else {
-            // if the geometry is wkb, we pass the geometry directly to the query
-            //console.debug("WKB", geojson);
-            let aggr = geojson.features[0].properties.aggregated_geom;
-            promises.push(findMatriklerInPolygon(aggr, true));
-          }
-
-          // When all queries are done, we can find the relevant addresses
-          Promise.all(promises)
-            .then((results) => {
-              //console.debug("Got matrikler", results);
-              // Merge all results into one array
-              let merged = this.mergeMatrikler(results);
-
-              // if the number of matrs is larger than maxparcels, dont add to map
-              if (merged.features.length < MAXPARCELS) {
-                this.addMatrsToMap(merged);
-              } else {
-                me.createSnack(__("Large number of parcels found"));
-              }
-
-              return merged;
-            })
-            .then((matrikler) => {
-              // if the number is too high, dont get addresses aswell.
-              if (matrikler.features.length > MAXPARCELS) {
-                me.setState({
-                  edit_matr: false,
-                  TooManyFeatures: true,
-                });
-                me.setState({
-                  results_matrikler: matrikler,
-                });
-                return;
-
-              } else {
-                // Set results
-                me.setState({
-                  results_adresser: me.getAdresser(matrikler),
-                  results_matrikler: matrikler,
-                  edit_matr: false,
-                });
-                return;
-              }
-            })
-            .catch((error) => {
-              console.warn('findMatriklerInPolygon:', error);
-              me.createSnack(__("Error in search"));
-              throw error;
-            });
-        } catch (error) {
-          console.warn('queryAddresses:', error);
-          me.createSnack(error);
-          return;
-        }
-      }
-
       /**
        * This function disolves the geometry, and prepares it for querying
        */
@@ -826,51 +641,6 @@ module.exports = {
         return collection;
       }
 
-      /**
-       * Merges all matrikler into one featurecollection
-       * @param {*} results
-       */
-      mergeMatrikler(results) {
-        let me = this;
-        let merged = {};
-
-        try {
-          for (let i = 0; i < results.length; i++) {
-            // Guard against empty results, and results that are not featureCollections
-            if (
-              results[i] &&
-              results[i].type == "FeatureCollection" &&
-              results[i].features.length > 0
-            ) {
-              for (let j = 0; j < results[i].features.length; j++) {
-                // If the matrikel is a litra - starts with 7000, ignore it in the list
-                if (
-                  results[i].features[j].properties.matrikelnr.startsWith(
-                    "7000"
-                  )
-                ) {
-                  continue;
-                }
-
-                // If the matikel has a registreretarel that is equal to vejareal, ignore it in the list
-                if (
-                  results[i].features[j].properties.registreretareal ==
-                  results[i].features[j].properties.vejareal
-                ) {
-                  continue;
-                }
-
-                let feature = results[i].features[j];
-                merged[feature.properties.featureid] = feature;
-              }
-            }
-          }
-          let newCollection = turfFeatureCollection(Object.values(merged));
-          return newCollection;
-        } catch (error) {
-          console.warn(error);
-        }
-      }
 
       /**
        * Merges all adresser into one array
@@ -907,19 +677,6 @@ module.exports = {
         }
       }
 
-      /**
-       * Styles and adds the matrikler to the map
-       */
-      addMatrsToMap(geojson) {
-        try {
-          // Make a layer per feature.
-          geojson.features.forEach((feature) => {
-            let l = L.geoJSON(feature, { ...styleObject.matrikel, interactive: false }).addTo(queryMatrs);
-          });
-        } catch (error) {
-          console.warn(error, geojson);
-        }
-      }
 
       /**
        * Styles and adds ventiler to the map
@@ -1144,10 +901,8 @@ module.exports = {
           editProject: false,
           results_adresser: {},
           results_log: {},
-          results_matrikler: [],
           results_ventiler: [],
           results_ledninger: [],
-          edit_matr: false,
           TooManyFeatures: false,
           selectedVentiler: [],
           beregnuuid: null,
@@ -1189,7 +944,7 @@ module.exports = {
         point = e.latlng;
         utils.cursorStyle().reset();
         blocked = true;
-        const user_alarmkabel_art =2
+        const user_alarmkabel_art = 2
         // send the point to the server + the distance
         me.queryPointAlarmkabel(point, user_alarmkabel_art, me.state.user_alarmkabel_distance, me.state.alarm_direction_selected)
           .then((data) => {
@@ -1355,121 +1110,6 @@ module.exports = {
         return
       };
 
-      /**
-       * Handler for edit click events
-       */
-      handleEditClick = (e) => {
-        let me = this;
-        // if the edit state is true, and the event is a click, add the matrikel to the list
-
-        // 2 things can happen here, either we hit an already selected matrikel, or we hit somewhere without a matrikel.
-        // if we hit a matrikel, we remove it from the list, if we hit somewhere without a matrikel, we add it and the adresse it represents to the lists
-
-        // get the clicked point
-        let point = e.latlng;
-        point = turfPoint([point.lng, point.lat]);
-
-        // Did we hit a feature on queryMatrs?
-        let hit = false;
-        let feature
-
-        // Check if the point is inside a feature on queryMatrs. The point needs to be inside a feature, and the feature needs to be a matrikel
-        queryMatrs.eachLayer(function (layer) {
-          // We need to go further down the rabbit hole, and check if the point is inside the feature
-          layer.eachLayer(function (sublayer) {
-            if (booleanPointInPolygon(point, sublayer.feature)) {
-              hit = true;
-              feature = layer;
-            }
-          });
-        });
-
-        // If we dit not hit a feature, we add it to the list, and query the addresses
-        if (!hit) {
-          // Add matrikel and adress to the list
-          me.addSingleMatrikel(point)
-        } else {
-          // Remove matrikel from list and map.
-          me.removeSingleMatrikel(feature)
-        }
-      }
-
-      toggleEdit = () => {
-        let me = this;
-
-        // If the edit state is false, we enable it
-        if (!me.state.edit_matr) {
-          utils.cursorStyle().crosshair();
-          cloud.get().map.on("click", me.boundHandleEditClick);
-        } else {
-          utils.cursorStyle().reset();
-          cloud.get().map.off("click", me.boundHandleEditClick);
-        }
-
-        // switch the current state
-        me.setState({
-          edit_matr: !me.state.edit_matr,
-        })
-      };
-      addSingleMatrikel = async function (point) {
-        let me = this;
-
-        // Based on clicked point, query for matrikel and adresse information. add these to map and lists.
-        // create a simple point feature, using a very small buffer
-        let buffered = turfBuffer(point, 0.0001, {
-          units: "meters",
-        });
-
-        // Query for matrikel & Adresse
-        let matrikel = await findMatriklerInPolygon(buffered);
-        let adresse = await findAddressesInMatrikel(matrikel.features[0]);
-
-        // Add matrikel to map
-        me.addMatrsToMap(matrikel);
-
-        // Merge the new adresse and matrilkel into the existing lists
-        let newAdresser = Object.assign({}, me.state.results_adresser);
-        adresse.forEach((a) => {
-          newAdresser[a.kvhx] = a;
-        });
-
-        // Set the new state
-        me.setState({
-          results_adresser: newAdresser
-        });
-      };
-
-      removeSingleMatrikel = function (layer) {
-        // Remove matrikel from list and map
-
-        // Using the matrikelnr and ejerlavkode, we can remove the matrikel from the list of matrikler
-        let matrikel, ejerlav
-        layer.eachLayer(function (sublayer) {
-          matrikel = sublayer.feature.properties.matrikelnr;
-          ejerlav = sublayer.feature.properties.ejerlavkode;
-        });
-
-        //console.log(matrikel, ejerlav)
-
-        // Remove adresse from list
-        let newAdresser = Object.assign({}, this.state.results_adresser);
-
-        // filter out the addresses that contain the matrikel and ejerlav
-        let filtered = []
-        for (let key in newAdresser) {
-          let a = newAdresser[key];
-          if (a.matrikelnr != matrikel || a.ejerlavkode != ejerlav) {
-            filtered.push(a);
-          }
-        }
-        // Remove matrikel from map
-        queryMatrs.removeLayer(layer);
-
-        // Set the new state
-        this.setState({
-          results_adresser: filtered
-        });
-      }
 
       clearVentilFilter = () => {
         me.turnOnLayer(me.state.ventil_layer, me.buildVentilFilter());
@@ -1522,7 +1162,7 @@ module.exports = {
           return false;
         }
       };
- 
+
       /**
        * Determines if lukkeliste is allowed
        * @returns boolean
@@ -1603,37 +1243,6 @@ module.exports = {
         pom.setAttribute("download", filename);
         pom.click();
       };
-
-      /**
-       * Gets adresser when there is too many features
-       */
-      getAdresser = async (matrikler) => {
-        let me = this;
-
-        let results = [];
-
-        for (let i = 0; i < matrikler.features.length; i++) {
-          let feature = matrikler.features[i];
-          results.push(await findAddressesInMatrikel(feature));
-          // Show progress per 25 features
-          if (i % 25 == 0) {
-            me.createSnack(__("Found addresses") + " " + i + "/" + matrikler.features.length);
-          }
-        }
-
-        let adresser = this.mergeAdresser(results);
-        me.createSnack(__("Found addresses"));
-
-        // Set results
-        me.setState({
-          results_adresser: adresser,
-          edit_matr: false,
-          TooManyFeatures: false,
-        });
-
-        return;
-      };
-
 
 
 
