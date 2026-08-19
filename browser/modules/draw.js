@@ -253,7 +253,7 @@ module.exports = {
             });
 
             cloud.get().map.addControl(drawControl);
-            $(".leaflet-draw-draw-circlemarker").append('<i class="fa fa-comment" aria-hidden="true"></i>').css("background-image", "none");
+            $(".leaflet-draw-draw-circlemarker").append('<i class="fa fa-comment" aria-hidden="true"></i>');
 
             drawOn = true;
 

@@ -104,6 +104,11 @@
     background-image: linear-gradient(transparent, transparent), url(../../../../images/spritesheet-dark.svg);
 }
 
+[data-bs-theme="light"] .leaflet-draw-toolbar a {
+    /* background-image: url(../images/spritesheet.png); not created yet */
+    background-image: linear-gradient(transparent, transparent), url(../../../../images/spritesheet.svg);
+}
+
 [data-bs-theme="dark"] a.leaflet-disabled {
     background-color: var(--bs-light-border-subtle);
 }
