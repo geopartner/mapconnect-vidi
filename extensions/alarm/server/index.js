@@ -36,11 +36,6 @@ const TIMEOUT = 30000;
  * @param response
  */
 function guard(req, response) {
-  // Guard against missing user
-  if (!hasUserSetup(req.params.userid)) {
-    response.status(401).send("User not found");
-    return;
-  }
 
   // guard against missing session (not logged in to GC2)
   if (!req.session.hasOwnProperty("gc2SessionId")) {
@@ -425,51 +420,4 @@ function SQLAPI(q, req, options = null) {
       });
   });
 }
-
-// Check if user has setup username and password
-function hasUserSetup(uuid) {
-  // check if uuid in in config, and if user object has username and password
-  if (bi.users.hasOwnProperty(uuid)) {
-    // if blueidea is set, and is true, check for username and password
-    if (bi.users[uuid].hasOwnProperty("blueidea") && bi.users[uuid].blueidea) {
-      if (
-        !bi.users[uuid].hasOwnProperty("username") ||
-        !bi.users[uuid].hasOwnProperty("password")
-      ) {
-        return false;
-      }
-    }
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// Login to Blueidea to get token
-function loginToBlueIdea(uuid) {
-  // guard against missing user
-  if (!hasUserSetup(uuid)) {
-    reject("User not found");
-  }
-  var user = bi.users[uuid];
-  var options = {
-    uri: bi.hostname + "User/Login",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({ email: user.username, password: user.password }),
-  };
-
-  return new Promise(function (resolve, reject) {
-    request.post(options, function (error, res, body) {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(JSON.parse(body).accessToken);
-      }
-    });
-  });
-}
-
 module.exports = router;

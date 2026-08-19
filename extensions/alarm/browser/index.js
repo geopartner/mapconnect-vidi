@@ -1189,9 +1189,9 @@ module.exports = {
         point = e.latlng;
         utils.cursorStyle().reset();
         blocked = true;
-
+        const user_alarmkabel_art =2
         // send the point to the server + the distance
-        me.queryPointAlarmkabel(point, me.state.user_alarmkabel_art, me.state.user_alarmkabel_distance, me.state.alarm_direction_selected)
+        me.queryPointAlarmkabel(point, user_alarmkabel_art, me.state.user_alarmkabel_distance, me.state.alarm_direction_selected)
           .then((data) => {
 
             me.createSnack(__("Alarm found"))
@@ -1237,10 +1237,10 @@ module.exports = {
         }
 
         // if the alarmkabel_art is not set, return
-        if (!me.state.user_alarmkabel_art || me.state.user_alarmkabel_art == "") {
-          me.createSnack(__("Alarmkabel type not set"));
-          return;
-        }
+        // if (!me.state.user_alarmkabel_art || me.state.user_alarmkabel_art == "") {
+        //   me.createSnack(__("Alarmkabel type not set"));
+        //   return;
+        // }
 
         // change the cursor to crosshair and wait for a click
         utils.cursorStyle().crosshair();

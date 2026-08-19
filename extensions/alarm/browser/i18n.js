@@ -80,8 +80,8 @@ var dict = {
     en_US: "All addresses found",
   },
   "Error in search": {
-    da_DK: "Fejl i søgning af matrikler",
-    en_US: "Error in search for parcels",
+    da_DK: "Fejl i søgning",
+    en_US: "Error in search",
   },
   "project list":{
     da_DK: "Aktive og fremtige brud",
