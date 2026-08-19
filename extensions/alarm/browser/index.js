@@ -281,7 +281,7 @@ module.exports = {
   init: function () {
     var parentThis = this;
 
-       // Define events
+    // Define events
 
     /*
      * This function queries the blueidea API with the selected drawings
@@ -459,7 +459,7 @@ module.exports = {
           edit_matr: false,
           user_alarmkabel: null,
           user_alarmkabel_distance: config.extensionConfig.blueidea.alarmkabel_distance || 100,
-          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || null,
+          user_alarmkabel_art: config.extensionConfig.blueidea.alarmkabel_art || 1,
           selected_profileid: '',
           lukkeliste_ready: false,
           TooManyFeatures: false,
@@ -597,7 +597,7 @@ module.exports = {
             }, () => {
               // Callback: Setup happens AFTER state update
               if (me.state.authed) {
-                
+
                 if (me.state.layersOnStart.length > 0) {
                   me.state.layersOnStart.forEach((layer) => {
                     api.turnOn(layer);
@@ -605,8 +605,8 @@ module.exports = {
                 }
                 return me.getUser()
               } else {
-                me.setState(resetObj);  
-              }    
+                me.setState(resetObj);
+              }
             }))
             .catch(e => {
               me.setState(resetObj);
@@ -637,11 +637,11 @@ module.exports = {
         return options;
       }
 
-           /**
-       * Get user from backend
-       * @returns {Promise<void>}
-       * @private
-       */
+      /**
+  * Get user from backend
+  * @returns {Promise<void>}
+  * @private
+  */
       getUser() {
         let me = this;
         // If user is set in extensionconfig, set it in state and get information from backend
@@ -672,11 +672,11 @@ module.exports = {
                 if (data.lukkestatus && data.lukkestatus.views_exists) {
                   lukkestatus = data.lukkestatus.views_exists;
                 }
-                me.setState(prev => ({ 
-                    project: prev.project.withChanges({forsyningsarter: data.forsyningsarter})
+                me.setState(prev => ({
+                  project: prev.project.withChanges({ forsyningsarter: data.forsyningsarter })
                 }));
 
-                me.setState(  {
+                me.setState({
                   user_lukkeliste: data.lukkeliste,
                   user_blueidea: data.blueidea,
                   user_id: config.extensionConfig.blueidea.userid, // todo! 
@@ -694,10 +694,10 @@ module.exports = {
                   user_ventil_layer_name_key: data.forsyningsarter[0]?.ventil_layer_name_key || null,
                   user_ventil_export: data.forsyningsarter[0]?.ventil_export || null,
                   layersOnStart: data.layersOnStart || []
-                } 
-              );
+                }
+                );
 
-                
+
                 resolve(data);
               },
               error: function (e) {
@@ -712,10 +712,10 @@ module.exports = {
       }
 
 
-       /**
-       * This function queries database for information related to alarmkabel
-       * @returns uuid string representing the query
-       */
+      /**
+      * This function queries database for information related to alarmkabel
+      * @returns uuid string representing the query
+      */
       queryPointAlarmkabel = (point, forsyningsart, distance, direction) => {
         let me = this;
         let body = point;
@@ -1259,10 +1259,10 @@ module.exports = {
         this.refreshProjectLayer();
       };
 
- 
-       /**
-       * Handler for alarmkabel click events
-       */
+
+      /**
+      * Handler for alarmkabel click events
+      */
       handleAlarmkabelClick = (e) => {
         let me = this;
         let point = null;
@@ -1760,120 +1760,122 @@ module.exports = {
         const _self = this;
         const s = _self.state;
 
-
-        if (s.authed && s.user_id) {
-
+        if (!s.authed || !s.user_id) {
           return (
-            <div role="tabpanel">
-
-
-              <div
-                style={{ alignSelf: "center" }}
-                hidden={!s.user_alarmkabel}
-              >
-                <h6>{__("Alarm cable")}</h6>
-                <select
-                  className="form-select"
-                  value={s.alarm_direction_selected}
-                  onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
-                >
-                  <option value="FT">{__('From-To')}</option>
-                  <option value="TF">{__('To-From')}</option>
-                  <option value="Both">{__('Both')}</option>
-                </select>
-                <div className="form-text mb-3">Angiv søgeretning</div>
-                <div className="vertical-center col-auto">
-                  {__("Distance from point")}
+            <div role="tabpanel" >
+              <div className="form-group" >
+                <div id="blueidea-feature-login" className="alert alert-info" role="alert" >
+                  {__("MissingLogin")}
                 </div>
-
-                <div className="input-group">
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={s.user_alarmkabel_distance}
-                    onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
-                    min={0}
-                    max={2000}
-                    style={{ width: "35%" }}
-                  />
-                  <button
-                    onClick={() => this.selectPointAlarmkabel()}
-                    className="btn btn-primary col-auto"
-                    disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
-                  >
-                    {__("Select point for alarmkabel")}
-                  </button>
+                <div className="d-grid mx-auto">
+                  <button onClick={() => this.clickLogin()} type="button" className="btn btn-primary">{__("Login")}</button>
                 </div>
-                <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
-              </div>
-
-              <div
-                style={{ alignSelf: "center" }}
-                //hidden={!s.user_alarmkabel}
-                hidden
-              >
-                <div className="vertical-center col-auto">
-                  {__("Distance from cabinet")}
-                </div>
-
-                <div className="input-group">
-                  <select
-                    className="form-select"
-                    value={s.alarm_skab_selected}
-                    onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
-                  >
-                    // for each option in s.alarm_skabe, create an option
-                    {s.alarm_skabe.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => this.selectPointAlarmskab()}
-                    className="btn btn-primary col-auto"
-                    disabled={!this.allowAlarmkabel()}
-                  >
-                    {__("Select point for cabinet")}
-                  </button>
-                </div>
-                <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
-              </div>
-
-              <div
-                style={{ alignSelf: "center" }}
-                hidden={s.results_alarmskabe.length == 0}
-              >
-                <div className='list-group'>
-                  {s.results_alarmskabe.map((item, index) => (
-                    <div className='list-group-item' key={index}>
-                      <div className='d-flex w-100 justify-content-between'>
-                        <small>{item.direction}</small>
-                        <small>{item.distance}m</small>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
               </div>
             </div>
-
           );
         }
 
-        // Not Logged in - or not configured
+
         return (
-          <div role="tabpanel" >
-            <div className="form-group" >
-              <div id="blueidea-feature-login" className="alert alert-info" role="alert" >
-                {__("MissingLogin")}
+          <div role="tabpanel">
+
+
+            <div
+              style={{ alignSelf: "center" }}
+              hidden={!s.user_alarmkabel}
+            >
+              <h6>{__("Alarm cable")}</h6>
+              <select
+                className="form-select"
+                value={s.alarm_direction_selected}
+                onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
+              >
+                <option value="FT">{__('From-To')}</option>
+                <option value="TF">{__('To-From')}</option>
+                <option value="Both">{__('Both')}</option>
+              </select>
+              <div className="form-text mb-3">Angiv søgeretning</div>
+              <div className="vertical-center col-auto">
+                {__("Distance from point")}
               </div>
-              <div className="d-grid mx-auto">
-                <button onClick={() => this.clickLogin()} type="button" className="btn btn-primary">{__("Login")}</button>
+
+              <div className="input-group">
+                <input
+                  type="number"
+                  className="form-control"
+                  value={s.user_alarmkabel_distance}
+                  onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
+                  min={0}
+                  max={2000}
+                  style={{ width: "35%" }}
+                />
+                <button
+                  onClick={() => this.selectPointAlarmkabel()}
+                  className="btn btn-primary col-auto"
+                  disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
+                >
+                  {__("Select point for alarmkabel")}
+                </button>
               </div>
+              <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
+            </div>
+
+            <div
+              style={{ alignSelf: "center" }}
+              //hidden={!s.user_alarmkabel}
+              hidden
+            >
+              <div className="vertical-center col-auto">
+                {__("Distance from cabinet")}
+              </div>
+
+              <div className="input-group">
+                <select
+                  className="form-select"
+                  value={s.alarm_skab_selected}
+                  onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
+                >
+                    // for each option in s.alarm_skabe, create an option
+                  {s.alarm_skabe.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => this.selectPointAlarmskab()}
+                  className="btn btn-primary col-auto"
+                  disabled={!this.allowAlarmkabel()}
+                >
+                  {__("Select point for cabinet")}
+                </button>
+              </div>
+              <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
+            </div>
+
+            <div
+              style={{ alignSelf: "center" }}
+              hidden={s.results_alarmskabe.length == 0}
+            >
+              <div className='list-group'>
+                {s.results_alarmskabe.map((item, index) => (
+                  <div className='list-group-item' key={index}>
+                    <div className='d-flex w-100 justify-content-between'>
+                      <small>{item.direction}</small>
+                      <small>{item.distance}m</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
             </div>
           </div>
+
         );
+
+
+        // Not Logged in - or not configured
+
       }
     };
 
