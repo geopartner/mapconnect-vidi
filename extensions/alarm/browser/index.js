@@ -101,59 +101,36 @@ var cloud;
 
 var bufferItems = new L.FeatureGroup();
 
-var queryVentils = new L.FeatureGroup();
 var selectedPoint = new L.FeatureGroup();
-var seletedLedninger = new L.FeatureGroup();
-var selectedIndirekteLedninger = new L.FeatureGroup();
-var selectedForbrugspunkter = new L.FeatureGroup();
 var alarmPositions = new L.FeatureGroup();
 
 var _clearBuffer = function () {
   bufferItems.clearLayers();
 };
 
-var _clearVentil = function () {
-  queryVentils.clearLayers();
-};
+
 var _clearSelectedPoint = function () {
   selectedPoint.clearLayers();
 };
-var _clearSeletedLedninger = function () {
-  seletedLedninger.clearLayers();
-};
-var _clearSelectedIndirekteLedninger = function () {
-  selectedIndirekteLedninger.clearLayers();
-};
+
+
 var _clearAlarmPositions = function () {
   alarmPositions.clearLayers();
 };
-var _clearSelectedForbrugspunkter = function () {
-  selectedForbrugspunkter.clearLayers();
-};
+
 
 var _clearAll = function () {
   _clearBuffer();
-  _clearVentil();
   _clearSelectedPoint();
-  _clearSeletedLedninger();
   _clearAlarmPositions();
-  _clearSelectedIndirekteLedninger();
-  _clearSelectedForbrugspunkter();
 };
-
-const MAXPARCELS = 250;
 
 
 const resetObj = {
   authed: false,
   user_id: null,
-  user_lukkeliste: false,
   user_db: false,
-  user_ventil_layer: null,
   user_udpeg_layer: null,
-  user_ventil_layer_key: null,
-  user_ventil_export: null,
-  selected_profileid: null,
   user_alarmkabel: false,
   user_alarmkabel_distance: 0,
   user_alarmkabel_art: null,
@@ -200,12 +177,9 @@ module.exports = {
      */
     mapObj = cloud.get().map;
     mapObj.addLayer(bufferItems);
-    mapObj.addLayer(queryVentils);
     mapObj.addLayer(selectedPoint);
-    mapObj.addLayer(seletedLedninger);
     mapObj.addLayer(alarmPositions);
-    mapObj.addLayer(selectedIndirekteLedninger);
-    mapObj.addLayer(selectedForbrugspunkter);
+
 
     /**
      *
@@ -265,22 +239,13 @@ module.exports = {
           projectsIsRefreshing: false,
           done: false,
           loading: false,
-          results_adresser: {},
-          results_ledninger: [],
-          results_ventiler: [],
           results_log: {},
-          user_lukkeliste: null,
           user_id: null,
-          user_profileid: null,
           user_db: false,
-          user_ventil_layer: null,
-          user_ventil_layer_key: null,
           user_udpeg_layer: null,
-          user_ventil_export: null,
           user_alarmkabel: null,
           user_alarmkabel_distance: config.extensionConfig.alarm.alarmkabel_distance || 100,
           user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 1,
-          selected_profileid: '',
           lukkeliste_ready: false,
           TooManyFeatures: false,
           alarm_direction_selected: 'Both',
@@ -288,9 +253,7 @@ module.exports = {
           alarm_skabe: null,
           results_alarmskabe: [],
           layersOnStart: [],
-          retryIsDisabled: true,
-          selectedVentiler: [],
-          clickedTableVentil: ''
+          retryIsDisabled: true
         };
 
         // Store bound event handlers as class properties to maintain consistent function references
@@ -346,14 +309,8 @@ module.exports = {
           }
         });
 
-        backboneEvents.get().on(`${exId}:disableRecalculate`, () => {
-          me.setState({ retryIsDisabled: true })
-          me.setState({ project: me.state.project.withChanges({ isReadOnly: false }) });
-        });
-
         backboneEvents.get().on(`${exId}:enableRecalculate`, () => {
           me.setState({ retryIsDisabled: false })
-          me.setState({ project: me.state.project.withChanges({ isReadOnly: true }) });
         });
 
         backboneEvents.get().on(`${exId}:setAnalyzingOff`, () => {
@@ -364,11 +321,6 @@ module.exports = {
         backboneEvents.get().on(`${exId}:setAnalyzingOn`, () => {
           me.setState({ isAnalyzing: true })
           me.forceUpdate();
-        });
-
-        backboneEvents.get().on(`${exId}:clearAll`, () => {
-          me.clearLukkeliste();
-          me.clearProjectState();
         });
 
         // Deactivates module
@@ -398,7 +350,6 @@ module.exports = {
           blocked = true;
           me.setState({
             active: false,
-            user_lukkeliste: false,
           });
           me.state.project.clearData();
         });
@@ -469,13 +420,8 @@ module.exports = {
                 config.extensionConfig.alarm.userid,// todo! 
               type: "GET",
               success: function (data) {
-                console.log("[Lukkeliste] Got user", data);
+                console.log("[Alarm] Got user", data);
 
-                // If data.profileid has values, set the first key as the selected
-                let userProfiles = [];
-                if (data.profileid) {
-                  userProfiles = Object.keys(data.profileid);
-                }
 
                 let alarmskabe = [];
                 let alarm_skab_selected = '';
@@ -493,21 +439,14 @@ module.exports = {
                 }));
 
                 me.setState({
-                  user_lukkeliste: data.lukkeliste,
-                  user_id: config.extensionConfig.alarm.userid, // todo! 
-                  user_profileid: data.profileid || null,
+                  user_id: config.extensionConfig.alarm.userid,
                   user_db: data.db || false,
-                  selected_profileid: userProfiles[0] || '',
                   user_alarmkabel: data.alarmkabel,
                   alarm_skabe: alarmskabe,
                   alarm_skab_selected: alarm_skab_selected,
                   lukkeliste_ready: lukkestatus,
                   forsyningsart_selected: 0,
                   user_udpeg_layer: data.forsyningsarter[0]?.udpeg_layer || null,
-                  user_ventil_layer: data.forsyningsarter[0]?.ventil_layer || null,
-                  user_ventil_layer_key: data.forsyningsarter[0]?.ventil_layer_key || null,
-                  user_ventil_layer_name_key: data.forsyningsarter[0]?.ventil_layer_name_key || null,
-                  user_ventil_export: data.forsyningsarter[0]?.ventil_export || null,
                   layersOnStart: data.layersOnStart || []
                 }
                 );
@@ -555,9 +494,9 @@ module.exports = {
       }
 
       /**
- * This function queries database for information related to alarmkabel
- * @returns uuid string representing the query
- */
+      * This function queries database for information related to alarmkabel
+      * @returns uuid string representing the query
+      */
       queryPointAlarmskab = (point, direction, alarmskab_gid) => {
         let me = this;
         let body = point;
@@ -643,127 +582,6 @@ module.exports = {
 
 
       /**
-       * Merges all adresser into one array
-       * @param {*} results
-       */
-      mergeAdresser(results) {
-        let me = this;
-        try {
-          // Merge all results into one array, keeping only kvhx
-          let merged = {};
-          for (let i = 0; i < results.length; i++) {
-            // for each adresse in list, check if it is a kvhx, and add it to the merged list
-            for (let j = 0; j < results[i].length; j++) {
-              let feature = results[i][j];
-              if (feature.kvhx) {
-                merged[feature.kvhx] = feature;
-              }
-            }
-          }
-          return merged;
-        } catch (error) {
-          console.warn(error);
-          return [];
-        }
-      }
-      /**
-       * Styles and adds the buffer to the map (from the geometryDisolver)
-       */
-      addBufferToMap(geojson) {
-        try {
-          var l = L.geoJSON(geojson, { ...styleObject.buffer, interactive: false }).addTo(bufferItems);
-        } catch (error) {
-          console.warn(error, geojson);
-        }
-      }
-
-
-      /**
-       * Styles and adds ventiler to the map
-       */
-      addVentilerToMap(geojson, nameKey) {
-        try {
-          var l = L.geoJSON(geojson, {
-            pointToLayer: function (feature, latlng) {
-
-              const style = feature.properties.forbundet
-                ? styleObject.ventil_forbundet
-                : styleObject.ventil;
-
-              return L.circleMarker(latlng, {
-                ...style,
-                interactive: true
-              });
-            },
-
-            onEachFeature: function (feature, layer) {
-              layer.bindTooltip(
-                `
-            <b>Ventil</b><br>
-             ${feature.properties[nameKey] || '—'}<br>
-             Forbundet: ${feature.properties.forbundet ? 'Ja' : 'Nej'}
-            `,
-                {
-                  sticky: true,
-                  direction: 'top',
-                  opacity: 0.9
-                }
-              );
-            }
-          }).addTo(queryVentils);
-
-        } catch (error) {
-          console.warn(error, geojson);
-        }
-      }
-
-      /**
-       * Styles and adds ledninger to the map
-       */
-      addSelectedLedningerToMap(geojson) {
-        try {
-
-          var l = L.geoJSON(geojson,
-            {
-              ...styleObject.selectedLedning,
-              interactive: true,
-              onEachFeature: function (feature, layer) {
-                layer.bindTooltip(
-                  config.extensionConfig.blueidea.afbrudt_ledning_tooltip || 'Afbrudt ledning ',
-                  {
-                    sticky: true,
-                    direction: 'top'
-                  }
-                );
-              }
-            }).addTo(seletedLedninger);
-        } catch (error) {
-          console.warn(error, geojson);
-        }
-      }
-
-      addSelectedIndirekteLedningerToMap(geojson) {
-        try {
-          var l = L.geoJSON(geojson,
-            {
-              ...styleObject.selectedIndirekteLedning,
-              interactive: true,
-              onEachFeature: function (feature, layer) {
-                layer.bindTooltip(
-                  config.extensionConfig.blueidea.indirekte_ledning_tooltip || 'Indirekte berørt ledning ',
-                  {
-                    sticky: true,
-                    direction: 'top'
-                  }
-                );
-              }
-            }).addTo(selectedIndirekteLedninger);
-        } catch (error) {
-          console.warn(error, geojson);
-        }
-      }
-
-      /**
        * Styles and adds the selected point to the map
        */
       addSelectedPointToMap(geojson) {
@@ -787,24 +605,6 @@ module.exports = {
         }
       }
 
-      addSelectedForbrugspunkterToMap(geojson) {
-        try {
-          var myIcon = new L.DivIcon(styleObject.selectedForbrugspunkt);
-          var l = L.geoJSON(geojson, {
-            pointToLayer: function (feature, latlng) {
-              return new L.Marker(latlng,
-                {
-                  icon: myIcon,
-                  interactive: true
-                });
-
-            },
-          }).addTo(selectedForbrugspunkter);
-
-        } catch (error) {
-          console.warn(error, geojson);
-        }
-      }
 
       /**
        * Styles and adds the alarm positions to the map
@@ -845,38 +645,7 @@ module.exports = {
       clickLogin() {
         document.querySelector('[data-bs-target="#login-modal"]').click();
       }
-
-      /**
-       * Sends user to draw tab
-       */
-      clickDraw() {
-        _clearAll();
-        const e = document.querySelector('#main-tabs a[href="#draw-content"]');
-        if (e) {
-          bootstrap.Tab.getInstance(e).show();
-          e.click();
-        } else {
-          console.warn(`Unable to locate #draw-content`)
-        }
-      }
-
-      clearProjectState = () => {
-        const me = this;
-        const newProject = new ProjectModel();
-        me.setState(prev => ({
-          project: newProject.withChanges({
-            forsyningsarter: prev.project.forsyningsarter,
-            projectName: '',
-            isReadOnly: false
-          }),
-
-        }))
-        me.setState({
-          editProject: false,
-        });
-        backboneEvents.get().trigger(`${exId}:setAnalyzingOff`);
-      }
-
+ 
       /**
        * This function turns on a layer, if it is not already on the map, and refreshes the map if there is a filter set.
        */
@@ -895,34 +664,7 @@ module.exports = {
         }
       };
 
-      clearLukkeliste = () => {
-        let me = this;
-        me.setState({
-          editProject: false,
-          results_adresser: {},
-          results_log: {},
-          results_ventiler: [],
-          results_ledninger: [],
-          TooManyFeatures: false,
-          selectedVentiler: [],
-          beregnuuid: null,
-          clickedTableVentil: '',
-          retryIsDisabled: true,
-        });
-        _clearAll();
-        api.turnOff(BlueIdea.Forbrugere_layerName);
-        try {
-          api.filter(BlueIdea.Forbrugere_layerName, {
-            "match": "any",
-            "columns": []
-          });
-        } catch (error) {
-          console.warn("Could not clear filter on forbrugere layer", error);
-        }
-        this.refreshProjectLayer();
-      };
-
-
+    
       /**
       * Handler for alarmkabel click events
       */
@@ -1111,69 +853,6 @@ module.exports = {
       };
 
 
-      clearVentilFilter = () => {
-        me.turnOnLayer(me.state.ventil_layer, me.buildVentilFilter());
-      };
-
-      buildVentilFilter = (keys = undefined) => {
-        let me = this;
-        var filter = {};
-
-        if (!keys) {
-          // If no key is set, create the "clear" filter
-          filter[me.state.ventil_layer] = {
-            match: "any",
-            columns: [],
-          };
-        } else {
-          let columns = [];
-
-          //for each key in keys, create a filter and add to columns
-          keys.forEach((key) => {
-            columns.push({
-              fieldname: me.state.ventil_layer_key,
-              expression: "=",
-              value: String(key),
-              restriction: false,
-            });
-          });
-
-          // create the filter
-          filter[me.state.ventil_layer] = {
-            match: "any",
-            columns: columns,
-          };
-        }
-
-        //console.debug(filter);
-
-        return filter;
-      };
-
-      /**
-       * Determines if the plugin is ready after getting results
-       * @returns boolean
-       */
-      readyToSend = () => {
-        // if adresse array is not empty, return true
-        if (Object.keys(this.state.results_adresser).length > 0) {
-          return true;
-        } else {
-          return false;
-        }
-      };
-
-      /**
-       * Determines if lukkeliste is allowed
-       * @returns boolean
-       */
-      allowLukkeliste = () => {
-        if (this.state.user_lukkeliste == true && this.state.user_db == true) {
-          return true;
-        } else {
-          return false;
-        }
-      };
 
       /**
        * Determines if alarmkabel is allowed
@@ -1185,65 +864,6 @@ module.exports = {
           return false;
         }
       }
-
-
-      /**
-       * Determines if ventiler can be downloaded
-       * @returns boolean
-       */
-      allowVentilDownload = () => {
-        let me = this;
-
-        if (
-          this.state.results_ventiler.length > 0 &&
-          this.allowLukkeliste() &&
-          this.state.user_ventil_export
-        ) {
-          return true;
-        } else {
-          return false;
-        }
-      };
-
-      /**
-       * This function converts an array to a csv string
-       * @param {*} data
-       * @returns
-       */
-      arrayToCsv(data) {
-        return data
-          .map(
-            (row) =>
-              row
-                .map(String) // convert every value to String
-                .map((v) => v.replaceAll('"', '""')) // escape double colons
-                .map((v) => `"${v}"`) // quote it
-                .join(",") // comma-separated
-          )
-          .join("\r\n"); // rows starting on new lines
-      };
-
-      /**
-       * Downloads blob to file, using ANSI encoding
-       */
-      downloadBlob = (content, filename, contentType) => {
-        // Create a blob, append the BOM and charset
-        var blob = new Blob(
-          [
-            new Uint8Array([0xef, 0xbb, 0xbf]), // UTF-8 BOM
-            content,
-          ],
-          { type: contentType + ";charset=UTF-8" }
-        );
-        var url = URL.createObjectURL(blob);
-
-        // Create a link to download it
-        var pom = document.createElement("a");
-        pom.href = url;
-        pom.setAttribute("download", filename);
-        pom.click();
-      };
-
 
 
       /**
