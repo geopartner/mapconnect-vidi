@@ -154,7 +154,6 @@ const resetObj = {
   authed: false,
   user_id: null,
   user_lukkeliste: false,
-  user_blueidea: false,
   user_db: false,
   user_ventil_layer: null,
   user_udpeg_layer: null,
@@ -281,95 +280,6 @@ module.exports = {
   init: function () {
     var parentThis = this;
 
-    // Define events
-
-    /*
-     * This function queries the blueidea API with the selected drawings
-     * @param {*} _vidi_id of the selected drawing
-     */
-
-    const makeBlueIdeaWithSelected = function (drawing) {
-      // get geojson from selected drawings
-      var geojson = {
-        type: "FeatureCollection",
-        features: [],
-      };
-
-      // for each layer in drawnItems, get geojson
-      let drawnItems = draw.getDrawItems();
-      // clear previous results 
-      _clearAll();
-      backboneEvents.get().trigger(`${exId}:clearAll`);// måske overkill. Denne er sikkert nok og _ clearAll kan undværes
-
-      for (const layer of drawnItems.getLayers()) {
-        if (layer._vidi_id === drawing) {
-          geojson.features.push(layer.toGeoJSON(GEOJSON_PRECISION));
-        }
-      };
-
-      // if no features, return
-      if (geojson.features.length == 0) {
-        return;
-      } else {
-        showBlueIdea();
-        setTimeout(() =>
-          blueIdeaRef.current.queryAddresses(geojson), 200
-        );
-      }
-    };
-
-    const makeBlueIdeaWithAll = function () {
-      // get geojson from all drawings
-      var geojson = {
-        type: "FeatureCollection",
-        features: [],
-      };
-
-      // clear previous results 
-      _clearAll();
-      backboneEvents.get().trigger(`${exId}:clearAll`); // måske overkill. Denne er sikkert nok og _ clearAll kan undværes
-      // for each layer in drawnItems, get geojson
-      let drawnItems = draw.getDrawItems();
-      drawnItems.eachLayer(function (layer) {
-        geojson.features.push(layer.toGeoJSON(GEOJSON_PRECISION));
-      });
-
-      // if no features, return
-      if (geojson.features.length == 0) {
-        return;
-      } else {
-        showBlueIdea();
-        setTimeout(() =>
-          blueIdeaRef.current.queryAddresses(geojson), 200
-        );
-      }
-    };
-
-    const showBlueIdea = function () {
-      const e = document.querySelector('#main-tabs a[href="#blueidea-content"]');
-      if (e) {
-        bootstrap.Tab.getInstance(e).show();
-        e.click();
-      } else {
-        console.warn(`Unable to locate #blueidea-content`)
-      }
-    }
-
-    // add the event listeners
-    $("#_draw_make_blueidea_with_selected").on("click", function () {
-      let drawing = draw.getSelectedDrawing();
-      if (!drawing) {
-        alert("Vælg en tegning");
-        return;
-      }
-      makeBlueIdeaWithSelected(drawing);
-    });
-
-    $("#_draw_make_blueidea_with_all").on("click", function () {
-      makeBlueIdeaWithAll();
-    });
-
-
     /**
      *
      * Native Leaflet object
@@ -448,7 +358,6 @@ module.exports = {
           results_ventiler: [],
           results_log: {},
           user_lukkeliste: null,
-          user_blueidea: null,
           user_id: null,
           user_profileid: null,
           user_db: false,
@@ -678,7 +587,6 @@ module.exports = {
 
                 me.setState({
                   user_lukkeliste: data.lukkeliste,
-                  user_blueidea: data.blueidea,
                   user_id: config.extensionConfig.blueidea.userid, // todo! 
                   user_profileid: data.profileid || null,
                   user_db: data.db || false,
@@ -1614,20 +1522,7 @@ module.exports = {
           return false;
         }
       };
-
-      /**
-       * Determines if the result is ready to be sent to blueidea
-       * @returns boolean
-       */
-      readyToBlueIdea = () => {
-        // if readyToSend is true, and blueidea is true, return true
-        if (this.readyToSend() && this.allowBlueIdea()) {
-          return true;
-        } else {
-          return false;
-        }
-      };
-
+ 
       /**
        * Determines if lukkeliste is allowed
        * @returns boolean
@@ -1651,17 +1546,6 @@ module.exports = {
         }
       }
 
-      /**
-       * Determines if blueidea is allowed
-       * @returns boolean
-       */
-      allowBlueIdea = () => {
-        if (this.state.user_blueidea == true) {
-          return true;
-        } else {
-          return false;
-        }
-      };
 
       /**
        * Determines if ventiler can be downloaded
