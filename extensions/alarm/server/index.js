@@ -13,7 +13,7 @@ var moment = require("moment");
 var config = require("../../../config/config.js");
 var he = require("he");
 var fetch = require("node-fetch");
-var bi = require("../../../config/gp/config.blueidea");
+var bi = require("../../../config/gp/config.alarm");
 const { post } = require("request");
 const { reject } = require("underscore");
 
@@ -59,40 +59,18 @@ var userString = function (req) {
   return userstr;
 };
 // Get current user and setup
-router.get("/api/extension/blueidea/:userid", function (req, response) {
+router.get("/api/extension/alarm/:userid", function (req, response) {
   guard(req, response);
 
   // Get user from config
   var user = bi.users[req.params.userid];
 
-  //console.log(user);
-
-  // guard against missing mandatory properties
-
-  // if blueidea is set, and is true, check for username and password
-  try {
-    if (user.hasOwnProperty("blueidea") && user.blueidea) {
-      if (!user.hasOwnProperty("username") || !user.hasOwnProperty("password")) {
-        response.status(500).send("Missing username or password");
-        return;
-      }
-    }
-  } catch {
-    console.log("Error checking blueidea properties");
-    return;
-  }
-
-  // if check if blueidea and lukke liste is set
-  if (!user.hasOwnProperty("blueidea") || !user.hasOwnProperty("lukkeliste")) {
-    response.status(500).send("Missing feature flags");
-    return;
-  }
+    
 
   returnobj = {
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
     alarmkabel: user.alarmkabel ? user.alarmkabel : false,
-    blueidea: user.blueidea ? user.blueidea : false,
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
     debug: user.debug ? user.debug : null,
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
@@ -100,13 +78,7 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
-  let validate = [
-    SQLAPI("select * from lukkeliste.beregn_ventiler limit 1", req),
-    SQLAPI("select * from lukkeliste.beregn_afskaaretmatrikler limit 1", req),
-    SQLAPI("select * from lukkeliste.beregn_afskaaretnet limit 1", req),
-    SQLAPI("select * from lukkeliste.beregnlog limit 1", req),
-    SQLAPI("select * from lukkeliste.lukkestatus limit 1", req),
-  ];
+  let validate = [];
 
   // if alarm_skab is set, test and build a list
   if (user.hasOwnProperty("alarm_skab")) {
@@ -119,17 +91,17 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
   Promise.all(validate)
     .then((res) => {
       returnobj.db = true;
-      returnobj.lukkestatus = res[4].features[0].properties;
-      //console.log(res[4].features[0].properties);
+      // returnobj.lukkestatus = res[4].features[0].properties;
+      // //console.log(res[4].features[0].properties);
 
-      // if alarm_skab is set, add to return object
-      if (user.hasOwnProperty("alarm_skab")) {
-        returnobj.alarm_skabe = res[5].features;
-      }
+      // // if alarm_skab is set, add to return object
+      // if (user.hasOwnProperty("alarm_skab")) {
+      //   returnobj.alarm_skabe = res[5].features;
+      // }
     })
     .catch((err) => {
       returnobj.db = false;
-      returnobj.lukkestatus = false;
+      // returnobj.lukkestatus = false;
       returnobj.message = err.message;
     })
     .finally(() => {
@@ -296,74 +268,6 @@ router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
       .catch((err) => {
         console.error(err);
         response.status(500).json(err);
-      });
-  }
-);
-
- 
-router.get("/api/extension/blueidea/:userid/getproject/:beregnuuid", function (req, response) {
-    guard(req, response);
-    const beregnuuid = req.params.beregnuuid;
-    const query = ` SELECT 
-    beregnuuid,
-    forsyningsart,
-    to_char(gyldig_fra AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_fra,
-    to_char(gyldig_til AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS gyldig_til,
-    beregnaarsag,
-    brud_status,
-    sagstekst 
-    FROM lukkeliste.beregnlog 
-    WHERE beregnuuid = '${beregnuuid}' `;   
-
-    SQLAPI(query, req )
-      .then((data) => {
-        response.status(200).json(data);
-      })
-      .catch((err) => {
-        console.error(err);
-        response.status(500).json(err);
-      });
-  }
-);
-
-
-router.post("/api/extension/blueidea/:userid/saveproject", function (req, response) {
-    guard(req, response);
-    const body = req.body;
-    const beregnuuid = body.beregnuuid;
-    
-    const query = `UPDATE lukkeliste.beregnlog SET brud_status = 2 WHERE beregnuuid='${beregnuuid}' `;   
-
-    SQLAPI(query, req )
-      .then((data) => {
-        response.status(200).json({ message: "Project saved successfully" });
-      })
-      .catch((err) => {
-        console.error(err);
-        response.status(500).json({ message: "Error saving project", error: err });
-      });
-  }
-);
-
-router.post("/api/extension/blueidea/:userid/saveprojectdates", function (req, response) {
-    guard(req, response);
-    const body = req.body;
-    const beregnuuid = body.beregnuuid;
-    const gyldig_fra = body.projectStartDate ? `'${body.projectStartDate}'::timestamp` : null;
-    const gyldig_til = body.projectEndDate ? `'${body.projectEndDate}'::timestamp` : null;
-
-    const query = ` UPDATE lukkeliste.beregnlog SET 
-    gyldig_fra = ${gyldig_fra},
-    gyldig_til = ${gyldig_til}
-    WHERE beregnuuid = '${beregnuuid}' `;   
-
-    SQLAPI(query, req )
-      .then((data) => {
-        response.status(200).json({ message: "Project saved successfully" });
-      })
-      .catch((err) => {
-        console.error(err);
-        response.status(500).json({ message: "Error saving project", error: err });
       });
   }
 );
