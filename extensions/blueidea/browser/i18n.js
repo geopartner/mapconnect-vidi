@@ -245,7 +245,7 @@ var dict = {
   },
   "Forsyningstype": {
     da_DK: "Forsyningtype",
-    en_US: "Pipe",
+    en_US: "Pipe type",
   },
   "Break-type": {
     da_DK: "Brudtype",

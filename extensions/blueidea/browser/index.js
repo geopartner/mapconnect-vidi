@@ -136,9 +136,7 @@ var _clearSeletedLedninger = function () {
 var _clearSelectedIndirekteLedninger = function () {
   selectedIndirekteLedninger.clearLayers();
 };
-var _clearAlarmPositions = function () {
-  alarmPositions.clearLayers();
-};
+
 var _clearSelectedForbrugspunkter = function () {
   selectedForbrugspunkter.clearLayers();
 };
@@ -149,7 +147,6 @@ var _clearAll = function () {
   _clearVentil();
   _clearSelectedPoint();
   _clearSeletedLedninger();
-  _clearAlarmPositions();
   _clearSelectedIndirekteLedninger();
   _clearSelectedForbrugspunkter();
 };
@@ -501,8 +498,6 @@ module.exports = {
         // Store bound event handlers as class properties to maintain consistent function references
         this.boundSelectPointLukkeliste = this.selectPointLukkeliste.bind(this);
         this.boundHandleEditClick = this.handleEditClick.bind(this);
-        this.boundHandleAlarmkabelClick = this.handleAlarmkabelClick.bind(this);
-        this.boundHandleAlarmskabClick = this.handleAlarmskabClick.bind(this);
         this.buildStyleObject(); 
       }
 
@@ -604,8 +599,6 @@ module.exports = {
           // Make sure to remove bound click event listeners from map
           cloud.get().map.off("click", me.boundSelectPointLukkeliste);
           cloud.get().map.off("click", me.boundHandleEditClick);
-          cloud.get().map.off("click", me.boundHandleAlarmkabelClick);
-          cloud.get().map.off("click", me.boundHandleAlarmskabClick);
 
           // Reset cursor style
           utils.cursorStyle().reset();
@@ -1683,87 +1676,9 @@ module.exports = {
       }
       };
 
-      /**
-       * Handler for alarmkabel click events
-       */
-      handleAlarmkabelClick = (e) => {
-        let me = this;
-        let point = null;
+ 
 
-        // remove event listener
-        cloud.get().map.off("click", me.boundHandleAlarmkabelClick);
-
-        // if the click is blocked, return
-        if (blocked || !me.state.active) {
-          return;
-        }
-
-        me.createSnack(__("Starting analysis"), true)
-
-        // get the clicked point
-        point = e.latlng;
-        utils.cursorStyle().reset();
-        blocked = true;
-
-        // send the point to the server + the distance
-        me.queryPointAlarmkabel(point, me.state.user_alarmkabel_art, me.state.user_alarmkabel_distance, me.state.alarm_direction_selected)
-          .then((data) => {
-
-            me.createSnack(__("Alarm found"))
-            // if the server returns a result, show it
-            if (data) {
-              // console.debug(data);
-              me.addAlarmPositionToMap(data.alarm);
-            }
-
-            // Add the clicked point to the map
-            if (data.log) {
-              //console.debug("Got log:", data.log);
-              me.addSelectedPointToMap(data.log);
-            }
-            return
-          })
-          .catch((error) => {
-            me.createSnack(__("Error in search") + ": " + error);
-            console.warn(error);
-            return
-          });
-      }
-
-      /**
-       * This function selects a point in the map for alarmkabel
-       * @returns Point
-       */
-      selectPointAlarmkabel = () => {
-        let me = this;
-        let point = null;
-        blocked = false;
-        _clearAll();
-
-        // if udpeg_layer is set, make sure it is turned on
-        if (me.state.user_udpeg_layer) {
-          me.turnOnLayer(me.state.user_udpeg_layer);
-        }
-
-        // If distance is not set, or is 0, return
-        if (!me.state.user_alarmkabel_distance || me.state.user_alarmkabel_distance == 0) {
-          me.createSnack(__("Distance not set"));
-          return;
-        }
-
-        // if the alarmkabel_art is not set, return
-        if (!me.state.user_alarmkabel_art || me.state.user_alarmkabel_art == "") {
-          me.createSnack(__("Alarmkabel type not set"));
-          return;
-        }
-
-        // change the cursor to crosshair and wait for a click
-        utils.cursorStyle().crosshair();
-        cloud.get().map.on("click", me.boundHandleAlarmkabelClick);
-
-        return
-      };
-
+ 
       /**
        * This function parses the alarmskabe results into a list of objects
        * @returns List of objects
@@ -1791,85 +1706,8 @@ module.exports = {
         return results;
       };
 
-      /**
-       * Handler for alarmskab click events
-       */
-      handleAlarmskabClick = (e) => {
-        let me = this;
-        let point = null;
-
-        // remove event listener
-        cloud.get().map.off("click", me.boundHandleAlarmskabClick);
-
-        // if the click is blocked, return
-        if (blocked) {
-          return;
-        }
-
-        me.createSnack(__("Starting analysis"), true)
-
-        // get the clicked point
-        point = e.latlng;
-        utils.cursorStyle().reset();
-        blocked = true;
-
-        // send the point to the server + the direction and alarm_skab
-        me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected)
-          .then((data) => {
-
-            me.createSnack(__("Alarm found"))
-            // if the server returns a result, show it
-            if (data) {
-              // console.debug(data);
-              me.addAlarmPositionToMap(data.alarm);
-
-              // Add the results to the list in state
-              me.setState({
-                results_alarmskabe: me.parseAlarmskabeResults(data.alarm.features),
-              });
-            }
-
-            // Add the clicked point to the map
-            if (data.log) {
-              //console.debug("Got log:", data.log);
-              me.addSelectedPointToMap(data.log);
-            }
-            return
-          })
-          .catch((error) => {
-            me.createSnack(__("Error in seach") + ": " + error);
-            console.warn(error);
-            return
-          });
-      }
-
-      /**
-       * This function selects a point in the map for alarmkabel, based on a specific alarmskab
-       * @returns Point
-       */
-      selectPointAlarmskab = () => {
-        let me = this;
-        let point = null;
-        blocked = false;
-        _clearAll();
-
-        // Reset the results
-        me.setState({
-          results_alarmskabe: [],
-        });
-
-        // if udpeg_layer is set, make sure it is turned on
-        if (me.state.user_udpeg_layer) {
-          me.turnOnLayer(me.state.user_udpeg_layer);
-        }
-
-        // change the cursor to crosshair and wait for a click
-        utils.cursorStyle().crosshair();
-        cloud.get().map.on("click", me.boundHandleAlarmskabClick);
-
-        return
-      };
-
+ 
+ 
       /**
        * Handler for edit click events
        */
@@ -2069,17 +1907,7 @@ module.exports = {
         }
       };
 
-      /**
-       * Determines if alarmkabel is allowed
-       */
-      allowAlarmkabel = () => {
-        if (this.state.user_alarmkabel == true && this.state.user_db == true) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
+ 
       /**
        * Determines if blueidea is allowed
        * @returns boolean
@@ -2262,7 +2090,7 @@ module.exports = {
         this.setState({ selected_profileid: e.target.value });
       }
 
-      setSelectedForsyningsart = (e) => {
+      setSelectedForsyningsart = (valueIndex) => {
         // turn off the udpeg layer of the last forsyningsart
         api.turnOff(this.state.project.forsyningsarter[this.state.project.forsyningsart_selected].udpeg_layer);
 
@@ -2275,12 +2103,13 @@ module.exports = {
 
         // set the new values based on the index in the list
         this.setState({
-          forsyningsart_selected: e.target.value,
-          user_udpeg_layer: this.state.project.forsyningsarter[e.target.value].udpeg_layer,
-          user_ventil_layer: this.state.project.forsyningsarter[e.target.value].ventil_layer,
-          user_ventil_layer_key: this.state.project.forsyningsarter[e.target.value].ventil_layer_key,
-          user_ventil_export: this.state.project.forsyningsarter[e.target.value].ventil_export,
+          forsyningsart_selected: valueIndex,
+          user_udpeg_layer: this.state.project.forsyningsarter[valueIndex].udpeg_layer,
+          user_ventil_layer: this.state.project.forsyningsarter[valueIndex].ventil_layer,
+          user_ventil_layer_key: this.state.project.forsyningsarter[valueIndex].ventil_layer_key,
+          user_ventil_export: this.state.project.forsyningsarter[valueIndex].ventil_export,
         });
+        api.turnOn(this.state.project.forsyningsarter[valueIndex].udpeg_layer);
       }
 
       haveIdenticalContents = (a, b) => {
@@ -2556,6 +2385,7 @@ module.exports = {
                     onHandleSaveProject={this.handleSaveProjectDates}
                     onReadyPointLukkeliste={this.readyPointLukkeliste}
                     onClearLukkeliste={this.clearLukkeliste}
+                    onForsyningsartChange={this.setSelectedForsyningsart}
                   ></ProjectComponent>
                   </div>
                 </details>             
