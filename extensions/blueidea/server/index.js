@@ -100,12 +100,10 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
   returnobj = {
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
-    alarmkabel: user.alarmkabel ? user.alarmkabel : false,
     blueidea: user.blueidea ? user.blueidea : false,
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
     debug: user.debug ? user.debug : null,
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
-    alarm_skabe: null,
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
@@ -117,24 +115,13 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
     SQLAPI("select * from lukkeliste.lukkestatus limit 1", req),
   ];
 
-  // if alarm_skab is set, test and build a list
-  if (user.hasOwnProperty("alarm_skab")) {
-    let alarm_skab = user.alarm_skab;
-    let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
-    validate.push(SQLAPI(query, req, { format: "geojson", srs: 4326 }));
-  }
-
-  
+ 
   Promise.all(validate)
     .then((res) => {
       returnobj.db = true;
       returnobj.lukkestatus = res[4].features[0].properties;
       //console.log(res[4].features[0].properties);
-
-      // if alarm_skab is set, add to return object
-      if (user.hasOwnProperty("alarm_skab")) {
-        returnobj.alarm_skabe = res[5].features;
-      }
+     
     })
     .catch((err) => {
       returnobj.db = false;
@@ -262,169 +249,6 @@ router.post("/api/extension/blueidea/:userid/StopProject", function (req, respon
         response.status(500).json(err);
       });
     
-  }
-);
-
-// Query alarmkabel-plugin in database
-router.post("/api/extension/alarmkabel/:userid/query", function (req, response) {
-    guard(req, response);
-
-    // guard against missing lat and lng in body
-    if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
-      response.status(401).send("Missing lat or lng");
-      return;
-    }
-
-    // Guard against no distance
-    if (!req.body.hasOwnProperty("distance")) {
-      response.status(401).send("Missing distance");
-      return;
-    }
-
-    // Guard against no forsyningsart
-    if (!req.body.hasOwnProperty("forsyningsart")) {
-      response.status(401).send("Missing forsyningsart");
-      return;
-    }
-
-    // set timeout to 30s
-    req.setTimeout(TIMEOUT);
-
-    // Create the query to insert into the database
-    const q = `
-      INSERT INTO lukkeliste.beregnlog(
-      the_geom, 
-      forsyningsart, 
-      opslagmatrikler, 
-      distance, 
-      beregntypeid,
-      username,
-      direction
-      ) 
-      VALUES (
-      ST_Transform(
-        ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),
-        25832
-      )::geometry, 
-      ${req.body.forsyningsart}, 
-      false, 
-      ${req.body.distance},
-      2,
-      '${req.session.screenName}', 
-      '${req.body.direction}'
-      )
-      RETURNING beregnuuid
-    `;
-
-    SQLAPI(q, req)
-      .then((uuid) => {
-        let beregnuuid = uuid.returning[0].beregnuuid;
-        let promises = [];
-
-        console.log('Alarmkabel:', 'user:', req.session.screenName, 'exec time:', uuid._execution_time, 'peak mem:', uuid._peak_memory_usage, '->', beregnuuid);
-
-        // get points
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.vw_alarmpkt where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
-
-        // get log
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.beregnlog where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
-
-        // when promises are complete, return the result
-        Promise.all(promises)
-          .then((res) => {
-            response.status(200).json({
-              alarm: res[0],
-              log: res[1],
-            });
-          })
-          .catch((err) => {
-            console.error(err);
-            response.status(500).json(err);
-          });
-      })
-      .catch((err) => {
-        console.error(err);
-        response.status(500).json(err);
-      });
-  }
-);
-
-// Query alarmskab-plugin in database
-router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
-    guard(req, response);
-
-    // guard against missing lat and lng in body
-    if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
-      response.status(401).send("Missing lat or lng");
-      return;
-    }
-
-    // guard against missing alarmskab
-    if (!req.body.hasOwnProperty("alarmskab")) {
-      response.status(401).send("Missing alarmskab id");
-      return;
-    }
-
-    // set timeout to 30s
-    req.setTimeout(TIMEOUT);
-
-    // create the string we need to query the database
-    q = `SELECT lukkeliste.fnc_beregn_afstand_alarmnet('${req.body.alarmskab}'::int, ST_Transform(ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),25832)::geometry, '${req.body.direction}', '${req.session.screenName}')`;
-    console.log(q);
-    SQLAPI(q, req)
-      .then((uuid) => {
-        let beregnuuid = uuid.features[0].properties.fnc_beregn_afstand_alarmnet;
-        let promises = [];
-
-        console.log(q, " -> ", beregnuuid);
-
-        // get points
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.vw_alarm_afstand where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
-
-        // get log
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.beregnlog where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
-
-        // when promises are complete, return the result
-        Promise.all(promises)
-          .then((res) => {
-            response.status(200).json({
-              alarm: res[0],
-              log: res[1],
-            });
-          })
-          .catch((err) => {
-            console.error(err);
-            response.status(500).json(err);
-          });
-      })
-      .catch((err) => {
-        console.error(err);
-        response.status(500).json(err);
-      });
   }
 );
 
