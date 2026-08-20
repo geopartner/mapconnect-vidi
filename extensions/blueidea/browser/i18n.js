@@ -67,10 +67,6 @@ var dict = {
     da_DK: "Lukkeplan gemt, du bliver viderestillet til Blue Idea",
     en_US: "Project created successfully, you will be redirected to Blue Idea",
   },
-  "Select point for alarmkabel": {
-    da_DK: "Beregn alarm",
-    en_US: "Calculate alarm",
-  },
   "Found parcels": {
     da_DK: "Fundne matrikler i område",
     en_US: "Found parcels in area",
@@ -175,23 +171,7 @@ var dict = {
     da_DK: "Vælg profil",
     en_US: "Select profile",
   },
-  "Alarm cable": {
-    da_DK: "Alarmkabel",
-    en_US: "Alarm cable",
-  },
-  "Distance": {
-    da_DK: "Afstand",
-    en_US: "Distance",
-  },
-  "Distance not set": {
-    da_DK: "Ugyldig afstand",
-    en_US: "Invalid distance",
-  },
-  "Alarm found": {
-    da_DK: "Mulige placeringer fundet",
-    en_US: "Possible alarms found",
-  },
-  "Lukkeliste is ready": {
+   "Lukkeliste is ready": {
     da_DK: "Lukkeliste klar",
     en_US: "Valve list ready",
   },
@@ -238,10 +218,6 @@ var dict = {
   "Select utility-type": {
     da_DK: "Vælg forsyningsart",
     en_US: "Select utility-type",
-  },
-  "Alarmkabel type not set": {
-    da_DK: "Forsyningart for alarmkabel er ikke sat",
-    en_US: "Utility type for alarm cable is not set",
   },
   "Forsyningstype": {
     da_DK: "Forsyningtype",
