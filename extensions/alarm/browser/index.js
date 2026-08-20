@@ -233,7 +233,7 @@ module.exports = {
           user_id: null,
           user_db: false,
           user_udpeg_layer: null,
-          user_alarmkabel: null,
+          user_alarmkabel: false,
           user_alarmkabel_distance: config.extensionConfig.alarm.alarmkabel_distance || 100,
           user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 2,
           alarm_direction_selected: 'Both',
@@ -384,12 +384,12 @@ module.exports = {
       getUser() {
         let me = this;
         // If user is set in extensionconfig, set it in state and get information from backend
-        if (config.extensionConfig.alarm.userid) { // todo! 
+        if (config.extensionConfig.alarm.userid) { 
           return new Promise(function (resolve, reject) {
             $.ajax({
               url:
-                "/api/extension/alarm/" + // todo! 
-                config.extensionConfig.alarm.userid,// todo! 
+                "/api/extension/alarm/" + 
+                config.extensionConfig.alarm.userid,
               type: "GET",
               success: function (data) {
                 console.log("[Alarm] Got user", data);
@@ -409,7 +409,7 @@ module.exports = {
                   alarm_skabe: alarmskabe,
                   alarm_skab_selected: alarm_skab_selected,
                   forsyningsart_selected: 0,
-                  user_udpeg_layer: data.forsyningsarter[0]?.udpeg_layer || null,
+                  user_udpeg_layer: data.udpeg_layer || null,
                   layersOnStart: data.layersOnStart || []
                 }
                 );
@@ -939,8 +939,6 @@ module.exports = {
           </div>
 
         );
-
-
         // Not Logged in - or not configured
 
       }

@@ -64,24 +64,21 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
 
   // Get user from config
   var user = bi.users[req.params.userid];
-
-    
-
-  returnobj = {
+  const returnobj = {
+    db: true,
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
     alarmkabel: user.alarmkabel ? user.alarmkabel : false,
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
-    debug: user.debug ? user.debug : null,
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
-    alarm_skabe: null,
+    alarm_skabe: user.alarm_skab ? user.alarm_skab : null,
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
   let validate = [];
 
   // if alarm_skab is set, test and build a list
-  if (user.hasOwnProperty("alarm_skab")) {
+  if (user.hasOwnProperty("alarm_skab") && user.alarm_skab.hasOwnProperty("layer") && user.alarm_skab.hasOwnProperty("geom") && user.alarm_skab.hasOwnProperty("key") && user.alarm_skab.hasOwnProperty("name")) {
     let alarm_skab = user.alarm_skab;
     let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
     validate.push(SQLAPI(query, req, { format: "geojson", srs: 4326 }));
@@ -95,9 +92,10 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
       // //console.log(res[4].features[0].properties);
 
       // // if alarm_skab is set, add to return object
-      // if (user.hasOwnProperty("alarm_skab")) {
-      //   returnobj.alarm_skabe = res[5].features;
-      // }
+      if (user.hasOwnProperty("alarm_skab")) {
+        returnobj.alarm_skabe = res[0].features;
+      }
+
     })
     .catch((err) => {
       returnobj.db = false;
