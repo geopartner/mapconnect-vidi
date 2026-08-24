@@ -127,10 +127,11 @@ const resetObj = {
   authed: false,
   user_id: null,
   user_db: false,
-  user_udpeg_layer: null,
+  //user_udpeg_layer: null,
   user_alarmkabel: false,
-  user_alarmkabel_distance: 0,
+  // user_alarmkabel_distance: 0,
   user_alarmkabel_art: null,
+
 };
 
 // This element contains the styling for the module
@@ -232,13 +233,14 @@ module.exports = {
           loading: false,
           user_id: null,
           user_db: false,
-          user_udpeg_layer: null,
+          user_udpeg_layer: config.extensionConfig.alarm.udpeg_layer || null,
           user_alarmkabel: false,
           user_alarmkabel_distance: config.extensionConfig.alarm.alarmkabel_distance || 100,
           user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 2,
           alarm_direction_selected: 'Both',
           alarm_skab_selected: '',
           alarm_skabe: null,
+          show_alarmskabe: false,
           results_alarmskabe: [],
           layersOnStart: []
         };
@@ -296,7 +298,7 @@ module.exports = {
           }
         });
 
-         // Deactivates module
+        // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
           console.debug("Stopping alarm");
 
@@ -384,35 +386,41 @@ module.exports = {
       getUser() {
         let me = this;
         // If user is set in extensionconfig, set it in state and get information from backend
-        if (config.extensionConfig.alarm.userid) { 
+        if (config.extensionConfig.alarm.userid) {
           return new Promise(function (resolve, reject) {
             $.ajax({
               url:
-                "/api/extension/alarm/" + 
+                "/api/extension/alarm/" +
                 config.extensionConfig.alarm.userid,
               type: "GET",
               success: function (data) {
                 console.log("[Alarm] Got user", data);
 
 
-                let alarmskabe = [];
+                let alarm_skabe = [];
                 let alarm_skab_selected = '';
-                if (data.alarmskabe) {
-                  alarmskabe = me.createAlarmskabeOptions(data.alarmskabe);
-                  alarm_skab_selected = alarmskabe[0].value || '';
+                if (data.alarm_skabe) {
+                  alarm_skabe = me.createAlarmskabeOptions(data.alarm_skabe);
+                  alarm_skab_selected = alarm_skabe[0].value || '';
+                  me.setState({
+                    show_alarmskabe: true,
+                  });
                 }
 
                 me.setState({
                   user_id: config.extensionConfig.alarm.userid,
                   user_db: data.db || false,
                   user_alarmkabel: data.alarmkabel,
-                  alarm_skabe: alarmskabe,
+                  alarm_skabe: alarm_skabe,
                   alarm_skab_selected: alarm_skab_selected,
                   forsyningsart_selected: 0,
-                  user_udpeg_layer: data.udpeg_layer || null,
                   layersOnStart: data.layersOnStart || []
+                });
+                if ( data.udpeg_layer) {
+                  me.setState({
+                    user_udpeg_layer: data.udpeg_layer
+                  });
                 }
-                );
 
 
                 resolve(data);
@@ -482,7 +490,7 @@ module.exports = {
         });
       }
 
-     
+
       /**
        * This function disolves the geometry, and prepares it for querying
        */
@@ -599,7 +607,7 @@ module.exports = {
       clickLogin() {
         document.querySelector('[data-bs-target="#login-modal"]').click();
       }
- 
+
       /**
        * This function turns on a layer, if it is not already on the map, and refreshes the map if there is a filter set.
        */
@@ -618,7 +626,7 @@ module.exports = {
         }
       };
 
-    
+
       /**
       * Handler for alarmkabel click events
       */
@@ -852,33 +860,36 @@ module.exports = {
               hidden={!s.user_alarmkabel}
             >
               <h6>{__("Alarm cable")}</h6>
-              <select
-                className="form-select"
-                value={s.alarm_direction_selected}
-                onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
-              >
-                <option value="FT">{__('From-To')}</option>
-                <option value="TF">{__('To-From')}</option>
-                <option value="Both">{__('Both')}</option>
-              </select>
-              <div className="form-text mb-3">Angiv søgeretning</div>
-              <div className="vertical-center col-auto">
-                {__("Distance from point")}
+              <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                <label className="col-4 col-form-label text-nowrap" >{__("Angiv søgeretning")}</label>
+                <select
+                  className="col form-select"
+                  value={s.alarm_direction_selected}
+                  onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
+                >
+                  <option value="FT">{__('From-To')}</option>
+                  <option value="TF">{__('To-From')}</option>
+                  <option value="Both">{__('Both')}</option>
+                </select>
               </div>
-
-              <div className="input-group">
+              <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                <label className="col-4 col-form-label text-nowrap" >{__("Distance from point")}</label>
                 <input
                   type="number"
-                  className="form-control"
+                  className="col form-control"
                   value={s.user_alarmkabel_distance}
                   onChange={(e) => this.setState({ user_alarmkabel_distance: e.target.value })}
                   min={0}
                   max={2000}
-                  style={{ width: "35%" }}
                 />
+              </div>
+
+
+              <div className="row mx-auto my-3 align-items-center flex-nowrap">
+                <div className="col-8"></div>
                 <button
                   onClick={() => this.selectPointAlarmkabel()}
-                  className="btn btn-primary col-auto"
+                  className="col-4 btn btn-primary gap-0"
                   disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
                 >
                   {__("Select point for alarmkabel")}
@@ -889,8 +900,7 @@ module.exports = {
 
             <div
               style={{ alignSelf: "center" }}
-              //hidden={!s.user_alarmkabel}
-              hidden
+              hidden={!s.show_alarmskabe}
             >
               <div className="vertical-center col-auto">
                 {__("Distance from cabinet")}

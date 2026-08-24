@@ -5,17 +5,16 @@
  */
 
 var express = require("express");
-var request = require("request");
 var router = express.Router();
 var http = require("http");
 var https = require("https");
 var moment = require("moment");
 var config = require("../../../config/config.js");
-var he = require("he");
+
 var fetch = require("node-fetch");
-var bi = require("../../../config/gp/config.alarm");
-const { post } = require("request");
-const { reject } = require("underscore");
+const bi = require("../../../config/gp/config.alarm");
+
+
 
 // SET GC2 HOST
 GC2_HOST = config.gc2.host;

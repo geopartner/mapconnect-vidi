@@ -28,7 +28,7 @@ var dict = {
     en_US: "Clear",
   },
   "Select point for alarmkabel": {
-    da_DK: "Beregn alarm",
+    da_DK: "Udpeg",
     en_US: "Calculate alarm",
   },
   "Error in search": {
@@ -56,7 +56,10 @@ var dict = {
     da_DK: "Mulige placeringer fundet",
     en_US: "Possible alarms found",
   },
- 
+ "Angiv søgeretning": { 
+   dk_DK: "Angiv søgeretning",
+   en_US: "Select search direction",
+ },
   "From-To": {
     da_DK: "Fra-Til",
     en_US: "From-To",
