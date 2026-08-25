@@ -97,7 +97,7 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
     return;
   }
 
-  returnobj = {
+  const returnobj = {
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
     blueidea: user.blueidea ? user.blueidea : false,

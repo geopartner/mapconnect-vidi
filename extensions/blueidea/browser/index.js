@@ -1957,7 +1957,7 @@ module.exports = {
 
         // turn off previous selection action if active
         if (!blocked) {
-          cloud.get().map.off("click", this.selectPointLukkeliste.bind(this));
+          cloud.get().map.off("click", this.boundSelectPointLukkeliste ());
           utils.cursorStyle().reset();
           blocked = true;
         }
@@ -2170,7 +2170,6 @@ module.exports = {
         const _self = this;
         const s = _self.state;
         const { clickedTableVentil, isAnalyzing, results_ledninger, retryIsDisabled, projectOpen } = this.state
-        const isDisabled = !this.allowLukkeliste() | s.edit_matr;
         const pipeSelected = results_ledninger.length > 0;
         const ventilProperties = this.getVentilProperties('vand');
         const breakHeader = s.editProject ? __("Edit project") : __("Select area");
