@@ -59,6 +59,8 @@ class ProjectComponent extends React.Component {
 
     handleForsyningsart_selectedChange = (value) => {
         this.props.onChange({ forsyningsart_selected: value });
+        const valueIndex = parseInt(value, 10);
+        this.props.onForsyningsartChange(valueIndex);
     };
 
     handleProjectStartChange = (date) => {
