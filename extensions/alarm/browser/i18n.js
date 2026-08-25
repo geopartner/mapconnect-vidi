@@ -44,6 +44,14 @@ var dict = {
     da_DK: "Alarmkabel",
     en_US: "Alarm cable",
   },
+  "Select alarmskab": {
+    da_DK: "Vælg alarmskab",
+    en_US: "Select cabinet",
+  },
+  "Cabinet": {
+    da_DK: "Alarmskabe",
+    en_US: "Cabinet",
+  },
   "Distance": {
     da_DK: "Afstand",
     en_US: "Distance",

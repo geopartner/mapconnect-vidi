@@ -19,7 +19,6 @@ import {
 import _, { has } from "underscore";
 import { createRoot } from "react-dom/client";
 
-
 var React = require("react");
 
 const alarmRef = React.createRef();
@@ -127,9 +126,7 @@ const resetObj = {
   authed: false,
   user_id: null,
   user_db: false,
-  //user_udpeg_layer: null,
   user_alarmkabel: false,
-  // user_alarmkabel_distance: 0,
   user_alarmkabel_art: null,
 
 };
@@ -240,9 +237,11 @@ module.exports = {
           alarm_direction_selected: 'Both',
           alarm_skab_selected: '',
           alarm_skabe: null,
+          alarm_skabe_all: [],
           show_alarmskabe: false,
           results_alarmskabe: [],
-          layersOnStart: []
+          layersOnStart: [],
+          errorText: '',
         };
 
         // Store bound event handlers as class properties to maintain consistent function references
@@ -374,6 +373,8 @@ module.exports = {
 
             options.push(option);
           }
+           options.sort((a, b) =>      String(a.label ?? '').localeCompare(String(b.label ?? '')));
+          options.unshift({ value: '', label: __("Select alarmskab") });
         }
         return options;
       }
@@ -399,11 +400,14 @@ module.exports = {
 
                 let alarm_skabe = [];
                 let alarm_skab_selected = '';
-                if (data.alarm_skabe) {
+                if (data.alarm_skabe && data.alarm_skabe.length > 0) {
+                  const alarm_skabe_all = data.alarm_skabe
                   alarm_skabe = me.createAlarmskabeOptions(data.alarm_skabe);
                   alarm_skab_selected = alarm_skabe[0].value || '';
                   me.setState({
                     show_alarmskabe: true,
+                    alarm_skabe: alarm_skabe,
+                    alarm_skabe_all: alarm_skabe_all,
                   });
                 }
 
@@ -416,7 +420,7 @@ module.exports = {
                   forsyningsart_selected: 0,
                   layersOnStart: data.layersOnStart || []
                 });
-                if ( data.udpeg_layer) {
+                if (data.udpeg_layer) {
                   me.setState({
                     user_udpeg_layer: data.udpeg_layer
                   });
@@ -427,6 +431,9 @@ module.exports = {
               },
               error: function (e) {
                 //console.debug("Error in getUser", e);
+                me.setState({
+                  errorText: "Error in Config: " + e.responseText,
+                });
                 reject(e);
               },
             });
@@ -813,8 +820,35 @@ module.exports = {
 
         return
       };
+      zoomToXY = (lng, lat) => {
+        const lngff = parseFloat(lng)
+        const latf = parseFloat(lat)
+        const padding = 0.0001
+        
+        const bounds = L.latLngBounds(
+          [latf - padding, lngff - padding],
+          [latf + padding, lngff + padding]
+        );
+        cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true });
+      }
 
-
+      alarmSkabeChange = (skabKeyStr) => {
+        const skabKey = parseInt(skabKeyStr, 10); // Convert to integer
+        alert("Changed alarmskab to: " + skabKey);
+        this.setState({
+          alarm_skab_selected: skabKey
+        });
+        const selectedSkab = this.state.alarm_skabe_all.find(skab => skab.properties.value === skabKey);
+        if (selectedSkab) {
+          console.log("Selected alarmskab:", selectedSkab);
+          alert("Selected alarmskab: " + JSON.stringify(selectedSkab));
+          const coordinates = selectedSkab.geometry.coordinates;
+          this.zoomToXY(coordinates[0], coordinates[1]);
+           this.addAlarmPositionToMap(selectedSkab);
+        } else {
+          console.warn("Alarmskab not found for key:", skabKey);
+        }
+      }
 
       /**
        * Determines if alarmkabel is allowed
@@ -902,15 +936,15 @@ module.exports = {
               style={{ alignSelf: "center" }}
               hidden={!s.show_alarmskabe}
             >
-              <div className="vertical-center col-auto">
-                {__("Distance from cabinet")}
-              </div>
+              {/* <h6>{__("Cabinet")}</h6> */}
 
-              <div className="input-group">
+
+              <div className="row mx-auto my-3 align-items-center flex-nowrap">
+                <label className="col-4 col-form-label text-nowrap" >{__("Cabinet")}</label>
                 <select
-                  className="form-select"
+                  className="col form-select"
                   value={s.alarm_skab_selected}
-                  onChange={(e) => this.setState({ alarm_skab_selected: e.target.value })}
+                  onChange={(e) => this.alarmSkabeChange(e.target.value)}
                 >
                     // for each option in s.alarm_skabe, create an option
                   {s.alarm_skabe.map((option) => (
@@ -919,17 +953,20 @@ module.exports = {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="row mx-auto my-3 align-items-center flex-nowrap">
+                <div className="col-8"></div>
                 <button
                   onClick={() => this.selectPointAlarmskab()}
-                  className="btn btn-primary col-auto"
+                  className="col-4 btn btn-primary gap-0"
                   disabled={!this.allowAlarmkabel()}
                 >
                   {__("Select point for cabinet")}
                 </button>
               </div>
-              <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div>
-            </div>
 
+            </div>
+            {/* <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div> */}
             <div
               style={{ alignSelf: "center" }}
               hidden={s.results_alarmskabe.length == 0}
