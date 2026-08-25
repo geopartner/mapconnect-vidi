@@ -21,9 +21,9 @@ var dict = {
   },
   "Info": {
     da_DK:
-      "Lukkeplan er et modul, der understøtter identifikation af relevante adresser og ventiler i forbindelse med en lukning. Der kan tegnes et område på kortet, og få en liste over adresser inden for området genereret. Derudover kan et specifikt punkt på ledningsnettet udpeges, hvorefter der dannes en liste over adresser og ventiler, som er forbundet til dette punkt. De genererede adresselister kan efterfølgende anvendes til udsendelse af beskeder via BlueIdea (forudsætter aftale med BlueIdea).",
+      "Lukkeplan er et modul, der understøtter identifikation af relevante adresser og ventiler i forbindelse med en lukning. Der kan tegnes et område på kortet, og få en liste over adresser inden for området genereret. Derudover kan et specifikt punkt på ledningsnettet udpeges, hvorefter der dannes en liste over adresser og ventiler, som er forbundet til dette punkt. De genererede adresselister kan efterfølgende anvendes til udsendelse af beskeder en SMS Service (f.eks. med BlueIdea).",
     en_US:
-      "ClosurePlan is a module that helps to find relevant addressess for a valve closure.You can draw an area on the map, and get a list of addresses in the area.You can also select a point on the network, and get a list of addresses connected to that point.The lists of addresses can then be used to send messages with BlueIdea (Requires agreement with BlueIdea)",
+      "ClosurePlan is a module that helps to find relevant addressess for a valve closure.You can draw an area on the map, and get a list of addresses in the area.You can also select a point on the network, and get a list of addresses connected to that point.The lists of addresses can then be used to send messages with  a SMS Service (as BlueIdea)",
   },
   "Plugin Tooltip": {
     da_DK: "Lukkeplan",
@@ -64,8 +64,8 @@ var dict = {
     en_US: "Undo all selections and reset the map",
   },
   "Project created successfully": {
-    da_DK: "Lukkeplan gemt, du bliver viderestillet til Blue Idea",
-    en_US: "Project created successfully, you will be redirected to Blue Idea",
+    da_DK: "Lukkeplan gemt, du bliver viderestillet til SMS Service",
+    en_US: "Project created successfully, you will be redirected to the SMS Service",
   },
   "Found parcels": {
     da_DK: "Fundne matrikler i område",
@@ -136,8 +136,12 @@ var dict = {
     en_US: "Recalculate, clear or Save ",
   },
   "Go to blueidea": {
-    da_DK: "Gem og gå til BlueIdea",
-    en_US: "Save and go to BlueIdea",
+    da_DK: "Gem og Send",
+    en_US: "Save and Send",
+  },
+  "Send to blueidea": {
+    da_DK: "Gemmer lukkeplan og viderestiller udvalgte adresser til SMS Service ",
+    en_US: " Saving closure plan and redirecting selected addresses to SMS Service",
   },
   "Valve list": {
     da_DK: "Lukkeliste",
@@ -156,8 +160,8 @@ var dict = {
     en_US: "Download valve list",
   },
   "NotAllowedBlueIdea": {
-    da_DK: "Du har ikke adgang til BlueIdea",
-    en_US: "You are not allowed to use BlueIdea",
+    da_DK: "Du har ikke adgang til SMS Service",
+    en_US: "You are not allowed to use the SMS Service",
   },
   "Starting analysis": {
     da_DK: "Analyserer",
@@ -208,12 +212,12 @@ var dict = {
     en_US: "Select cabinet",
   },
   "Send selected to Blueidea": {
-    da_DK: "Send valgte til Blueidea",
-    en_US: "Send selected to Blueidea",
+    da_DK: "Send valgte til SMS Service",
+    en_US: "Send selected to SMS Service",
   },
   "Send all to Blueidea": {
-    da_DK: "Send alle til Blueidea",
-    en_US: "Send all to Blueidea",
+    da_DK: "Send alle til SMS Service",
+    en_US: "Send all to SMS Service",
   },
   "Select utility-type": {
     da_DK: "Vælg forsyningsart",

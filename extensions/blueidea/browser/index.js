@@ -290,11 +290,11 @@ module.exports = {
     $(draw_selector).append(`
       <div id="_draw_blueidea_group" class="" role="group">
         <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        BlueIdea
+        SMS Service
         </button>
         <ul class="dropdown-menu" aria-labelledby="_draw_blueidea_group">
-        <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_blueidea_with_selected">Send selected to Blueidea</a></li>
-        <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_blueidea_with_all">Send alle til Blueidea</a></li>
+      <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_blueidea_with_selected">Send selected to SMS Service</a></li>
+        <li><a class="dropdown-item" href="javascript:void(0)" id="_draw_make_blueidea_with_all">Send alle til SMS Service</a></li>
         </ul>
       </div>
     `);
@@ -2301,6 +2301,7 @@ module.exports = {
                         onClick={() => this.sendToBlueIdea()}
                         className="col-6 btn btn-primary"
                         disabled={!this.readyToBlueIdea()}
+                        title={__("Send to blueidea")}
                       >
                         {__("Go to blueidea")}
                       </button>
