@@ -166,6 +166,7 @@
     "react-bootstrap": "^2.10.10",
     "react-dom": "^18.3.1",
     "react-dropzone": "^5.1.0",
+    "react-is": "^19.2.8",
     "react-widgets": "^5.8.4",
     "redis": "^3.1.2",
     "regenerator-runtime": "^0.13.9",

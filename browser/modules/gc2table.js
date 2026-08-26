@@ -19,6 +19,10 @@ var Backbone = require('backbone');
 var debounce = require('lodash/debounce');
 const marked = require('marked');
 const mustache = require('mustache');
+
+import config from "../../config/config";
+let session = require('../../extensions/session/browser');
+
 var gc2table = (function () {
     "use strict";
     var isLoaded, object, init;
