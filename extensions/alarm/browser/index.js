@@ -127,8 +127,8 @@ var _clearAll = function () {
 
 
 const resetObj = {
-  authed: false, 
-  user_id:  null, 
+  authed: false,
+  user_id: null,
   user_db: false,
   user_alarmkabel: false,
   user_alarmkabel_art: null,
@@ -227,9 +227,9 @@ module.exports = {
         if (!wkt || !fullLayerName) {
           return foundFeature;
         }
-    
 
-        await new Promise((resolve, reject) => {
+
+        return await new Promise((resolve, reject) => {
           sqlQuery.init(
             qstore,
             wkt,
@@ -238,7 +238,7 @@ module.exports = {
               if (qstore.length >= 1 && qstore[0].geoJSON) {
                 try {
                   qstore[0].geoJSON.features.forEach(feature => {
-                    foundFeature = feature.properties[this.state.alarmskab_gid];
+                    foundFeature = feature;
                   });
                   resolve(foundFeature);
                 } catch (err) {
@@ -257,7 +257,7 @@ module.exports = {
             null
           );
         });
-               
+
 
         // backboneEvents.get().trigger(`${MAPSTATUS_MODULE_NAME}:updatedata`, featuresManager);
 
@@ -280,7 +280,7 @@ module.exports = {
           authed: false,
           isAnalyzing: false,
           loading: false,
-          user_id:  null,
+          user_id: null,
           user_db: false,
           user_udpeg_layer: config.extensionConfig.alarm.udpeg_layer || null,
           user_alarmkabel: false,
@@ -288,6 +288,7 @@ module.exports = {
           user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 2,
           alarm_direction_selected: 'Both',
           alarm_skab_layer: null,
+          alarm_skab_key: null,
           alarm_skab_selected: '',
           alarm_skabe: null,
           alarm_skabe_all: [],
@@ -458,6 +459,7 @@ module.exports = {
                   me.setState({
                     show_alarmskabe: true,
                     alarm_skab_layer: data.alarm_skab_layer ? data.alarm_skab_layer : null,
+                    alarm_skab_key: data.alarm_skab_key ? data.alarm_skab_key : null,
                     alarm_skabe: alarm_skabe,
                     alarm_skabe_all: alarm_skabe_all,
                   });
@@ -529,7 +531,9 @@ module.exports = {
       */
       queryPointAlarmskab = (point, direction, alarmskab_gid) => {
         let me = this;
-        let body = point;
+        let body = {};
+        body.lat = point[0];
+        body.lng = point[1];
         body.direction = direction;  //append distance to body
         body.alarmskab = alarmskab_gid; //append alarmskab to body
 
@@ -794,42 +798,19 @@ module.exports = {
         return results;
       };
 
-
-
       /**
-       * Handler for alarmskab click events
+       * Starts the alarmskab analysis by sending the selected cabinet and direction to the server
        */
-      handleAlarmskabClick = async (e) => {
+      startAlarmskabAnalysis = () => {
         let me = this;
-        let point = null;
-
-        // remove event listener
-        cloud.get().map.off("click", me.boundHandleAlarmskabClick);
-
-        // if the click is blocked, return
-        if (blocked) {
+        if (!me.state.alarm_skab_selected) {
+          me.createSnack(__("No cabinet selected"));
           return;
         }
-
-        
-
-        // get the clicked point
-        point = e.latlng;
-        utils.cursorStyle().reset();
-        blocked = true;
-        const result = await makeSearch(point.lng, point.lat, me.state.alarm_skab_layer);
-        
-        if (!result) {
-          blocked = false;
-          return;
-        } 
-        alert("Result: " + JSON.stringify(result));
-        const skabeId = result ? result.properties[me.state.alarmskab_gid] : null;
-        alert("Skabe ID: " + skabeId);  
-        alarmSkabeChange(skabeId.toString());
-        
+        const selectedSkab = this.state.alarm_skabe_all.find(skab => skab.properties.value === me.state.alarm_skab_selected);
+        const point = selectedSkab ? selectedSkab.geometry.coordinates : null;
         me.createSnack(__("Starting analysis"), true)
-        
+
         // send the point to the server + the direction and alarm_skab
         me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected)
           .then((data) => {
@@ -858,6 +839,39 @@ module.exports = {
             console.warn(error);
             return
           });
+      };
+
+      /**
+       * Handler for alarmskab click events
+       */
+      handleAlarmskabClick = async (e) => {
+        let me = this;
+        let point = null;
+
+        // remove event listener
+        cloud.get().map.off("click", me.boundHandleAlarmskabClick);
+
+        // if the click is blocked, return
+        if (blocked) {
+          return;
+        }
+
+
+
+        // get the clicked point
+        point = e.latlng;
+        utils.cursorStyle().reset();
+        blocked = true;
+
+        const feature = await makeSearch(point.lng, point.lat, me.state.alarm_skab_layer);
+
+        if (!feature) {
+          me.alarmSkabeChange('');
+          blocked = false;
+          return;
+        }
+        const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
+        me.alarmSkabeChange(skabeId.toString());
       }
 
       /**
@@ -905,7 +919,6 @@ module.exports = {
           return;
         }
         const skabKey = parseInt(skabKeyStr, 10); // Convert to integer
-        alert("Changed alarmskab to: " + skabKey);
         this.setState({
           alarm_skab_selected: skabKey
         });
@@ -994,7 +1007,7 @@ module.exports = {
                 <div className="col-8"></div>
                 <button
                   onClick={() => this.selectPointAlarmkabel()}
-                  className="col-4 btn btn-primary gap-0"
+                  className="col-4 btn btn-primary "
                   disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
                 >
                   {__("Select point for alarmkabel")}
@@ -1002,37 +1015,43 @@ module.exports = {
               </div>
             </div>
 
-            <div
-              style={{ alignSelf: "center" }}
-              hidden={!s.show_alarmskabe}
-            >
-              {/* <h6>{__("Cabinet")}</h6> */}
-
-
+            <div style={{ alignSelf: "center" }} hidden={!s.show_alarmskabe}>
               <div className="row mx-auto my-3 align-items-center flex-nowrap">
-                <label className="col-4 col-form-label text-nowrap" >{__("Cabinet")}</label>
+                <label className="col-4 col-form-label text-nowrap">
+                  {__("Cabinet")}
+                </label>
                 <select
                   className="col form-select"
                   value={s.alarm_skab_selected}
                   onChange={(e) => this.alarmSkabeChange(e.target.value)}
                 >
-                    // for each option in s.alarm_skabe, create an option
-                  {s.alarm_skabe && s.alarm_skabe.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  {s.alarm_skabe &&
+                    s.alarm_skabe.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                 </select>
               </div>
+
               <div className="row mx-auto my-3 align-items-center flex-nowrap">
-                <div className="col-8"></div>
-                <button
-                  onClick={() => this.selectPointAlarmskab()}
-                  className="col-4 btn btn-primary gap-0"
-                  disabled={!this.allowAlarmkabel()}
-                >
-                  {__("Select point for cabinet")}
-                </button>
+                <div className="col-4"></div>
+                <div className="col-8 d-flex justify-content-between align-items-center">
+                  <button
+                    onClick={() => this.startAlarmskabAnalysis()}
+                    className="btn btn-primary"
+                    disabled={!s.alarm_skab_selected}
+                  >
+                    BEREGN
+                  </button>
+                  <button
+                    onClick={() => this.selectPointAlarmskab()}
+                    className="btn btn-primary"
+                    disabled={!this.allowAlarmkabel()}
+                  >
+                    {__("Select point for cabinet")}
+                  </button>
+                </div>
               </div>
 
             </div>
