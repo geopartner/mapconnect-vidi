@@ -51,8 +51,6 @@ import { createRoot } from 'react-dom/client';
 import config from '../../../config/config';
 
 
-
-
 let _self, meta, layers, sqlQuery, switchLayer, cloud, legend, state, backboneEvents,
     onEachFeature = [], pointToLayer = {}, onSelectedStyle = [], onLoad = [], onSelect = [],
     onMouseOver = [], cm = [], styles = {}, tables = {}, childLayersThatShouldBeEnabled = [],
@@ -270,7 +268,12 @@ module.exports = {
             });
         }
 
-        queueStatistsics = new QueueStatisticsWatcher({switchLayer, offlineModeControlsManager, layerTree: _self, extensions});
+        queueStatistsics = new QueueStatisticsWatcher({
+            switchLayer,
+            offlineModeControlsManager,
+            layerTree: _self,
+            extensions
+        });
         apiBridgeInstance = APIBridgeSingletone((statistics, forceLayerUpdate) => {
             _self._statisticsHandler(statistics, forceLayerUpdate);
         });
@@ -329,6 +332,28 @@ module.exports = {
 
     getTables: () => {
         return tables;
+    },
+
+    /**
+     * Force-close any open vector-feature popup and release its event handlers
+     * and detached accordion DOM. Called when a vector layer is turned off so
+     * its features (and any retained bytea payloads) become GC-able.
+     */
+    closeVectorPopup: () => {
+        if (typeof vectorPopUp !== "undefined" && vectorPopUp) {
+            const popupEl = vectorPopUp.getElement?.();
+            if (popupEl) {
+                popupEl.querySelectorAll('.accordion-collapse').forEach(el => {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+                        try { bootstrap.Collapse.getInstance(el)?.dispose(); } catch (e) {}
+                    }
+                    el.replaceWith(el.cloneNode(false));
+                });
+            }
+            try { vectorPopUp.off(); } catch (e) {}
+            try { vectorPopUp.closePopup(); } catch (e) {}
+            vectorPopUp = undefined;
+        }
     },
 
     /**
@@ -2030,8 +2055,10 @@ module.exports = {
 
             let metaDataKeys = meta.getMetaDataKeys();
             let template = sqlQuery.getVectorTemplate(layerKey);
+            // prepareDataForTableView only reads properties; the other call sites
+            // (lines 1728, 1839) also pass features directly without cloning.
             let tableHeaders = sqlQuery.prepareDataForTableView(LAYER.VECTOR + ':' + layerKey,
-                JSON.parse(JSON.stringify(layerWithData[0].toGeoJSON(GEOJSON_PRECISION).features)));
+                layerWithData[0].toGeoJSON(GEOJSON_PRECISION).features);
 
             window.filterFormatter = (value, row, index) => {
                 return `
@@ -2196,7 +2223,11 @@ module.exports = {
 
         $(".vector-feature-info-panel").remove();
         if (typeof vectorPopUp !== "undefined") {
+            // Detach all event listeners so the closure context (which captures
+            // the previous call's features incl. any bytea payloads) can be GC'd.
+            vectorPopUp.off();
             vectorPopUp.closePopup();
+            vectorPopUp = undefined;
         }
         features.forEach((f) => {
             let layerKey = f.layerKey;
@@ -2206,7 +2237,9 @@ module.exports = {
 
             let parsedMeta = _self.parseLayerMeta(meta.getMetaByKey(layerKey, false));
             let editDisplay = parsedMeta.vidi_layer_editable ? 'inline' : 'none';
-            let properties = JSON.parse(JSON.stringify(feature.properties));
+            // Shallow copy: we only add a few _vidi_edit_* top-level keys below;
+            // nested objects (including bytea payloads) are referenced, not duplicated.
+            let properties = {...feature.properties};
             for (const key in properties) {
                 if (properties.hasOwnProperty(key)) {
                     if (key.indexOf(SYSTEM_FIELD_PREFIX) === 0) {
@@ -2220,6 +2253,12 @@ module.exports = {
             properties._vidi_edit_vector = vector;
             properties._vidi_edit_display = editDisplay;
 
+            // Ensure _vidi_content exists so the popup template can iterate fields
+            // even when prepareDataForTableView hasn't run for this feature yet
+            // (e.g. on freshly added features before reload).
+            if (!properties._vidi_content) {
+                properties._vidi_content = {title: layerKey, fields: []};
+            }
 
             let i = properties._vidi_content.fields.length;
             while (i--) {
@@ -2306,15 +2345,36 @@ module.exports = {
                 }
             }
             let func = selectCallBack.bind(this, null, layer, layerKey, _self, feature);
-            $(document).arrive(`#a-collapse${randText}`, function () {
+            const arriveSelector = `#a-collapse${randText}`;
+            const arriveHandler = function () {
+                // Unbind immediately: a fresh arrive handler is registered per
+                // popup-open, and each one captures `func` → `feature` → bytea
+                // payloads. Without unbinding, the document accumulates one
+                // permanent retainer per feature ever shown.
+                $(document).unbindArrive(arriveSelector, arriveHandler);
+
                 const e = $(`#collapse${randText}`);
                 const bsCollapse = document.getElementById(`collapse${randText}`);
+                if (!bsCollapse) return;
+                const map = cloud.get().map;
                 bsCollapse.addEventListener('hidden.bs.collapse', event => {
-                    // Do something
+                    let geoJsonLayer;
+                    map.eachLayer(layer => {
+                        if (layer.id === 'v:' + layerKey) {
+                            geoJsonLayer = map._layers[layer._leaflet_id];
+                        }
+                    })
+                    map.eachLayer(layer => {
+                        if (parseInt(layer._leaflet_id) === parseInt(e[0].dataset.layerId)) {
+                            if (geoJsonLayer) {
+                                geoJsonLayer.resetStyle(layer);
+                            }
+                        }
+                    })
                 })
                 bsCollapse.addEventListener('shown.bs.collapse', event => {
                     func();
-                    cloud.get().map.eachLayer(layer => {
+                    map.eachLayer(layer => {
                         if (parseInt(layer._leaflet_id) === parseInt(e[0].dataset.layerId)) {
                             if (layer?.setStyle) {
                                 layer.setStyle(SELECTED_STYLE);
@@ -2325,17 +2385,8 @@ module.exports = {
                         }
                     })
                 })
-                $(this).on('click', function () {
-                    _self.resetAllVectorLayerStyles();
-                    sqlQuery.getQstore()?.forEach(store => {
-                        $.each(store.layer._layers, function (i, v) {
-                            if (store.layer && store.layer.resetStyle) {
-                                store.layer.resetStyle(v);
-                            }
-                        });
-                    })
-                });
-            });
+            };
+            $(document).arrive(arriveSelector, arriveHandler);
             if (count > 0) {
                 if (count2 === features.length) {
                     if (multi) {
@@ -2351,7 +2402,7 @@ module.exports = {
                             minWidth: 300,
                             className: `js-vector-layer-popup custom-popup`
                         }).setLatLng(event.latlng).setContent(`${additionalControls}${accordion}`).openOn(cloud.get().map)
-                            .on('remove', () => {
+                            .on('remove', function onPopupRemove() {
                                 if (`editor` in extensions) {
                                     editor = extensions.editor.index;
                                     if (!editor.getEditedFeature()) {
@@ -2359,6 +2410,32 @@ module.exports = {
                                     }
                                 }
                                 _self.resetAllVectorLayerStyles();
+
+                                // Bootstrap 5 components hold static Map<DOMelement, instance>
+                                // for instance tracking. Without dispose(), the detached
+                                // accordion DOM stays referenced — and its event listeners
+                                // (which close over the popup's features) prevent GC.
+                                // Replacing each .accordion-collapse with a clone strips
+                                // all attached listeners before dispose() releases the map.
+                                const popupEl = vectorPopUp?.getElement();
+                                if (popupEl) {
+                                    popupEl.querySelectorAll('.accordion-collapse').forEach(el => {
+                                        if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+                                            try {
+                                                bootstrap.Collapse.getInstance(el)?.dispose();
+                                            } catch (e) {
+                                            }
+                                        }
+                                        el.replaceWith(el.cloneNode(false));
+                                    });
+                                }
+
+                                // Detach this handler so the popup object becomes GC-able
+                                // (the closure context retains the call-site's features).
+                                if (vectorPopUp) {
+                                    vectorPopUp.off('remove', onPopupRemove);
+                                    vectorPopUp = undefined;
+                                }
                             });
                     }
                 }
@@ -2948,7 +3025,8 @@ module.exports = {
         // Setup active / added layers indicators
         layerTreeUtils.setupLayerNumberIndicator(base64GroupName, localNumberOfActiveLayers, localNumberOfAddedLayers);
 
-        $("#layer-panel-" + base64GroupName).find(`.js-toggle-layer-panel`).click((e) => {
+        const layerPanelToggleEl = $("#layer-panel-" + base64GroupName).find(`.js-toggle-layer-panel`);
+        layerPanelToggleEl.on('click', (e) => {
             if ($("#group-" + base64GroupName).find(`#collapse${base64GroupName}`).children().length === 0) {
                 let virtualLayerTreeNode = $('<div></div>');
                 const name = $("#layer-panel-" + base64GroupName).find('.card-body').data('gc2-group-id')
@@ -3891,7 +3969,7 @@ module.exports = {
         if (whereClause) {
             sql += ` WHERE ${whereClause}`;
         }
-        download.download(sql, format, urlparser.db)
+        download.download(sql, format, urlparser.db, layerKey.replace('.', '_'));
     },
 
     onApplyPredefinedFiltersHandler: ({layerKey, filters}, forcedReloadLayerType = false) => {

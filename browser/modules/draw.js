@@ -253,7 +253,7 @@ module.exports = {
             });
 
             cloud.get().map.addControl(drawControl);
-            $(".leaflet-draw-draw-circlemarker").append('<i class="fa fa-comment" aria-hidden="true"></i>');
+            $(".leaflet-draw-draw-circlemarker").append('<i class="bi bi-chat-left-text" aria-hidden="true"></i>').css("background-image", "none");
 
             drawOn = true;
 
@@ -441,13 +441,6 @@ module.exports = {
     getState: () => {
         let drawnItems = serializeLayers.serializeDrawnItems(true);
         return {drawnItems};
-    },
-
-    /**
-     * Returns the selected drawing
-     */
-    getSelectedDrawing: () => {
-        return selectedDrawing;
     },
 
     /**

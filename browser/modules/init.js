@@ -106,6 +106,8 @@ module.exports = {
             loadCheckingInterval: 15000,
             mode: 0,
             layerTreeFilterPlaceholder: null,
+            minZoom: null,
+            maxZoom: null,
             allowDownloadLayer: true,
             showLayerGroupChildren: true,
         };

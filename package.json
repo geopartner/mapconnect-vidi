@@ -14,8 +14,7 @@
     "build_docs": "sphinx-build ./docs ./docs/_build/html/da",
     "gettext": "sphinx-build ./docs -b gettext ./docs/_build/gettext",
     "update_en": "cd ./docs && sphinx-intl update -p _build/gettext -l en",
-    "build_en": "sphinx-build -b html -D language=en ./docs ./docs/_build/html/en",
-    "upstream": "bash scripts/upstream.sh"
+    "build_en": "sphinx-build -b html -D language=en ./docs ./docs/_build/html/en"
   },
   "repository": {
     "type": "git",
@@ -115,6 +114,7 @@
     "dotenv": "^16.0.3",
     "es6-promise": "^4.2.8",
     "express": "^4.17.1",
+    "express-async-errors": "^3.1.1",
     "express-cluster": "0.0.5",
     "express-prom-bundle": "^8.0.0",
     "express-session": "^1.17.1",

@@ -27,13 +27,87 @@ The changes and additions made will be reflected by the date which they are depl
 - [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
 - [embed] New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
 
-
-# Vidi Changelog
+# Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
+
+## [2026.6.3] - 2026-29-6
+### Fixed
+- Print: headless browser pool now surfaces `factoryCreateError`/`factoryDestroyError` instead of
+  masking them as the misleading "ResourceRequest timed out" acquire error. The bundled Chromium can
+  be overridden via `PUPPETEER_EXECUTABLE_PATH` / `config.puppeteerProcesses.executablePath` (fixes
+  printing in Docker, where the bundled binary is absent), and `acquireTimeoutMillis` was raised from
+  500ms to a configurable 30s so a cold browser launch no longer times out before it is ready.
+
+## [2026.6.2] - 2026-16-6
+### Fixed
+- Add versioning check to filter out ended versions in downloads.
+
+## [2026.6.1] - 2026-10-6
+### Fixed
+- Editor: Boolean fields default to `false` again when creating new features. The `skipDefaults` form
+  option suppressed the schema's explicit `default: false`, so unchecked checkboxes were submitted as
+  `null`. Changed to `skipEmptyDefaults`, which still applies defaults explicitly defined in the schema.
+
+### Changed
+- Refactor(controllers): Replace deprecated `request` library with modern `fetch` across controllers (not extensions yet).
+- Integrate `express-async-errors` to forward async route rejections in controllers to a central error handler. 
+  Implemented a middleware-based error handler for consistent error responses.
+
+## [2026.6.0] - 2026-8-6
+### Fixed
+- Prevent redundant '?' when appending query parameters to WMTS URL.
+ 
+## [2026.5.9] - 2026-29-5
+### Fixed
+- Memory-leaks in Editor.
+
+## [2026.5.8] - 2026-20-5
+### Fixed
+- Editor: Optimize blob handling: reduce memory consumption by replacing base64 strings with blob URLs, 
+  clean up unused references, and prevent leaks. Enhance FileUploadWidget to efficiently manage 
+  data URLs and async HTTP URL conversion.
+
+## [2026.5.7] - 2026-19-5
+### Fixed
+- Strip query strings from URLs before passing them to the decoder in FileUploadWidget, as the deocoder doesn't use them.
+
+## [2026.5.6] - 2026-19-5
+### Fixed
+- Replaced FontAwesome with Bootstrap Icons for draw control icon.
+
+## [2026.5.5] - 2026-15-5
+### Added
+- New config options `minZoom` and `maxZoom`. Minimum and maximum zoom level of the map. If not set, the map will use the min/max zoom level of the active baselayer.
+
+## [2026.5.4] - 2026-13-5
+### Fixed
+- Back to use enum + ui:enumNames rather than oneOf+const. AJV compiles oneOf into a
+  deeply nested else-chain (one level per branch) which overflows V8's stack
+  on large restriction lists (e.g. ~1000 postnumre)
+
+## [2026.5.3] - 2026-13-5
+### Fixed
+- JSON types are noe strinhgified in the editor.
+
+## [2026.5.2] - 2026-8-5
+### Changed
+- Refactor Editor schema handling: replace `enum` with `oneOf` for restriction fields, preserve parent type, and improve select rendering.
+
+## [2026.5.1] - 2026-5-5
+### Fixed
+- Add support for danger toasts and fixed layertree download functionality with improved error handling and localized messages.
+
+## [2026.5.0] - 2026-4-5
+### Fixed
+- The download widget in layertree was broken and is fixed now. Also, Dowbload file name is set to the layer name.
+
+## [2026.4.2] - 2026-28-4
+### Fixed
+- Regressions in Symbols
 
 ## [2026.4.1] - 2026-20-4
 ### Fixed

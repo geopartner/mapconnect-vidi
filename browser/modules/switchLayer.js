@@ -563,6 +563,14 @@ module.exports = module.exports = {
                 if (webGLLayer) cloud.get().map.removeLayer(webGLLayer);
 
                 if (name.startsWith(LAYER.VECTOR + ':')) {
+                    // Close any open feature popup for this layer first.
+                    // The popup's accordion DOM holds event listeners that
+                    // close over Leaflet features (incl. bytea payloads);
+                    // without explicit cleanup they survive layer destruction
+                    // via Bootstrap's static Collapse instance map.
+                    if (typeof layerTree.closeVectorPopup === 'function') {
+                        layerTree.closeVectorPopup();
+                    }
                     let tables = layerTree.getTables();
                     let stores = layerTree.getStores();
                     stores[name].destroy();
@@ -576,6 +584,25 @@ module.exports = module.exports = {
                         }
                     }
                     stores[name].geoJSON = null;
+                    // Also clear the Leaflet layer's _layers so features (and
+                    // any bytea payloads on their properties) become GC-able.
+                    // Don't delete the store entry itself — layerTree gates
+                    // store creation on `vectorStores[key]` being an object,
+                    // so removing it would force a full rebuild on layer re-on.
+                    try {
+                        if (stores[name].layer && typeof stores[name].layer.clearLayers === 'function') {
+                            stores[name].layer.clearLayers();
+                        }
+                        if (stores[name].layerHL && typeof stores[name].layerHL.clearLayers === 'function') {
+                            stores[name].layerHL.clearLayers();
+                        }
+                        // Reset the hash so the next load is not short-circuited
+                        // by "Hashes match. Not reloading" (the cached hash refers
+                        // to the now-cleared geoJSON).
+                        stores[name].currentGeoJsonHash = null;
+                    } catch (e) {
+                        console.warn('switchLayer: failed to clear vector store layers', e);
+                    }
                     // If vector table is enabled for layer the remove and set pane with back to 100%
                     const vectorTableEl = $(`*[data-vidi-vector-table-id="${name}"]`);
                     if (vectorTableEl.length) {

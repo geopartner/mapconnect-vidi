@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2025 MapCentia ApS
+ * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -18,10 +19,6 @@ var Backbone = require('backbone');
 var debounce = require('lodash/debounce');
 const marked = require('marked');
 const mustache = require('mustache');
-
-import config from "../../config/config";
-let session = require('../../extensions/session/browser');
-
 var gc2table = (function () {
     "use strict";
     var isLoaded, object, init;
@@ -106,8 +103,6 @@ var gc2table = (function () {
             maxZoom = parseInt(defaults.maxZoom) || 17;
 
         var customOnLoad = false, destroy, assignEventListeners, clickedFlag = false;
-
-        let clonedLayers = {};
 
         $(el).parent("div").addClass("gc2map");
 
@@ -199,7 +194,7 @@ var gc2table = (function () {
                     }
                 });
 
-                object.trigger("openpopup" + "_" + uid, layer, clonedLayers[id]);
+                object.trigger("openpopup" + "_" + uid, layer);
             }
         });
 
@@ -439,16 +434,13 @@ var gc2table = (function () {
             loadDataInTable();
         };
 
-        $.each(store.layer._layers, function (i, v) {
-            const l = L.geoJson(JSON.parse(JSON.stringify(v.toGeoJSON())))._layers;
-            clonedLayers[i] = l[Object.keys(l)[0]];
-        })
         loadDataInTable = function (doNotCallCustomOnload = false, forceDataLoad = false) {
             data = [];
             $.each(store.layer._layers, function (i, v) {
                 v.feature.properties._id = i;
-                // Clone
-                let layerClone = jQuery.extend(true, {}, v.feature.properties);
+                // Shallow copy: we only overwrite top-level keys with rendered HTML
+                // below; nested objects (including bytea payloads) are referenced.
+                let layerClone = {...v.feature.properties};
                 $.each(layerClone, function (n, m) {
                     $.each(cm, function (j, k) {
                         if (k.dataIndex === n && (k?.template && k?.template !== '') && (layerClone[n] && layerClone[n] !== '')) {
@@ -458,10 +450,18 @@ var gc2table = (function () {
                         } else if (k.dataIndex === n && (k?.link === true || typeof k?.link === "string") && (layerClone[n] && layerClone[n] !== '')) {
                             layerClone[n] = "<a style='text-decoration: underline' target='_blank' rel='noopener' href='" + layerClone[n] + "'>" + (typeof k.link === "string" ? k.link : "Link") + "</a>";
                         } else if (k.dataIndex === n && (k?.content === 'image' && (layerClone[n] && layerClone[n] !== ''))) {
-                            layerClone[n] = `<div style="cursor: pointer" onclick="window.open().document.body.innerHTML = '<img src=\\'${layerClone[n]}\\' />';">
-                                        <img style='width:25px' src='${layerClone[n]}'/>
-                                     </div>`
+                            const srcVal = layerClone[n];
+                            if (Array.isArray(srcVal)) {
+                                // bytea[]: avoid stringifying the array which would inline
+                                // every base64 entry into the HTML.
+                                layerClone[n] = `<span class="text-muted small">${srcVal.length} file(s)</span>`;
+                            } else {
+                                layerClone[n] = `<div style="cursor: pointer" onclick="window.open('${srcVal}')">
+                                        <img style='width:25px' src="${srcVal}"/>
+                                     </div>`;
+                            }
                         } else if (k.dataIndex === n && (k?.restrictions && (layerClone[n] && layerClone[n] !== ''))) {
+                            // Replace the value with the corresponding alias from the restrictions array if it exists
                             let restriction = k.restrictions.find(restriction => restriction.value === layerClone[n]);
                             if (restriction) {
                                 // replace value with alias
@@ -470,15 +470,16 @@ var gc2table = (function () {
                         }
                     });
                 });
-                data.push(JSON.parse(JSON.stringify(layerClone)));
-                layerClone = null;
+                data.push(layerClone);
 
                 if (assignFeatureEventListenersOnDataLoad) {
                     assignEventListeners();
                 }
             });
 
-            originalLayers = jQuery.extend(true, {}, store.layer._layers);
+            // Shallow copy of the layers map; we only iterate values to re-add to
+            // the map after filtering — never mutate the Leaflet layers themselves.
+            originalLayers = {...store.layer._layers};
 
             if ($(el).is(':visible') || forceDataLoad) {
                 $(el).bootstrapTable("load", data);

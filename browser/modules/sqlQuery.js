@@ -50,6 +50,27 @@ let template;
 
 let elementPrefix;
 
+/**
+ * Decode a base64 data URL into a Blob and return an object URL. The blob URL
+ * is a short (~40 char) string that can replace the giant base64 payload in
+ * popup HTML and DOM. Returns null if the input is not a decodable data URL.
+ */
+const dataUrlToBlobUrl = (dataUrl, contentType) => {
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+    const semi = dataUrl.indexOf(';');
+    const comma = dataUrl.indexOf(',', semi);
+    if (semi < 5 || comma < 0) return null;
+    try {
+        const binary = atob(dataUrl.substring(comma + 1));
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return URL.createObjectURL(new Blob([bytes], {type: contentType}));
+    } catch (e) {
+        console.warn('sqlQuery: failed to create blob URL for bytea field', e);
+        return null;
+    }
+};
+
 let qStoreShadow;
 
 let defaultSelectedStyle = {
@@ -804,6 +825,13 @@ module.exports = {
         if (features.length > 0) {
             features.forEach(feature => {
                 let fields = [];
+                // Reclaim bytea blob URLs from a previous pass before regenerating HTML.
+                const prevBlobUrls = feature.properties?._vidi_content?.blobUrls;
+                if (Array.isArray(prevBlobUrls)) {
+                    prevBlobUrls.forEach(URL.revokeObjectURL);
+                }
+                const blobUrls = [];
+                try {
                 if (fieldConf === null) {
                     $.each(feature.properties, function (name, property) {
                         if (name.indexOf(SYSTEM_FIELD_PREFIX) !== 0 && name !== `_id` && name !== `_vidi_content`) {
@@ -860,11 +888,28 @@ module.exports = {
                                                 </div>`;
 
                                         value = Handlebars.compile(tmpl)(feature.properties[property.key]);
+                                    } else if (Array.isArray(feature.properties[property.key])) {
+                                        // bytea[] arrives as an array. Stringifying joins entries
+                                        // with commas which gives invalid base64 and dataUrlToBlobUrl
+                                        // would fall back to embedding the giant comma-joined string.
+                                        value = `<span class="text-muted small">${feature.properties[property.key].length} ${__("file(s)")}</span>`;
                                     } else {
-                                        let subValue = decodeURIComponent(feature.properties[property.key]);
+                                        const rawImg = feature.properties[property.key];
+                                        const rawImgStr = typeof rawImg === 'string' ? rawImg : String(rawImg);
+                                        const subValue = rawImgStr.indexOf('%') !== -1 ? decodeURIComponent(rawImgStr) : rawImgStr;
+                                        // If it is a data URL, route through blob URL to keep the
+                                        // base64 out of the HTML string and the DOM <img src>.
+                                        let imgContentType = null;
+                                        if (subValue.startsWith('data:')) {
+                                            const semi = subValue.indexOf(';');
+                                            if (semi > 5) imgContentType = subValue.substring(5, semi);
+                                        }
+                                        const imgBlobUrl = dataUrlToBlobUrl(subValue, imgContentType);
+                                        const imgSrc = imgBlobUrl || subValue;
+                                        if (imgBlobUrl) blobUrls.push(imgBlobUrl);
                                         value =
-                                            `<div style="cursor: pointer" onclick="window.open().document.body.innerHTML = '<img src=\\'${subValue}\\' />';">
-                                        <img class="w-100" src='${subValue}'/>
+                                            `<div style="cursor: pointer" onclick="window.open('${imgSrc}')">
+                                        <img class="w-100" src="${imgSrc}"/>
                                      </div>`;
                                     }
                                 }
@@ -881,35 +926,62 @@ module.exports = {
                                     </video>`;
                                 }
                             } else if (property.value.type === 'bytea' && feature.properties[property.key]) {
-                                let subValue = decodeURIComponent(feature.properties[property.key]);
+                                const raw = feature.properties[property.key];
+                                if (Array.isArray(raw)) {
+                                    // bytea[] - render count, don't try to coerce the array
+                                    // (would join with commas and embed huge HTML).
+                                    value = `<span class="text-muted small">${raw.length} ${__("file(s)")}</span>`;
+                                    fields.push({title: property.value.alias || property.key, value});
+                                    fieldLabel = (property.value.alias !== null && property.value.alias !== "") ? property.value.alias : property.key;
+                                    if (feature.properties[property.key] !== undefined) {
+                                        out.push([property.key, property.value.sort_id, fieldLabel, property.value.link, property.value.template, property.value.content]);
+                                    }
+                                    return;
+                                }
+                                // Coerce to string defensively - some sources may hand us
+                                // non-string truthy values that the original decodeURIComponent
+                                // would have coerced silently.
+                                const rawStr = typeof raw === 'string' ? raw : String(raw);
+                                // Only decode/strip if actually needed - avoids creating
+                                // copies of the giant base64 string for the common case.
+                                let subValue = rawStr.indexOf('%') !== -1 ? decodeURIComponent(rawStr) : rawStr;
+                                if (subValue.indexOf('"') !== -1) subValue = subValue.replaceAll('"', '');
                                 if (subValue) {
                                     let type;
-                                    try {
-                                        type = utils.splitBase64(subValue).contentType;
-                                    } catch (e) {
-                                        type = subValue.split("=")[1];
+                                    const semi = subValue.indexOf(';');
+                                    if (semi > 5 && subValue.startsWith('data:')) {
+                                        type = subValue.substring(5, semi);
+                                    } else {
+                                        try {
+                                            type = utils.splitBase64(subValue).contentType;
+                                        } catch (e) {
+                                            type = subValue.split("=")[1];
+                                        }
                                     }
-                                    // We've to clean the relation name of double quotes
-                                    const cleanValue = subValue.replaceAll('"', '')
+                                    // Replace base64 with a short blob URL so the HTML
+                                    // (and DOM) doesn't carry the megabytes-long payload.
+                                    const blobUrl = dataUrlToBlobUrl(subValue, type);
+                                    const src = blobUrl || subValue;
+                                    if (blobUrl) blobUrls.push(blobUrl);
                                     if (MIME_TYPES_IMAGES.includes(type)) {
                                         value =
-                                            `<div style="cursor: pointer" onclick="window.open().document.body.innerHTML = '<img src=\\'${cleanValue}\\' />';">
-                                        <img class="w-100" src='${cleanValue}'/>
+                                            `<div style="cursor: pointer" onclick="window.open('${src}')">
+                                        <img class="w-100" src="${src}"/>
                                      </div>`;
                                     } else if (MIME_TYPES_APPS.includes(type)) {
                                         value = `<embed
-                                        src=${cleanValue}
-                                        type=${type}
+                                        src="${src}"
+                                        type="${type}"
                                         width="100%"
                                         height="200px"
                                     />
-                                    <a download target="_blank" href=${cleanValue}>${__("Download the file")}</a>
+                                    <a download target="_blank" href="${src}">${__("Download the file")}</a>
                                     `;
                                     } else {
                                         value = `
                                         <div>
                                             <div class="alert alert-warning" role="alert">
-                                            <i class="bi bi-exclamation-triangle-fill"></i> ${__("The file type can't be shown but you can download it")}: <a download href="${subValue}"/>${type}</a>
+                                            <i class="bi bi-exclamation-triangle-fill"></i> ${__("The file type can't be shown but you can download it")}: <a download href="${src}">${type}</a>
                                             </div>
                                         </div>
                                     `
@@ -935,11 +1007,17 @@ module.exports = {
                         return a[1] - b[1];
                     });
                 }
+                } catch (e) {
+                    // Never let a single feature's field-processing error prevent
+                    // _vidi_content from being set; popup readers depend on it.
+                    console.error('sqlQuery.prepareDataForTableView: field processing failed for feature, popup will show partial data', e);
+                }
 
 
                 feature.properties._vidi_content = {};
                 feature.properties._vidi_content.title = layerTitle;
                 feature.properties._vidi_content.fields = fields; // Used in a "loop" template
+                feature.properties._vidi_content.blobUrls = blobUrls; // Tracked for revoke on next pass
                 if (first) {
                     out.forEach(property => {
                         cm.push({
@@ -986,14 +1064,33 @@ module.exports = {
     reset: function (qstore) {
         $.each(qstore, function (index, store) {
             if (store) {
-                store.abort();
-                store.reset();
-                cloud.get().removeGeoJsonStore(store);
+                try { store.abort(); } catch (e) {}
+                try { store.reset(); } catch (e) {}
+                try { cloud.get().removeGeoJsonStore(store); } catch (e) {}
+                // Defensive: explicitly drop everything that could retain features
+                // (incl. bytea payloads) even if store.reset() partially failed.
+                try { store.geoJSON = null; } catch (e) {}
+                try {
+                    if (store.layer && typeof store.layer.clearLayers === 'function') {
+                        store.layer.clearLayers();
+                    }
+                } catch (e) {}
+                try { store.currentGeoJsonHash = null; } catch (e) {}
+                // Null the array slot so the sqlStore object itself becomes GC-able.
+                qstore[index] = null;
             }
         });
         $(`#${elementPrefix}info-tab`).empty();
         $(`#${elementPrefix}info-pane`).empty();
         cloud.get().map.closePopup();
+        // Drop references to the displayed FeatureCollections. `result` holds
+        // {data: layerObj.geoJSON, ...} entries whose features carry bytea
+        // payloads (base64 images). It was previously only re-initialized at the
+        // start of the next init(), so after a vector-layer reload that runs
+        // reset()/resetAll() without a fresh query, the prior FeatureCollection
+        // — and its base64 — stayed reachable via the page-lifetime
+        // MutationObserver closure and was never collected.
+        result = [];
     },
 
     resetAll: function () {
@@ -1027,23 +1124,9 @@ module.exports = {
      */
     makeDraggable: (popup) => {
         const map = cloud.get().map
-        const wrapper = '.leaflet-popup-content-wrapper'
-        const popupContent = popup._container.querySelector(wrapper);
-        
-        // Only apply dragging behavior to content wrapper, not children
-        popupContent.style.cursor = 'move';
-        popupContent.children[0].style.cursor = 'auto';
-        
         const draggable = new L.Draggable(popup._container, popup._wrapper);
-        
-        // Handle mousedown event to check if it should start dragging
-        popup._container.addEventListener('mousedown', function(e) {
-            // drag only on the wrapper class
-            if (!e.target.classList.contains(wrapper.replace('.', ''))) {
-                draggable.disable();
-                setTimeout(() => draggable.enable(), 100); // Re-enable after interaction
-            }
-        });
+        // change cursor class
+        $(".leaflet-popup-content-wrapper").css('cursor', 'move');
         draggable.on('dragstart', function (e) {
             //on first drag, remove the pop-up tip
             $(".leaflet-popup-tip-container").hide();
