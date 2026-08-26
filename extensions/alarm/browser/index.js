@@ -16,6 +16,9 @@ import {
   featureCollection as turfFeatureCollection,
   applyFilter,
 } from "@turf/turf";
+import { convert as geojsonToWKT } from "terraformer-wkt-parser";
+
+
 import _, { has } from "underscore";
 import { createRoot } from "react-dom/client";
 
@@ -89,6 +92,7 @@ var exBufferDistance = 0.1;
  */
 var mapObj;
 var config = require("../../../config/config.js");
+let sqlQuery;
 
 /**
  * Draw module
@@ -123,12 +127,11 @@ var _clearAll = function () {
 
 
 const resetObj = {
-  authed: false,
-  user_id: null,
+  authed: false, 
+  user_id:  null, 
   user_db: false,
   user_alarmkabel: false,
   user_alarmkabel_art: null,
-
 };
 
 // This element contains the styling for the module
@@ -155,6 +158,7 @@ module.exports = {
     switchLayer = o.switchLayer;
     layers = o.layers;
     socketId = o.socketId;
+    sqlQuery = o.sqlQuery;
     transformPoint = o.transformPoint;
     backboneEvents = o.backboneEvents;
     return this;
@@ -213,28 +217,77 @@ module.exports = {
 
     var blocked = true;
 
+    const makeSearch = async (lng, lat, fullLayerName) => {
+      try {
+        let foundFeature = null;
+        let qstore = [];
+        const point = turfPoint([lng, lat])
+        const bufferedPolygon = turfBuffer(point, 2, { units: 'meters' })
+        const wkt = geojsonToWKT(bufferedPolygon.geometry)
+        if (!wkt || !fullLayerName) {
+          return foundFeature;
+        }
+    
+
+        await new Promise((resolve, reject) => {
+          sqlQuery.init(
+            qstore,
+            wkt,
+            "4326",
+            () => {
+              if (qstore.length >= 1 && qstore[0].geoJSON) {
+                try {
+                  qstore[0].geoJSON.features.forEach(feature => {
+                    foundFeature = feature.properties[this.state.alarmskab_gid];
+                  });
+                  resolve(foundFeature);
+                } catch (err) {
+                  reject(err);
+                }
+              } else {
+                resolve(foundFeature);
+              }
+            },
+            null,
+            null,
+            null,
+            [fullLayerName],
+            true,
+            null,
+            null
+          );
+        });
+               
+
+        // backboneEvents.get().trigger(`${MAPSTATUS_MODULE_NAME}:updatedata`, featuresManager);
+
+      } catch (e) {
+        console.error("Error in makeSearch:", e);
+      }
+    }
+
+
     /**
      *
      */
     class Alarm extends React.Component {
-      static get Aktive_brud_layeName() { return 'lukkeliste.aktive_brud' }
-      static get Forbrugere_layerName() { return 'lukkeliste.vw_forbrugere' }
 
       constructor(props) {
         super(props)
-
+        this.sqlQuery = props.sqlQuery;
         this.state = {
           active: false,
           authed: false,
           isAnalyzing: false,
           loading: false,
-          user_id: null,
+          user_id:  null,
           user_db: false,
           user_udpeg_layer: config.extensionConfig.alarm.udpeg_layer || null,
           user_alarmkabel: false,
           user_alarmkabel_distance: config.extensionConfig.alarm.alarmkabel_distance || 100,
           user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 2,
           alarm_direction_selected: 'Both',
+          alarm_skab_layer: null,
           alarm_skab_selected: '',
           alarm_skabe: null,
           alarm_skabe_all: [],
@@ -270,11 +323,10 @@ module.exports = {
        */
       componentDidMount() {
         let me = this;
-        me.turnOnLayer(Alarm.Aktive_brud_layeName);
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is
         backboneEvents.get().on("deactivate:all", () => { });
-
+        this.getUser();
         // Activates module
         backboneEvents.get().on(`on:${exId}`, () => {
           //console.debug("Starting alarm");
@@ -373,7 +425,7 @@ module.exports = {
 
             options.push(option);
           }
-           options.sort((a, b) =>      String(a.label ?? '').localeCompare(String(b.label ?? '')));
+          options.sort((a, b) => String(a.label ?? '').localeCompare(String(b.label ?? '')));
           options.unshift({ value: '', label: __("Select alarmskab") });
         }
         return options;
@@ -403,9 +455,9 @@ module.exports = {
                 if (data.alarm_skabe && data.alarm_skabe.length > 0) {
                   const alarm_skabe_all = data.alarm_skabe
                   alarm_skabe = me.createAlarmskabeOptions(data.alarm_skabe);
-                  alarm_skab_selected = alarm_skabe[0].value || '';
                   me.setState({
                     show_alarmskabe: true,
+                    alarm_skab_layer: data.alarm_skab_layer ? data.alarm_skab_layer : null,
                     alarm_skabe: alarm_skabe,
                     alarm_skabe_all: alarm_skabe_all,
                   });
@@ -649,7 +701,7 @@ module.exports = {
           return;
         }
 
-        me.createSnack(__("Starting analysis"), true)
+        //me.createSnack(__("Starting analysis"), true)
 
         // get the clicked point
         point = e.latlng;
@@ -742,10 +794,12 @@ module.exports = {
         return results;
       };
 
+
+
       /**
        * Handler for alarmskab click events
        */
-      handleAlarmskabClick = (e) => {
+      handleAlarmskabClick = async (e) => {
         let me = this;
         let point = null;
 
@@ -757,13 +811,25 @@ module.exports = {
           return;
         }
 
-        me.createSnack(__("Starting analysis"), true)
+        
 
         // get the clicked point
         point = e.latlng;
         utils.cursorStyle().reset();
         blocked = true;
-
+        const result = await makeSearch(point.lng, point.lat, me.state.alarm_skab_layer);
+        
+        if (!result) {
+          blocked = false;
+          return;
+        } 
+        alert("Result: " + JSON.stringify(result));
+        const skabeId = result ? result.properties[me.state.alarmskab_gid] : null;
+        alert("Skabe ID: " + skabeId);  
+        alarmSkabeChange(skabeId.toString());
+        
+        me.createSnack(__("Starting analysis"), true)
+        
         // send the point to the server + the direction and alarm_skab
         me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected)
           .then((data) => {
@@ -820,11 +886,12 @@ module.exports = {
 
         return
       };
+
       zoomToXY = (lng, lat) => {
         const lngff = parseFloat(lng)
         const latf = parseFloat(lat)
         const padding = 0.0001
-        
+
         const bounds = L.latLngBounds(
           [latf - padding, lngff - padding],
           [latf + padding, lngff + padding]
@@ -833,6 +900,10 @@ module.exports = {
       }
 
       alarmSkabeChange = (skabKeyStr) => {
+        if (!skabKeyStr || skabKeyStr === '') {
+          this.setState({ alarm_skab_selected: '' });
+          return;
+        }
         const skabKey = parseInt(skabKeyStr, 10); // Convert to integer
         alert("Changed alarmskab to: " + skabKey);
         this.setState({
@@ -844,7 +915,7 @@ module.exports = {
           alert("Selected alarmskab: " + JSON.stringify(selectedSkab));
           const coordinates = selectedSkab.geometry.coordinates;
           this.zoomToXY(coordinates[0], coordinates[1]);
-           this.addAlarmPositionToMap(selectedSkab);
+          this.addAlarmPositionToMap(selectedSkab);
         } else {
           console.warn("Alarmskab not found for key:", skabKey);
         }
@@ -929,7 +1000,6 @@ module.exports = {
                   {__("Select point for alarmkabel")}
                 </button>
               </div>
-              <div className="form-text mb-3">Angiv antal meter, og udpeg punkt.</div>
             </div>
 
             <div
@@ -947,7 +1017,7 @@ module.exports = {
                   onChange={(e) => this.alarmSkabeChange(e.target.value)}
                 >
                     // for each option in s.alarm_skabe, create an option
-                  {s.alarm_skabe.map((option) => (
+                  {s.alarm_skabe && s.alarm_skabe.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>

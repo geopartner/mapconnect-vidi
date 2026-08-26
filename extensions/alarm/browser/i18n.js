@@ -28,8 +28,8 @@ var dict = {
     en_US: "Clear",
   },
   "Select point for alarmkabel": {
-    da_DK: "Udpeg",
-    en_US: "Calculate alarm",
+    da_DK: "Udpeg ledning",
+    en_US: "Select pipe",
   },
   "Error in search": {
     da_DK: "Fejl i søgning",

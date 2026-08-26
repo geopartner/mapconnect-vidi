@@ -71,6 +71,7 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
     alarm_skabe: user.alarm_skab ? user.alarm_skab : null,
+    alarm_skab_layer:  null,
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
@@ -93,6 +94,7 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
       // // if alarm_skab is set, add to return object
       if (user.hasOwnProperty("alarm_skab")) {
         returnobj.alarm_skabe = res[0].features;
+        returnobj.alarm_skab_layer =user.alarm_skab?user.alarm_skab.layer : null;
       }
 
     })
