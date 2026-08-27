@@ -41,11 +41,11 @@ function guard(req, response) {
     response
       .status(401)
       .send("No active session - please login in the vidi application");
-    return;
+    return false;
   }
 
   // else do nothing
-  return;
+  return true;
 }
 
 var userString = function (req) {
@@ -57,33 +57,95 @@ var userString = function (req) {
   }
   return userstr;
 };
+
+const validateConfig = function (user) {
+  const result = {status: true, message: ''};
+  if (!user) {
+    result.status = false;
+    result.message = 'No user provided';
+    return result;
+  }
+  if (!user.hasOwnProperty("alarm_skab") &&
+      !user.hasOwnProperty("alarmkabel")) {
+    result.status = false;
+    result.message = 'No alarm_skab or alarmkabel configuration found';
+    return result;
+  }
+  if (!user.hasOwnProperty("alarm_skab") && 
+       user.hasOwnProperty("alarmkabel") &&
+      !user.alarmkabel !== true ) {
+    result.status = false;
+    result.message = 'No alarm_skab or alarmkabel configuration found';
+    return result;
+  }
+
+
+  if (user.hasOwnProperty("alarm_skab")) {
+    const props = ["layer", "geom", "key", "name"];
+    for (const prop of props) {
+      if (!user.alarm_skab.hasOwnProperty(prop)) {
+        result.status = false;
+        result.message += `Missing property ${prop} in alarm_skab configuration\n`;
+        return result;
+      }
+    }
+  }
+
+  if (user.hasOwnProperty("alarmkabel")) {
+    const props = ["alarmkabel_distance", "alarmkabel_art", "udpeg_layer"];
+    for (const prop of props) {
+      if (!user.hasOwnProperty(prop)) {
+        result.status = false;
+        result.message += `Missing property ${prop} in alarmkabel configuration\n`;
+        return result;
+      }
+    }
+  }
+
+  return result;
+
+  
+};
+
 // Get current user and setup
 router.get("/api/extension/alarm/:userid", function (req, response) {
-  guard(req, response);
-
+  if (!guard(req, response)) {
+    return;
+  }
+  const user = bi.users[req.params.userid];
+  const status = validateConfig(user); 
+  if (status.status === false) {
+    response.status(401).send(status);
+    return;
+  }
+   
   // Get user from config
-  var user = bi.users[req.params.userid];
+  
   const returnobj = {
     db: true,
+    status: true,
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
     alarmkabel: user.alarmkabel ? user.alarmkabel : false,
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
     alarm_skabe: user.alarm_skab ? user.alarm_skab : null,
+    alarm_skab_layer: null,
+    alarm_skab_key: null,
+    message: '',
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
   let validate = [];
 
   // if alarm_skab is set, test and build a list
-  if (user.hasOwnProperty("alarm_skab") && user.alarm_skab.hasOwnProperty("layer") && user.alarm_skab.hasOwnProperty("geom") && user.alarm_skab.hasOwnProperty("key") && user.alarm_skab.hasOwnProperty("name")) {
+  if (user.hasOwnProperty("alarm_skab")) {
     let alarm_skab = user.alarm_skab;
     let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
     validate.push(SQLAPI(query, req, { format: "geojson", srs: 4326 }));
   }
 
-  
+
   Promise.all(validate)
     .then((res) => {
       returnobj.db = true;
@@ -93,43 +155,53 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
       // // if alarm_skab is set, add to return object
       if (user.hasOwnProperty("alarm_skab")) {
         returnobj.alarm_skabe = res[0].features;
+        returnobj.alarm_skab_layer = user.alarm_skab ? user.alarm_skab.layer : null;
+        returnobj.alarm_skab_key = user.alarm_skab ? user.alarm_skab.key : null;
       }
 
     })
     .catch((err) => {
       returnobj.db = false;
-      // returnobj.lukkestatus = false;
-      returnobj.message = err.message;
+      returnobj.status = false;
+      returnobj.message = 'Alarm config error: ' + err.message;
+      
     })
     .finally(() => {
-      response.status(200).json(returnobj);
+      if (returnobj.status === true) {
+        response.status(200).json(returnobj);
+      }
+      else {
+        response.status(401).json(returnobj);
+      }
     });
 });
 
 // Query alarmkabel-plugin in database
 router.post("/api/extension/alarmkabel/:userid/query", function (req, response) {
-    guard(req, response);
+  if (!guard(req, response)) {
+    return;
+  }
 
-    // guard against missing lat and lng in body
-    if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
-      response.status(401).send("Missing lat or lng");
-      return;
-    }
+  // guard against missing lat and lng in body
+  if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
+    response.status(401).send("Missing lat or lng");
+    return;
+  }
 
-    // Guard against no distance
-    if (!req.body.hasOwnProperty("distance")) {
-      response.status(401).send("Missing distance");
-      return;
-    }
+  // Guard against no distance
+  if (!req.body.hasOwnProperty("distance")) {
+    response.status(401).send("Missing distance");
+    return;
+  }
 
-    // Guard against no forsyningsart
-    if (!req.body.hasOwnProperty("forsyningsart")) {
-      response.status(401).send("Missing forsyningsart");
-      return;
-    }
+  // Guard against no forsyningsart
+  if (!req.body.hasOwnProperty("forsyningsart")) {
+    response.status(401).send("Missing forsyningsart");
+    return;
+  }
 
-    // set timeout to 30s
-    req.setTimeout(TIMEOUT);
+  // set timeout to 30s
+  req.setTimeout(TIMEOUT);
 
     // Create the query to insert into the database
     const q = `
@@ -155,21 +227,21 @@ router.post("/api/extension/alarmkabel/:userid/query", function (req, response) 
       RETURNING beregnuuid
     `;
 
-    SQLAPI(q, req)
-      .then((uuid) => {
-        let beregnuuid = uuid.returning[0].beregnuuid;
-        let promises = [];
+  SQLAPI(q, req)
+    .then((uuid) => {
+      let beregnuuid = uuid.returning[0].beregnuuid;
+      let promises = [];
 
-        console.log('Alarmkabel:', 'user:', req.session.screenName, 'exec time:', uuid._execution_time, 'peak mem:', uuid._peak_memory_usage, '->', beregnuuid);
+      console.log('Alarmkabel:', 'user:', req.session.screenName, 'exec time:', uuid._execution_time, 'peak mem:', uuid._peak_memory_usage, '->', beregnuuid);
 
-        // get points
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.vw_alarmpkt where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
+      // get points
+      promises.push(
+        SQLAPI(
+          `SELECT * from lukkeliste.vw_alarmpkt where beregnuuid = '${beregnuuid}'`,
+          req,
+          { format: "geojson", srs: 4326 }
+        )
+      );
 
         // get log
         promises.push(
@@ -180,24 +252,24 @@ router.post("/api/extension/alarmkabel/:userid/query", function (req, response) 
           )
         );
 
-        // when promises are complete, return the result
-        Promise.all(promises)
-          .then((res) => {
-            response.status(200).json({
-              alarm: res[0],
-              log: res[1],
-            });
-          })
-          .catch((err) => {
-            console.error(err);
-            response.status(500).json(err);
+      // when promises are complete, return the result
+      Promise.all(promises)
+        .then((res) => {
+          response.status(200).json({
+            alarm: res[0],
+            log: res[1],
           });
-      })
-      .catch((err) => {
-        console.error(err);
-        response.status(500).json(err);
-      });
-  }
+        })
+        .catch((err) => {
+          console.error(err);
+          response.status(500).json(err);
+        });
+    })
+    .catch((err) => {
+      console.error(err);
+      response.status(500).json(err);
+    });
+}
 );
 
 // Query alarmskab-plugin in database
@@ -300,7 +372,6 @@ router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
   }
 );
 
- 
 
 // Use SQLAPI
 function SQLAPI(q, req, options = null) {
