@@ -52,6 +52,10 @@ var dict = {
     da_DK: "Alarmskabe",
     en_US: "Cabinet",
   },
+  "Error": {
+    da_DK: "Fejl i konfiguration",
+    en_US: "Error in configuration",
+  },
   "Distance": {
     da_DK: "Afstand",
     en_US: "Distance",

@@ -57,14 +57,70 @@ var userString = function (req) {
   }
   return userstr;
 };
+
+const validateConfig = function (user) {
+  const result = {status: true, message: ''};
+  if (!user) {
+    result.status = false;
+    result.message = 'No user provided';
+    return result;
+  }
+  if (!user.hasOwnProperty("alarm_skab") &&
+      !user.hasOwnProperty("alarmkabel")) {
+    result.status = false;
+    result.message = 'No alarm_skab or alarmkabel configuration found';
+    return result;
+  }
+  if (!user.hasOwnProperty("alarm_skab") && 
+       user.hasOwnProperty("alarmkabel") &&
+      !user.alarmkabel !== true ) {
+    result.status = false;
+    result.message = 'No alarm_skab or alarmkabel configuration found';
+    return result;
+  }
+
+
+  if (user.hasOwnProperty("alarm_skab")) {
+    const props = ["layer", "geom", "key", "name"];
+    for (const prop of props) {
+      if (!user.alarm_skab.hasOwnProperty(prop)) {
+        result.status = false;
+        result.message += `Missing property ${prop} in alarm_skab configuration\n`;
+        return result;
+      }
+    }
+  }
+
+  if (user.hasOwnProperty("alarmkabel")) {
+    const props = ["alarmkabel_distance", "alarmkabel_art", "udpeg_layer"];
+    for (const prop of props) {
+      if (!user.hasOwnProperty(prop)) {
+        result.status = false;
+        result.message += `Missing property ${prop} in alarmkabel configuration\n`;
+        return result;
+      }
+    }
+  }
+
+  return result;
+
+  
+};
+
 // Get current user and setup
 router.get("/api/extension/alarm/:userid", function (req, response) {
   if (!guard(req, response)) {
     return;
   }
-
+  const user = bi.users[req.params.userid];
+  const status = validateConfig(user); 
+  if (status.status === false) {
+    response.status(401).send(status);
+    return;
+  }
+   
   // Get user from config
-  var user = bi.users[req.params.userid];
+  
   const returnobj = {
     db: true,
     profileid: user.profileid ? user.profileid : null,
@@ -283,72 +339,6 @@ router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
 }
 );
 
-//  // Query alarmskab-plugin in database
-//  router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
-//      guard(req, response);
-
-//      // guard against missing lat and lng in body
-//      if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
-//        response.status(401).send("Missing lat or lng");
-//        return;
-//      }
-
-//      // guard against missing alarmskab
-//      if (!req.body.hasOwnProperty("alarmskab")) {
-//        response.status(401).send("Missing alarmskab id");
-//        return;
-//      }
-
-//      // set timeout to 30s
-//      req.setTimeout(TIMEOUT);
-
-//      // create the string we need to query the database
-//      q = `SELECT lukkeliste.fnc_beregn_afstand_alarmnet('${req.body.alarmskab}'::int, ST_Transform(ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),25832)::geometry, '${req.body.direction}', '${req.session.screenName}')`;
-//      console.log(q);
-//      SQLAPI(q, req)
-//        .then((uuid) => {
-//          let beregnuuid = uuid.features[0].properties.fnc_beregn_afstand_alarmnet;
-//          let promises = [];
-
-//          console.log(q, " -> ", beregnuuid);
-
-//          // get points
-//          promises.push(
-//            SQLAPI(
-//              `SELECT * from lukkeliste.vw_alarm_afstand where beregnuuid = '${beregnuuid}'`,
-//              req,
-//              { format: "geojson", srs: 4326 }
-//            )
-//          );
-
-//          // get log
-//          promises.push(
-//            SQLAPI(
-//              `SELECT * from lukkeliste.beregnlog where beregnuuid = '${beregnuuid}'`,
-//              req,
-//              { format: "geojson", srs: 4326 }
-//            )
-//          );
-
-//          // when promises are complete, return the result
-//          Promise.all(promises)
-//            .then((res) => {
-//              response.status(200).json({
-//                alarm: res[0],
-//                log: res[1],
-//              });
-//            })
-//            .catch((err) => {
-//              console.error(err);
-//              response.status(500).json(err);
-//            });
-//        })
-//        .catch((err) => {
-//          console.error(err);
-//          response.status(500).json(err);
-//        });
-//    }
-//  );
 
 // Use SQLAPI
 function SQLAPI(q, req, options = null) {

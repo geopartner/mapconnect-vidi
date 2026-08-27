@@ -449,6 +449,9 @@ module.exports = {
               type: "GET",
               success: function (data) {
                 console.log("[Alarm] Got user", data);
+                me.setState({
+                  errorText: ''
+                });
 
 
                 let alarm_skabe = [];
@@ -486,7 +489,7 @@ module.exports = {
               error: function (e) {
                 //console.debug("Error in getUser", e);
                 me.setState({
-                  errorText: "Error in Config: " + e.responseText,
+                  errorText: "Error in Config: " + e.message,
                 });
                 reject(e);
               },
@@ -967,6 +970,18 @@ module.exports = {
             </div>
           );
         }
+        if (s.errorText) {
+          return (
+            <div role="tabpanel">
+              <div className="form-group">
+                <div id="blueidea-feature-login" className="alert alert-danger" role="alert">
+                  {__("Error") + s.errorText}
+                </div>
+              </div>
+            </div>
+          );
+        }
+          
 
 
         return (
