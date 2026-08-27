@@ -284,6 +284,9 @@ module.exports = {
         } else {
             me.render();
         }
+
+        // Make updateApp globally available for onclick handlers
+        window.updateApp = updateApp;
     },
 
 
