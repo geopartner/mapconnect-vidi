@@ -97,15 +97,13 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
     return;
   }
 
-  returnobj = {
+  const returnobj = {
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
-    alarmkabel: user.alarmkabel ? user.alarmkabel : false,
     blueidea: user.blueidea ? user.blueidea : false,
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
     debug: user.debug ? user.debug : null,
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
-    alarm_skabe: null,
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
@@ -117,24 +115,13 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
     SQLAPI("select * from lukkeliste.lukkestatus limit 1", req),
   ];
 
-  // if alarm_skab is set, test and build a list
-  if (user.hasOwnProperty("alarm_skab")) {
-    let alarm_skab = user.alarm_skab;
-    let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
-    validate.push(SQLAPI(query, req, { format: "geojson", srs: 4326 }));
-  }
-
-  
+ 
   Promise.all(validate)
     .then((res) => {
       returnobj.db = true;
       returnobj.lukkestatus = res[4].features[0].properties;
       //console.log(res[4].features[0].properties);
-
-      // if alarm_skab is set, add to return object
-      if (user.hasOwnProperty("alarm_skab")) {
-        returnobj.alarm_skabe = res[5].features;
-      }
+     
     })
     .catch((err) => {
       returnobj.db = false;

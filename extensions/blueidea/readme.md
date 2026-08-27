@@ -27,9 +27,7 @@ Der er flere dele i opsætningen af denne extension. Da den både skal håndtere
 - BlueIdea og Lukkeliste
   - lukkeliste er `true`, samt `forsyningsarter`
   - blueidea er `true`, samt username + password
-- Lukkeliste med alarm-funktionalitet
-  - lukkeliste er `true`
-  - alarmkabel er `true`, samt `alarm_skab`
+
 
 ### Vidi
 
@@ -64,7 +62,6 @@ module.exports = {
           },
         }
       ],
-      alarmkabel: true,
       layersOnStart: [
         "danvand_gp.vw_dvg_ledning",
       ],
@@ -88,8 +85,6 @@ module.exports = {
 | lukkeliste       | boolean | `False` | Om brugeren skal have adgang til lukkeliste-værktøjerne                                 |
 | profileid        | obj     |         | Objekt med profilid & alias                                                             |
 | forsyningsarter  | array   |         | Navnet på layeret hvor ventil-lukkeliste skal findes                                    |
-| alarmkabel       | boolean | `False` | Om brugeren skal have adgang til alarmkabel-værktøjerne                                 |
-| alarm_skab       | obj     |         | Objekt med opsætning af alarmskabe                                                      |
 | layersOnStart    | array   |         | Liste med lag der skal tændes når modulet starter. bliver slukket når modulet slukkes   |
 
 ### forsyningsarter:
@@ -105,15 +100,6 @@ module.exports = {
 > [!IMPORTANT]  
 > Rækkefølgen af forsyningsarter i listen `forsyningsarter` skal hænge sammen med styretabellen idet det er artens index der afgører hvilket ledningnet der analyseres op imod.
 
-### Alarm_skab:
-
-| Property | Type   | Default | Description                                                                     |
-| -------- | ------ | ------- | ------------------------------------------------------------------------------- |
-| layer    | string |         | navnet på laget der benyttes til alarm-beregning hvor alarmkablerne skal findes |
-| key      | string |         | kolonnenavn på `layer` som skal bruges til at finde alarmkablerne               |
-| name     | string |         | SQL udtryk der bruges til at finde teksten til dropdown                         |
-| geom     | string |         | kolonnenavn på `layer` som indeholder geometrien                                |
-
 ### ?config=*.json:
 
 Der skal ligeledes laves en opsætning af extension i kørselsmiljøet. Se nedenfor.
@@ -127,8 +113,6 @@ Denne extension afhænger af `session` extensionen, så den skal også være loa
   "extensionConfig": {
     "blueidea": {
       "userid": "d7a12844-5fc9-4316-9af7-b841fcc3d399",
-      "alarmkabel_distance": 75,
-      "alarmkabel_art": 1
     }
   }
 }
@@ -136,9 +120,8 @@ Denne extension afhænger af `session` extensionen, så den skal også være loa
 
 | Property            | Type | Default | Description                                        |
 | ------------------- | ---- | ------- | -------------------------------------------------- |
-| user                | guid |         | direkte reference til server-konfiguration         |
-| alarmkabel_distance | int  | 100     | afstand i meter fra udpeget punkt til alarmvisning |
-| alarmkabel_art      | int  |         | Forsyningsart til alarmkabel-analyse               |
+| userid                | guid |         | direkte reference til server-konfiguration         |
+
 
 ### GC2
 
@@ -149,4 +132,3 @@ Den bruger der tænkes at bruge lukkeliste-værktøjerne skal have en rolle med 
 - `lukkeliste.beregn_afskaaretnet`
 - `lukkeliste.beregnlog`
 - `lukkeliste.lukkestatus`
-- _*Lag der er defineret i `alarm_skab` hvis denne er relevant_
