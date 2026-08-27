@@ -123,6 +123,7 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
   
   const returnobj = {
     db: true,
+    status: true,
     profileid: user.profileid ? user.profileid : null,
     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
     alarmkabel: user.alarmkabel ? user.alarmkabel : false,
@@ -131,17 +132,14 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
     alarm_skabe: user.alarm_skab ? user.alarm_skab : null,
     alarm_skab_layer: null,
     alarm_skab_key: null,
+    message: '',
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
   let validate = [];
 
   // if alarm_skab is set, test and build a list
-  if (user.hasOwnProperty("alarm_skab") &&
-    user.alarm_skab.hasOwnProperty("layer") &&
-    user.alarm_skab.hasOwnProperty("geom") &&
-    user.alarm_skab.hasOwnProperty("key") &&
-    user.alarm_skab.hasOwnProperty("name")) {
+  if (user.hasOwnProperty("alarm_skab")) {
     let alarm_skab = user.alarm_skab;
     let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
     validate.push(SQLAPI(query, req, { format: "geojson", srs: 4326 }));
@@ -164,11 +162,17 @@ router.get("/api/extension/alarm/:userid", function (req, response) {
     })
     .catch((err) => {
       returnobj.db = false;
-      // returnobj.lukkestatus = false;
-      returnobj.message = err.message;
+      returnobj.status = false;
+      returnobj.message = 'Alarm config error: ' + err.message;
+      
     })
     .finally(() => {
-      response.status(200).json(returnobj);
+      if (returnobj.status === true) {
+        response.status(200).json(returnobj);
+      }
+      else {
+        response.status(401).json(returnobj);
+      }
     });
 });
 

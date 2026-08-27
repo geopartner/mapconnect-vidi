@@ -295,7 +295,6 @@ module.exports = {
           show_alarmskabe: false,
           results_alarmskabe: [],
           layersOnStart: [],
-          errorText: '',
         };
 
         // Store bound event handlers as class properties to maintain consistent function references
@@ -449,11 +448,6 @@ module.exports = {
               type: "GET",
               success: function (data) {
                 console.log("[Alarm] Got user", data);
-                me.setState({
-                  errorText: ''
-                });
-
-
                 let alarm_skabe = [];
                 let alarm_skab_selected = '';
                 if (data.alarm_skabe && data.alarm_skabe.length > 0) {
@@ -488,9 +482,10 @@ module.exports = {
               },
               error: function (e) {
                 //console.debug("Error in getUser", e);
-                me.setState({
-                  errorText: "Error in Config: " + e.message,
-                });
+                if (e?.responseJSON?.message) {
+                  me.createSnack("Error in Config: " + e.responseJSON.message);
+                } 
+                
                 reject(e);
               },
             });
@@ -970,20 +965,7 @@ module.exports = {
             </div>
           );
         }
-        if (s.errorText) {
-          return (
-            <div role="tabpanel">
-              <div className="form-group">
-                <div id="blueidea-feature-login" className="alert alert-danger" role="alert">
-                  {__("Error") + s.errorText}
-                </div>
-              </div>
-            </div>
-          );
-        }
-          
-
-
+                
         return (
           <div role="tabpanel">
 
@@ -1057,7 +1039,7 @@ module.exports = {
                     className="btn btn-primary"
                     disabled={!s.alarm_skab_selected}
                   >
-                    BEREGN
+                    Beregn
                   </button>
                   <button
                     onClick={() => this.selectPointAlarmskab()}
