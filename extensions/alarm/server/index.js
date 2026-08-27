@@ -133,10 +133,9 @@ router.post("/api/extension/alarmkabel/:userid/query", function (req, response) 
 
     // Create the query to insert into the database
     const q = `
-      INSERT INTO lukkeliste.beregnlog(
+      INSERT INTO lukkeliste.beregnalarmlog(
       the_geom, 
       forsyningsart, 
-      opslagmatrikler, 
       distance, 
       beregntypeid,
       username,
@@ -148,7 +147,6 @@ router.post("/api/extension/alarmkabel/:userid/query", function (req, response) 
         25832
       )::geometry, 
       ${req.body.forsyningsart}, 
-      false, 
       ${req.body.distance},
       2,
       '${req.session.screenName}', 
@@ -176,7 +174,7 @@ router.post("/api/extension/alarmkabel/:userid/query", function (req, response) 
         // get log
         promises.push(
           SQLAPI(
-            `SELECT * from lukkeliste.beregnlog where beregnuuid = '${beregnuuid}'`,
+            `SELECT * from lukkeliste.beregnalarmlog where beregnuuid = '${beregnuuid}'`,
             req,
             { format: "geojson", srs: 4326 }
           )
@@ -222,11 +220,44 @@ router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
     req.setTimeout(TIMEOUT);
 
     // create the string we need to query the database
-    q = `SELECT lukkeliste.fnc_beregn_afstand_alarmnet('${req.body.alarmskab}'::int, ST_Transform(ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),25832)::geometry, '${req.body.direction}', '${req.session.screenName}')`;
+    // q = `SELECT lukkeliste.fnc_beregn_afstand_alarmnet('${req.body.alarmskab}'::int, 
+    // ST_Transform(ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),25832)::geometry, 
+    // '${req.body.direction}', 
+    // '${req.session.screenName}')`;
+    // Create the query to insert into the database
+    const q = `
+      INSERT INTO lukkeliste.beregnalarmlog(
+      the_geom, 
+      forsyningsart, 
+      distance, 
+      beregntypeid,
+      username,
+      direction,
+      funktion,
+      komponentid
+      ) 
+      VALUES (
+      ST_Transform(
+        ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),
+        25832
+      )::geometry, 
+      ${req.body.forsyningsart}, 
+      ${req.body.distance},
+      2,
+      '${req.session.screenName}', 
+      '${req.body.direction}',
+      'fnc_beregn_afstand_alarmnet',
+      '${req.body.alarmskab}'
+      )
+      RETURNING beregnuuid
+    `;
+
+
+
     console.log(q);
     SQLAPI(q, req)
       .then((uuid) => {
-        let beregnuuid = uuid.features[0].properties.fnc_beregn_afstand_alarmnet;
+        let beregnuuid = uuid.returning[0].beregnuuid;
         let promises = [];
 
         console.log(q, " -> ", beregnuuid);
@@ -243,7 +274,7 @@ router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
         // get log
         promises.push(
           SQLAPI(
-            `SELECT * from lukkeliste.beregnlog where beregnuuid = '${beregnuuid}'`,
+            `SELECT * from lukkeliste.beregnalarmlog where beregnuuid = '${beregnuuid}'`,
             req,
             { format: "geojson", srs: 4326 }
           )

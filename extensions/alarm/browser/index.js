@@ -475,11 +475,13 @@ module.exports = {
       * This function queries database for information related to alarmkabel
       * @returns uuid string representing the query
       */
-      queryPointAlarmskab = (point, direction, alarmskab_gid) => {
+      queryPointAlarmskab = (point, direction, alarmskab_gid, forsyningsart, distance) => {
         let me = this;
         let body = point;
         body.direction = direction;  //append distance to body
         body.alarmskab = alarmskab_gid; //append alarmskab to body
+        body.forsyningsart = forsyningsart; //append forsyningsart to body
+        body.distance = distance; //append distance to body
 
         return new Promise(function (resolve, reject) {
           $.ajax({
@@ -703,10 +705,10 @@ module.exports = {
         }
 
         // if the alarmkabel_art is not set, return
-        // if (!me.state.user_alarmkabel_art || me.state.user_alarmkabel_art == "") {
-        //   me.createSnack(__("Alarmkabel type not set"));
-        //   return;
-        // }
+        if (!me.state.user_alarmkabel_art || me.state.user_alarmkabel_art == "") {
+          me.createSnack(__("Alarmkabel type not set"));
+          return;
+        }
 
         // change the cursor to crosshair and wait for a click
         utils.cursorStyle().crosshair();
@@ -763,9 +765,10 @@ module.exports = {
         point = e.latlng;
         utils.cursorStyle().reset();
         blocked = true;
+        const user_alarmkabel_art = 2
 
         // send the point to the server + the direction and alarm_skab
-        me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected)
+        me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected, user_alarmkabel_art, me.state.user_alarmkabel_distance)
           .then((data) => {
 
             me.createSnack(__("Alarm found"))
