@@ -12,7 +12,7 @@ var moment = require("moment");
 var config = require("../../../config/config.js");
 
 var fetch = require("node-fetch");
-const bi = require("../../../config/gp/config.alarm");
+
 
 
 
@@ -35,7 +35,6 @@ const TIMEOUT = 30000;
  * @param response
  */
 function guard(req, response) {
-
   // guard against missing session (not logged in to GC2)
   if (!req.session.hasOwnProperty("gc2SessionId")) {
     response
@@ -58,126 +57,91 @@ var userString = function (req) {
   return userstr;
 };
 
-const validateConfig = function (user) {
-  const result = {status: true, message: ''};
-  if (!user) {
-    result.status = false;
-    result.message = 'No user provided';
-    return result;
-  }
-  if (!user.hasOwnProperty("alarm_skab") &&
-      !user.hasOwnProperty("alarmkabel")) {
-    result.status = false;
-    result.message = 'No alarm_skab or alarmkabel configuration found';
-    return result;
-  }
-  if (!user.hasOwnProperty("alarm_skab") && 
-       user.hasOwnProperty("alarmkabel") &&
-      !user.alarmkabel !== true ) {
-    result.status = false;
-    result.message = 'No alarm_skab or alarmkabel configuration found';
-    return result;
-  }
+ 
 
-
-  if (user.hasOwnProperty("alarm_skab")) {
-    const props = ["layer", "geom", "key", "name"];
-    for (const prop of props) {
-      if (!user.alarm_skab.hasOwnProperty(prop)) {
-        result.status = false;
-        result.message += `Missing property ${prop} in alarm_skab configuration\n`;
-        return result;
-      }
-    }
-  }
-
-  if (user.hasOwnProperty("alarmkabel")) {
-    const props = ["alarmkabel_distance", "alarmkabel_art", "udpeg_layer"];
-    for (const prop of props) {
-      if (!user.hasOwnProperty(prop)) {
-        result.status = false;
-        result.message += `Missing property ${prop} in alarmkabel configuration\n`;
-        return result;
-      }
-    }
-  }
-
-  return result;
-
-  
-};
-
-// Get current user and setup
-router.get("/api/extension/alarm/:userid", function (req, response) {
+router.post("/api/extension/alarmskabelist", function (req, response) {
   if (!guard(req, response)) {
     return;
   }
-  const user = bi.users[req.params.userid];
-  const status = validateConfig(user); 
-  if (status.status === false) {
-    response.status(401).send(status);
-    return;
-  }
-   
-  // Get user from config
-  
-  const returnobj = {
-    db: true,
-    status: true,
-    profileid: user.profileid ? user.profileid : null,
-    lukkeliste: user.lukkeliste ? user.lukkeliste : false,
-    alarmkabel: user.alarmkabel ? user.alarmkabel : false,
-    forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
-    layersOnStart: user.layersOnStart ? user.layersOnStart : [],
-    alarm_skabe: user.alarm_skab ? user.alarm_skab : null,
-    alarm_skab_layer: null,
-    alarm_skab_key: null,
-    message: '',
-  };
-
-  // Check if the database is correctly setup, and the session is allowed to access it
-  let validate = [];
-
-  // if alarm_skab is set, test and build a list
-  if (user.hasOwnProperty("alarm_skab")) {
-    let alarm_skab = user.alarm_skab;
-    let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
-    validate.push(SQLAPI(query, req, { format: "geojson", srs: 4326 }));
-  }
-
-
-  Promise.all(validate)
-    .then((res) => {
-      returnobj.db = true;
-      // returnobj.lukkestatus = res[4].features[0].properties;
-      // //console.log(res[4].features[0].properties);
-
-      // // if alarm_skab is set, add to return object
-      if (user.hasOwnProperty("alarm_skab")) {
-        returnobj.alarm_skabe = res[0].features;
-        returnobj.alarm_skab_layer = user.alarm_skab ? user.alarm_skab.layer : null;
-        returnobj.alarm_skab_key = user.alarm_skab ? user.alarm_skab.key : null;
-      }
-
-    })
-    .catch((err) => {
-      returnobj.db = false;
-      returnobj.status = false;
-      returnobj.message = 'Alarm config error: ' + err.message;
-      
-    })
-    .finally(() => {
-      if (returnobj.status === true) {
-        response.status(200).json(returnobj);
-      }
-      else {
-        response.status(401).json(returnobj);
-      }
-    });
+  const alarm_skab =  req.body;
+ 
+  let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
+  SQLAPI(query, req, { format: "geojson", srs: 4326 })
+    .then(data => response.status(200).json(data))
+    .catch(err => response.status(500).send(err));  
 });
 
+// Get current user and setup
+// router.get("/api/extension/alarm", function (req, response) {
+//   if (!guard(req, response)) {
+//     return;
+//   }
+//   const user = bi.users[req.params.userid];
+//   const status = validateConfig(user); 
+//   if (status.status === false) {
+//     response.status(401).send(status);
+//     return;
+//   }
+   
+//   // Get user from config
+  
+//   const returnobj = {
+//     db: true,
+//     status: true,
+//     profileid: user.profileid ? user.profileid : null,
+//     lukkeliste: user.lukkeliste ? user.lukkeliste : false,
+//     alarmkabel: user.alarmkabel ? user.alarmkabel : false,
+//     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
+//     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
+//     alarm_skabe: user.alarm_skab ? user.alarm_skab : null,
+//     alarm_skab_layer: null,
+//     alarm_skab_key: null,
+//     message: '',
+//   };
+
+//   // Check if the database is correctly setup, and the session is allowed to access it
+//   let validate = [];
+
+//   // if alarm_skab is set, test and build a list
+//   if (user.hasOwnProperty("alarm_skab")) {
+//     let alarm_skab = user.alarm_skab;
+//     let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
+//     validate.push(SQLAPI(query, req, { format: "geojson", srs: 4326 }));
+//   }
+
+
+//   Promise.all(validate)
+//     .then((res) => {
+//       returnobj.db = true;
+//       // returnobj.lukkestatus = res[4].features[0].properties;
+//       // //console.log(res[4].features[0].properties);
+
+//       // // if alarm_skab is set, add to return object
+//       if (user.hasOwnProperty("alarm_skab")) {
+//         returnobj.alarm_skabe = res[0].features;
+//         returnobj.alarm_skab_layer = user.alarm_skab ? user.alarm_skab.layer : null;
+//         returnobj.alarm_skab_key = user.alarm_skab ? user.alarm_skab.key : null;
+//       }
+
+//     })
+//     .catch((err) => {
+//       returnobj.db = false;
+//       returnobj.status = false;
+//       returnobj.message = 'Alarm config error: ' + err.message;
+      
+//     })
+//     .finally(() => {
+//       if (returnobj.status === true) {
+//         response.status(200).json(returnobj);
+//       }
+//       else {
+//         response.status(401).json(returnobj);
+//       }
+//     });
+// });
+
 // Query alarmkabel-plugin in database
-router.post("/api/extension/alarmkabel/:userid/query", function (req, response) {
+router.post("/api/extension/alarmkabel/query", function (req, response) {
   if (!guard(req, response)) {
     return;
   }
@@ -273,10 +237,12 @@ router.post("/api/extension/alarmkabel/:userid/query", function (req, response) 
 );
 
 // Query alarmskab-plugin in database
-router.post("/api/extension/alarmskab/:userid/query", function (req, response) {
-    guard(req, response);
+router.post("/api/extension/alarmskab/query", function (req, response) {
+  if (!guard(req, response)) {
+    return;
+  }
 
-    // guard against missing lat and lng in body
+  // guard against missing lat and lng in body
     if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
       response.status(401).send("Missing lat or lng");
       return;

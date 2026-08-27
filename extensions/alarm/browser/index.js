@@ -126,7 +126,6 @@ var _clearAll = function () {
 
 const resetObj = {
   authed: false,
-  user_id: null,
   user_db: false,
   user_alarmkabel: false,
   user_alarmkabel_art: null,
@@ -278,7 +277,6 @@ module.exports = {
           authed: false,
           isAnalyzing: false,
           loading: false,
-          user_id: null,
           user_db: false,
           user_udpeg_layer: config.extensionConfig.alarm.udpeg_layer || null,
           kabelpoint: null,
@@ -325,7 +323,7 @@ module.exports = {
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is
         backboneEvents.get().on("deactivate:all", () => { });
-        this.getUser();
+        this.getConfig();
         // Activates module
         backboneEvents.get().on(`on:${exId}`, () => {
           //console.debug("Starting alarm");
@@ -342,7 +340,7 @@ module.exports = {
                 api.turnOn(layer);
               });
             }
-            return this.getUser();
+            return this.getConfig();
           } else {
             me.setState(resetObj);
           }
@@ -394,7 +392,7 @@ module.exports = {
                     api.turnOn(layer);
                   });
                 }
-                return me.getUser()
+                return me.getConfig()
               } else {
                 me.setState(resetObj);
               }
@@ -431,69 +429,143 @@ module.exports = {
       }
 
       /**
-  * Get user from backend
-  * @returns {Promise<void>}
-  * @private
-  */
-      getUser() {
-        let me = this;
-        // If user is set in extensionconfig, set it in state and get information from backend
-        if (config.extensionConfig.alarm.userid) {
-          return new Promise(function (resolve, reject) {
-            $.ajax({
-              url:
-                "/api/extension/alarm/" +
-                config.extensionConfig.alarm.userid,
-              type: "GET",
-              success: function (data) {
-                console.log("[Alarm] Got user", data);
-                let alarm_skabe = [];
-                let alarm_skab_selected = '';
-                if (data.alarm_skabe && data.alarm_skabe.length > 0) {
-                  const alarm_skabe_all = data.alarm_skabe
-                  alarm_skabe = me.createAlarmskabeOptions(data.alarm_skabe);
-                  me.setState({
-                    show_alarmskabe: true,
-                    alarm_skab_layer: data.alarm_skab_layer ? data.alarm_skab_layer : null,
-                    alarm_skab_key: data.alarm_skab_key ? data.alarm_skab_key : null,
-                    alarm_skabe: alarm_skabe,
-                    alarm_skabe_all: alarm_skabe_all,
-                  });
-                }
-
-                me.setState({
-                  user_id: config.extensionConfig.alarm.userid,
-                  user_db: data.db || false,
-                  user_alarmkabel: data.alarmkabel,
-                  alarm_skabe: alarm_skabe,
-                  alarm_skab_selected: alarm_skab_selected,
-                  forsyningsart_selected: 0,
-                  layersOnStart: data.layersOnStart || []
-                });
-                if (data.udpeg_layer) {
-                  me.setState({
-                    user_udpeg_layer: data.udpeg_layer
-                  });
-                }
-
-
-                resolve(data);
-              },
-              error: function (e) {
-                //console.debug("Error in getUser", e);
-                if (e?.responseJSON?.message) {
-                  me.createSnack("Error in Config: " + e.responseJSON.message);
-                }
-
-                reject(e);
-              },
-            });
-          });
-        } else {
-          return;
+       * 
+       * @param {*} config  The alarm configuration object to validate
+       * @returns {Object}  The result of the validation, with status and message properties  
+       */
+      validateConfig(config) {
+        const result = { status: true, message: '', hasKabelskab: false };
+        if (!config) {
+          result.status = false;
+          result.message = 'No user provided';
+          return result;
         }
+        if (!config.hasOwnProperty("alarm_skab") &&
+          !config.hasOwnProperty("alarmkabel")) {
+          result.status = false;
+          result.message = 'No alarm_skab or alarmkabel configuration found';
+          return result;
+        }
+        if (!config.hasOwnProperty("alarm_skab") &&
+          config.hasOwnProperty("alarmkabel") &&
+          !config.alarmkabel !== true) {
+          result.status = false;
+          result.message = 'No alarm_skab or alarmkabel configuration found';
+          return result;
+        }
+
+
+        if (config.hasOwnProperty("alarm_skab")) {
+          const props = ["layer", "geom", "key", "name"];
+          for (const prop of props) {
+            if (!config.alarm_skab.hasOwnProperty(prop)) {
+              result.status = false;
+              result.message += `Missing property ${prop} in alarm_skab configuration\n`;
+              return result;
+            }
+          }
+          result.hasKabelskab = true;
+        }
+
+        if (config.hasOwnProperty("alarmkabel")) {
+          const props = ["alarmkabel_distance", "alarmkabel_art", "udpeg_layer"];
+          for (const prop of props) {
+            if (!config.hasOwnProperty(prop)) {
+              result.status = false;
+              result.message += `Missing property ${prop} in alarmkabel configuration\n`;
+              return result;
+            }
+          }
+        }
+        return result;
       }
 
+      /**
+       * 
+       * @param {*} alarm_skab 
+       * @returns list of alarmskabe
+       */
+      getAlarmSkabe(alarm_skab) {
+        return new Promise((resolve, reject) => {
+          const body = {}
+          body.key = alarm_skab.key
+          body.name = alarm_skab.name
+          body.geom = alarm_skab.geom
+          body.layer = alarm_skab.layer
+
+          $.ajax({
+            url: "/api/extension/alarmskabelist",
+            type: "POST",
+            data: JSON.stringify(body),
+            contentType: "application/json",
+            success: function (data) {
+              resolve(data);
+            },
+            error: function (e) {
+              reject(e);
+            },
+          });
+        });
+      }
+
+      /**
+        * Get the alarm configuration from the extension config
+        * and update the component state accordingly
+        */
+      async getConfig() {
+        let me = this;
+        // If user is set in extensionconfig, set it in state and get information from backend
+        if (!config.extensionConfig.alarm) {
+          me.createSnack("No alarm configuration found");
+          return;
+        }
+
+        let data = config.extensionConfig.alarm;
+        const status = me.validateConfig(data);
+        if (status.status === false) {
+          me.createSnack(status.message);
+          return;
+        }
+
+        me.setState({
+          user_db: true,
+          user_alarmkabel: data.alarmkabel,
+          alarm_skab_selected: '',
+          forsyningsart_selected: 2,
+          layersOnStart: data.layersOnStart || []
+        });
+        if (data.udpeg_layer) {
+          me.setState({
+            user_udpeg_layer: data.udpeg_layer
+          });
+        }
+
+        if (status.hasKabelskab) {
+          const alarm_skabe_all = await me.getAlarmSkabe(config.extensionConfig.alarm.alarm_skab);
+
+          if (!alarm_skabe_all) {
+            return;
+          }
+          if (alarm_skabe_all && alarm_skabe_all.features.length > 0) {
+            try{
+            const alarm_skabe_options = me.createAlarmskabeOptions(alarm_skabe_all.features);
+            me.setState({
+              show_alarmskabe: true,
+              alarm_skab_layer: data.alarm_skab.layer ? data.alarm_skab.layer : null,
+              alarm_skab_key: data.alarm_skab.key ? data.alarm_skab.key : null,
+              alarm_skabe: alarm_skabe_options,
+              alarm_skabe_all: alarm_skabe_all.features,
+            });
+            } catch(e){
+              me.createSnack("Error processing alarm skabe options");
+            }
+          }
+
+
+
+
+        }
+      }
 
       /**
       * This function queries database for information related to alarmkabel
@@ -508,7 +580,7 @@ module.exports = {
 
         return new Promise(function (resolve, reject) {
           $.ajax({
-            url: "/api/extension/alarmkabel/" + me.state.user_id + "/query",
+            url: "/api/extension/alarmkabel/query",
             type: "POST",
             data: JSON.stringify(body),
             contentType: "application/json",
@@ -538,7 +610,7 @@ module.exports = {
 
         return new Promise(function (resolve, reject) {
           $.ajax({
-            url: "/api/extension/alarmskab/" + me.state.user_id + "/query",
+            url: "/api/extension/alarmskab/query",
             type: "POST",
             data: JSON.stringify(body),
             contentType: "application/json",
@@ -553,56 +625,6 @@ module.exports = {
       }
 
 
-      /**
-       * This function disolves the geometry, and prepares it for querying
-       */
-      geometryDisolver(geojson) {
-        // we need to wrap the geometry in a featurecollection, so we can use turf
-        let collection = {
-          type: "FeatureCollection",
-          features: [],
-        };
-
-        // loop through all features, buffer them, and add them to the collection
-        for (let i = 0; i < geojson.features.length; i++) {
-          let feature = geojson.features[i];
-
-          // If the type is not set, force it to be a Feature
-          if (!feature.type) {
-            feature.type = "Feature";
-          }
-
-          try {
-            // If the feature as a radius property, use that as the buffer distance (points and markers)
-            let buffered;
-            if (
-              feature.properties.distance &&
-              feature.geometry.type == "Point" &&
-              feature.properties.type == "circle"
-            ) {
-              try {
-                let parsedRadii = feature.properties.distance.split(" ")[0];
-                buffered = turfBuffer(feature, parsedRadii, {
-                  units: "meters",
-                });
-              } catch (error) {
-                console.warn(error, feature);
-              }
-            } else {
-              buffered = turfBuffer(feature, exBufferDistance, {
-                units: "meters",
-              });
-            }
-
-            collection.features.push(buffered);
-          } catch (error) {
-            console.warn(error, feature);
-          }
-        }
-
-        // return geometry for querying
-        return collection;
-      }
 
 
       /**
@@ -874,7 +896,7 @@ module.exports = {
             return
           })
           .catch((error) => {
-            if( error.responseJSON && error.responseJSON.message) {
+            if (error.responseJSON && error.responseJSON.message) {
               me.createSnack(__("Error in search") + ": " + error.responseJSON.message);
             } else {
               me.createSnack(__("Error in search") + ": " + error);
@@ -995,7 +1017,7 @@ module.exports = {
         const _self = this;
         const s = _self.state;
 
-        if (!s.authed || !s.user_id) {
+        if (!s.authed) {
           return (
             <div role="tabpanel" >
               <div className="form-group" >
@@ -1049,6 +1071,7 @@ module.exports = {
                 <div className="col-8 d-flex justify-content-between align-items-center">
                   <button
                     onClick={() => this.selectPointAlarmkabel()}
+                    style={{ width: '150px' }}
                     className="col-4 btn btn-primary "
                     disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
                   >
@@ -1057,6 +1080,7 @@ module.exports = {
                   <button
                     onClick={() => this.startQueryPointAlarmkabel()}
                     className="btn btn-primary"
+                    style={{ width: '125px' }}
                     disabled={!s.kabelpoint}
                   >
                     Beregn
@@ -1090,6 +1114,7 @@ module.exports = {
 
                   <button
                     onClick={() => this.selectPointAlarmskab()}
+                    style={{ width: '150px' }}
                     className="btn btn-primary"
                     disabled={!this.allowAlarmkabel()}
                   >
@@ -1097,6 +1122,7 @@ module.exports = {
                   </button>
                   <button
                     onClick={() => this.startAlarmskabAnalysis()}
+                    style={{ width: '125px' }}
                     className="btn btn-primary"
                     disabled={!s.alarm_skab_selected}
                   >
