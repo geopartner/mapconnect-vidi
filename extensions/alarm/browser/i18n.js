@@ -64,14 +64,18 @@ var dict = {
     da_DK: "Ugyldig afstand",
     en_US: "Invalid distance",
   },
+  "No feature found at clicked point": {
+    da_DK: "Ingen feature fundet på det klikkede punkt",
+    en_US: "No feature found at clicked point",
+  },
   "Alarm found": {
     da_DK: "Mulige placeringer fundet",
     en_US: "Possible alarms found",
   },
- "Angiv søgeretning": { 
-   dk_DK: "Angiv søgeretning",
-   en_US: "Select search direction",
- },
+  "Angiv søgeretning": { 
+    da_DK: "Angiv søgeretning",
+    en_US: "Select search direction",
+  },
   "From-To": {
     da_DK: "Fra-Til",
     en_US: "From-To",

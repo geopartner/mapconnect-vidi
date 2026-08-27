@@ -10,9 +10,7 @@
 import {
   buffer as turfBuffer,
   point as turfPoint,
-  flatten as turfFlatten,
-  union as turfUnion,
-  booleanPointInPolygon,
+  nearestPointOnLine,
   featureCollection as turfFeatureCollection,
   applyFilter,
 } from "@turf/turf";
@@ -283,6 +281,7 @@ module.exports = {
           user_id: null,
           user_db: false,
           user_udpeg_layer: config.extensionConfig.alarm.udpeg_layer || null,
+          kabelpoint: null,
           user_alarmkabel: false,
           user_alarmkabel_distance: config.extensionConfig.alarm.alarmkabel_distance || 100,
           user_alarmkabel_art: config.extensionConfig.alarm.alarmkabel_art || 2,
@@ -484,8 +483,8 @@ module.exports = {
                 //console.debug("Error in getUser", e);
                 if (e?.responseJSON?.message) {
                   me.createSnack("Error in Config: " + e.responseJSON.message);
-                } 
-                
+                }
+
                 reject(e);
               },
             });
@@ -691,7 +690,7 @@ module.exports = {
       /**
       * Handler for alarmkabel click events
       */
-      handleAlarmkabelClick = (e) => {
+      handleAlarmkabelClick = async (e) => {
         let me = this;
         let point = null;
 
@@ -709,9 +708,45 @@ module.exports = {
         point = e.latlng;
         utils.cursorStyle().reset();
         blocked = true;
-        const user_alarmkabel_art = 2
+
+        const feature = await makeSearch(point.lng, point.lat, me.state.user_udpeg_layer);
+        if (!feature) {
+          console.warn("No feature found at clicked point");
+          me.setState({ kabelpoint: null });
+          _clearAlarmPositions();
+          me.createSnack(__("No feature found at clicked point"));
+          return;
+        }
+        try {
+          const tpoint = turfPoint([point.lng, point.lat]);
+          const projectedPoint = nearestPointOnLine(feature, tpoint);
+          point.lng = projectedPoint.geometry.coordinates[0];
+          point.lat = projectedPoint.geometry.coordinates[1];
+          me.addAlarmPositionToMap(projectedPoint);
+          me.setState({ kabelpoint: { point } });
+        } catch (err) {
+          console.error("Error processing feature:", err);
+          me.createSnack(__("Error in search") + ": " + err);
+          return;
+        }
+      }
+
+      /**
+       * This function starts the query for the alarmkabel based on the selected point.
+      */
+      startQueryPointAlarmkabel = () => {
+        let me = this;
+        const point = me.state.kabelpoint?.point;
+        if (!point) {
+          me.createSnack(__("No point selected"));
+          clearAlarmPositions();
+          return;
+        }
         // send the point to the server + the distance
-        me.queryPointAlarmkabel(point, user_alarmkabel_art, me.state.user_alarmkabel_distance, me.state.alarm_direction_selected)
+        me.queryPointAlarmkabel(point,
+          me.state.user_alarmkabel_art,
+          me.state.user_alarmkabel_distance,
+          me.state.alarm_direction_selected)
           .then((data) => {
 
             me.createSnack(__("Alarm found"))
@@ -729,11 +764,15 @@ module.exports = {
             return
           })
           .catch((error) => {
-            me.createSnack(__("Error in search") + ": " + error);
+            if (error?.responseJSON?.message) {
+              me.createSnack(__("Error in search") + ": " + error.responseJSON.message);
+            } else {
+              me.createSnack(__("Error in search") + ": " + error);
+            }
             console.warn(error);
             return
           });
-      }
+      };
 
       /**
        * This function selects a point in the map for alarmkabel
@@ -833,7 +872,11 @@ module.exports = {
             return
           })
           .catch((error) => {
-            me.createSnack(__("Error in seach") + ": " + error);
+            if( error.responseJSON && error.responseJSON.message) {
+              me.createSnack(__("Error in search") + ": " + error.responseJSON.message);
+            } else {
+              me.createSnack(__("Error in search") + ": " + error);
+            }
             console.warn(error);
             return
           });
@@ -923,7 +966,6 @@ module.exports = {
         const selectedSkab = this.state.alarm_skabe_all.find(skab => skab.properties.value === skabKey);
         if (selectedSkab) {
           console.log("Selected alarmskab:", selectedSkab);
-          alert("Selected alarmskab: " + JSON.stringify(selectedSkab));
           const coordinates = selectedSkab.geometry.coordinates;
           this.zoomToXY(coordinates[0], coordinates[1]);
           this.addAlarmPositionToMap(selectedSkab);
@@ -965,7 +1007,7 @@ module.exports = {
             </div>
           );
         }
-                
+
         return (
           <div role="tabpanel">
 
@@ -1001,14 +1043,23 @@ module.exports = {
 
 
               <div className="row mx-auto my-3 align-items-center flex-nowrap">
-                <div className="col-8"></div>
-                <button
-                  onClick={() => this.selectPointAlarmkabel()}
-                  className="col-4 btn btn-primary "
-                  disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
-                >
-                  {__("Select point for alarmkabel")}
-                </button>
+                <div className="col-4"></div>
+                <div className="col-8 d-flex justify-content-between align-items-center">
+                  <button
+                    onClick={() => this.selectPointAlarmkabel()}
+                    className="col-4 btn btn-primary "
+                    disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
+                  >
+                    {__("Select point for alarmkabel")}
+                  </button>
+                  <button
+                    onClick={() => this.startQueryPointAlarmkabel()}
+                    className="btn btn-primary"
+                    disabled={!s.kabelpoint}
+                  >
+                    Beregn
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1034,19 +1085,20 @@ module.exports = {
               <div className="row mx-auto my-3 align-items-center flex-nowrap">
                 <div className="col-4"></div>
                 <div className="col-8 d-flex justify-content-between align-items-center">
-                  <button
-                    onClick={() => this.startAlarmskabAnalysis()}
-                    className="btn btn-primary"
-                    disabled={!s.alarm_skab_selected}
-                  >
-                    Beregn
-                  </button>
+
                   <button
                     onClick={() => this.selectPointAlarmskab()}
                     className="btn btn-primary"
                     disabled={!this.allowAlarmkabel()}
                   >
                     {__("Select point for cabinet")}
+                  </button>
+                  <button
+                    onClick={() => this.startAlarmskabAnalysis()}
+                    className="btn btn-primary"
+                    disabled={!s.alarm_skab_selected}
+                  >
+                    Beregn
                   </button>
                 </div>
               </div>
