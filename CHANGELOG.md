@@ -2,7 +2,11 @@
 
 The changes and additions made will be reflected by the date which they are deployed to production.
 
-
+## 2026-08-27
+- refactor alarm and lukkeplan extension 
+- The word BlueIdea is removed from UI.
+- Alarm:  bug fixes.
+- Alarm:  Seperating the select and start process 
 
 ## 2025-10-3
 - mapstatus. Knudetype configurable for selection

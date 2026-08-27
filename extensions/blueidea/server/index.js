@@ -252,6 +252,103 @@ router.post("/api/extension/blueidea/:userid/StopProject", function (req, respon
   }
 );
 
+// Query alarmkabel-plugin in database
+router.post("/api/extension/blueidea/:userid/query", function (req, response) {
+    guard(req, response);
+
+    // guard against missing lat and lng in body
+    if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
+      response.status(401).send("Missing lat or lng");
+      return;
+    }
+
+    // Guard against no distance
+    if (!req.body.hasOwnProperty("distance")) {
+      response.status(401).send("Missing distance");
+      return;
+    }
+
+    // Guard against no forsyningsart
+    if (!req.body.hasOwnProperty("forsyningsart")) {
+      response.status(401).send("Missing forsyningsart");
+      return;
+    }
+
+    // set timeout to 30s
+    req.setTimeout(TIMEOUT);
+
+    // Create the query to insert into the database
+    const q = `
+      INSERT INTO lukkeliste.beregnlog(
+      the_geom, 
+      forsyningsart, 
+      opslagmatrikler, 
+      distance, 
+      beregntypeid,
+      username,
+      direction
+      ) 
+      VALUES (
+      ST_Transform(
+        ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),
+        25832
+      )::geometry, 
+      ${req.body.forsyningsart}, 
+      false, 
+      ${req.body.distance},
+      2,
+      '${req.session.screenName}', 
+      '${req.body.direction}'
+      )
+      RETURNING beregnuuid
+    `;
+
+    SQLAPI(q, req)
+      .then((uuid) => {
+        let beregnuuid = uuid.returning[0].beregnuuid;
+        let promises = [];
+
+        console.log('Alarmkabel:', 'user:', req.session.screenName, 'exec time:', uuid._execution_time, 'peak mem:', uuid._peak_memory_usage, '->', beregnuuid);
+
+        // get points
+        promises.push(
+          SQLAPI(
+            `SELECT * from lukkeliste.vw_alarmpkt where beregnuuid = '${beregnuuid}'`,
+            req,
+            { format: "geojson", srs: 4326 }
+          )
+        );
+
+        // get log
+        promises.push(
+          SQLAPI(
+            `SELECT * from lukkeliste.beregnlog where beregnuuid = '${beregnuuid}'`,
+            req,
+            { format: "geojson", srs: 4326 }
+          )
+        );
+
+        // when promises are complete, return the result
+        Promise.all(promises)
+          .then((res) => {
+            response.status(200).json({
+              alarm: res[0],
+              log: res[1],
+            });
+          })
+          .catch((err) => {
+            console.error(err);
+            response.status(500).json(err);
+          });
+      })
+      .catch((err) => {
+        console.error(err);
+        response.status(500).json(err);
+      });
+  }
+);
+
+
 // Query lukkeliste-plugin in database
 router.post("/api/extension/lukkeliste/:userid/query", function (req, response) {
     guard(req, response);

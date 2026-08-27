@@ -1,3 +1,4 @@
+
 # BlueIdea / Lukkeliste
 
 Dette modul gør det muligt at udpege adresser, og sende dem direkte til BlueIdea. Denne logik kan udbygges med at finde adresser på baggrund af eksisterende ledningsnet. Opsætningen af denne er dog mere omstændig, og kræver at der er en database med et sundt ledningsnet.
