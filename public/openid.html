@@ -26,7 +26,11 @@
         const redirectUri = oidc?.redirectUris?.vidi ?? DEFAULTS.redirectUri;
         // const redirectUri = "http://localhost:3000/openid.html";
         const clientId = oidc?.clientId ?? DEFAULTS.clientId;
-        const host = oidc?.host ?? DEFAULTS.host;
+        let host = oidc?.host ?? DEFAULTS.host;
+        // Normalize 127.0.0.1 to localhost to avoid network issues in local development scenarios
+        if (host) {
+            host = host.replace(/^(https?:\/\/)127\.0\.0\.1([:\/]|$)/, '$1localhost$2');
+        }
         const tokenUri = oidc?.tokenUri ?? undefined;
         const authUri = oidc?.authUri ?? undefined;
         const logoutUri = oidc?.logoutUri ?? undefined;
@@ -34,8 +38,22 @@
         return {redirectUri, clientId, host, tokenUri, authUri, scope, logoutUri};
     }
 
-    const oidcConfig = extractOidcConfig()
-    const codeFlow = new CentiaSDK.CodeFlow(oidcConfig)
+    let codeFlow;
+    let oidcConfig;
+    try {
+        if (typeof CentiaSDK === 'undefined') {
+            throw new Error('Centia SDK failed to load. Check your internet connection or try a different CDN URL.');
+        }
+        oidcConfig = extractOidcConfig()
+        codeFlow = new CentiaSDK.CodeFlow(oidcConfig)
+    } catch (error) {
+        console.error('Failed to initialize OAuth flow:', error);
+        showError(`Failed to initialize login: ${error.message}`);
+    }
+    
+    if (!codeFlow) {
+        throw new Error('CodeFlow initialization failed');
+    }
 
     // Minimal JWT decoder (payload only)
     function jwtDecode(token) {
