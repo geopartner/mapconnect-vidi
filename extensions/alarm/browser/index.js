@@ -958,9 +958,10 @@ module.exports = {
         }
         const feature = me.getNearestFeature(turfPoint([point.lng, point.lat]), features);    
         if (!feature) {
-        const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
-        me.alarmSkabeChange(skabeId.toString());
-      }
+          const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
+          me.alarmSkabeChange(skabeId.toString());
+        }
+      };
 
       /**
        * This function selects a point in the map for alarmkabel, based on a specific alarmskab
@@ -990,16 +991,16 @@ module.exports = {
       };
 
       zoomToXY = (lng, lat) => {
-        const lngff = parseFloat(lng)
-        const latf = parseFloat(lat)
-        const padding = 0.0001
+        const lngff = parseFloat(lng);
+        const latf = parseFloat(lat);
+        const padding = 0.0001;
 
         const bounds = L.latLngBounds(
           [latf - padding, lngff - padding],
           [latf + padding, lngff + padding]
         );
         cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true });
-      }
+      };
 
       alarmSkabeChange = (skabKeyStr) => {
         if (!skabKeyStr || skabKeyStr === '') {
@@ -1019,7 +1020,7 @@ module.exports = {
         } else {
           console.warn("Alarmskab not found for key:", skabKey);
         }
-      }
+      };
 
       /**
        * Determines if alarmkabel is allowed
@@ -1030,7 +1031,7 @@ module.exports = {
         } else {
           return false;
         }
-      }
+      };
 
 
       /**
@@ -1178,7 +1179,7 @@ module.exports = {
         // Not Logged in - or not configured
 
       }
-    
+    }
 
     utils.createMainTab(
       exId,
@@ -1197,7 +1198,7 @@ module.exports = {
     } catch (e) {
       throw "Failed to load DOM";
     }
-  
+  },
 
   callBack: function (url) {
     utils.popupCenter(
