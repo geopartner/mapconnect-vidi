@@ -216,13 +216,13 @@ module.exports = {
 
     const makeSearch = async (lng, lat, fullLayerName) => {
       try {
-        let foundFeature = null;
+        let foundFeatures = [];
         let qstore = [];
         const point = turfPoint([lng, lat])
         const bufferedPolygon = turfBuffer(point, 2, { units: 'meters' })
         const wkt = geojsonToWKT(bufferedPolygon.geometry)
         if (!wkt || !fullLayerName) {
-          return foundFeature;
+          return foundFeatures;
         }
 
 
@@ -235,14 +235,14 @@ module.exports = {
               if (qstore.length >= 1 && qstore[0].geoJSON) {
                 try {
                   qstore[0].geoJSON.features.forEach(feature => {
-                    foundFeature = feature;
+                    foundFeatures.push(feature);
                   });
-                  resolve(foundFeature);
+
                 } catch (err) {
                   reject(err);
                 }
               } else {
-                resolve(foundFeature);
+                resolve(foundFeatures);
               }
             },
             null,
@@ -709,7 +709,27 @@ module.exports = {
           api.filter(layer, filter);
         }
       };
-
+      /**
+       * Finds the nearest feature to a given point
+       */
+      getNearestFeature = (point, features) => {
+        let nearest = null;
+        if (!features || features.length === 0) {
+          return null;
+        }
+        
+        const tpoint = turfPoint([point.lng, point.lat]);
+        for (let i = 0; i < features.length; i++) {
+          const feature = features[i];
+          const projectedPoint = nearestPointOnLine(feature, tpoint);
+          // You can add any processing for each feature here if needed
+          if (!nearest || turfDistance(tpoint, projectedPoint) < turfDistance(tpoint, nearest)) {
+            nearest = projectedPoint;
+          }
+        }
+        
+        return nearest;
+      };
 
       /**
       * Handler for alarmkabel click events
@@ -732,9 +752,10 @@ module.exports = {
         point = e.latlng;
         utils.cursorStyle().reset();
         blocked = true;
-
-        const feature = await makeSearch(point.lng, point.lat, me.state.user_udpeg_layer);
-        if (!feature) {
+        me.setState({ kabelpoint: null });
+        _clearAll();
+        const features = await makeSearch(point.lng, point.lat, me.state.user_udpeg_layer);
+        if (!features || features.length === 0) {
           console.warn("No feature found at clicked point");
           me.setState({ kabelpoint: null });
           _clearAlarmPositions();
@@ -743,7 +764,7 @@ module.exports = {
         }
         try {
           const tpoint = turfPoint([point.lng, point.lat]);
-          const projectedPoint = nearestPointOnLine(feature, tpoint);
+          const projectedPoint = me.getNearestFeature(tpoint, features);
           point.lng = projectedPoint.geometry.coordinates[0];
           point.lat = projectedPoint.geometry.coordinates[1];
           me.addAlarmPositionToMap(projectedPoint);
@@ -753,7 +774,7 @@ module.exports = {
           me.createSnack(__("Error in search") + ": " + err);
           return;
         }
-      }
+      } 
 
       /**
        * This function starts the query for the alarmkabel based on the selected point.
@@ -928,13 +949,15 @@ module.exports = {
         utils.cursorStyle().reset();
         blocked = true;
 
-        const feature = await makeSearch(point.lng, point.lat, me.state.alarm_skab_layer);
+        const features = await makeSearch(point.lng, point.lat, me.state.alarm_skab_layer);
 
-        if (!feature) {
+        if (!features || features.length === 0) {
           me.alarmSkabeChange('');
           blocked = false;
           return;
         }
+        const feature = me.getNearestFeature(turfPoint([point.lng, point.lat]), features);    
+        if (!feature) {
         const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
         me.alarmSkabeChange(skabeId.toString());
       }
@@ -1155,7 +1178,7 @@ module.exports = {
         // Not Logged in - or not configured
 
       }
-    };
+    
 
     utils.createMainTab(
       exId,
@@ -1174,7 +1197,7 @@ module.exports = {
     } catch (e) {
       throw "Failed to load DOM";
     }
-  },
+  
 
   callBack: function (url) {
     utils.popupCenter(
