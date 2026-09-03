@@ -14,6 +14,7 @@ var config = require("../../../config/config");
 var dn = require("../../../config/gp/config.geosag");
 
 const debug = false;
+
 function addZero(i) {
   if (i < 10) {
     i = "0" + i;

@@ -683,9 +683,14 @@ module.exports = {
                                 const data = r.json();
                                 resolve(data)
                             })
-                            .catch(e => reject(e))
+                            .catch(e => {
+                                const errorMessage = e?.message || 'Der skete en fejl ved upload';
+                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                reject(e);
+                            })
                     })
                 }
+
 
                 var parseStatus = function (statusObj) {
                     //console.log(statusObj);
@@ -766,9 +771,14 @@ module.exports = {
                                 const data = r.json();
                                 resolve(data)
                             })
-                            .catch(e => reject(e))
+                            .catch(e => {
+                                const errorMessage = e?.message || 'Der skete en fejl';
+                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                reject(e);
+                            })
                     })
                 }
+                
 
                 var buildFilter = function (key = undefined) {
                     //Empty stuff
@@ -1265,7 +1275,11 @@ module.exports = {
                                     harMegetFarlig: this.hasMForF(f.l_mf)
                                 })
                             })
-                            .catch(e => console.log(e))
+                            .catch(e => {
+                                const errorMessage = e?.message || 'An error occurred while fetching the inquiry';
+                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                console.log(e);
+                            })
                     }
 
                     clickLogin() {
