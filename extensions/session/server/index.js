@@ -59,6 +59,8 @@ let start = function (dataToAuthorizeWith, req, response, status) {
         response.header('Expires', '0');
         response.header('X-Powered-By', 'MapCentia Vidi');
 
+        console.log("Response body from GC2:", body.toString());
+
         if (err || res.statusCode !== 200) {
             console.error(err);
             response.status(401).send({
