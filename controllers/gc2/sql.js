@@ -1,7 +1,6 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2018 MapCentia ApS
- * @copyright  2025 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -11,21 +10,9 @@ var config = require('../../config/config.js').gc2;
 var metrics = require('../../modules/metrics');
 var request = require('request');
 var fs = require('fs');
-const { option } = require('grunt');
+const {Readable} = require('stream');
 
-var query = function (req, response) {
-    // Get SQL metrics if enabled
-    const sqlMetrics = metrics.isEnabled() ? metrics.getSqlMetrics() : null;
-    
-    // Start timing the query
-    let startTime;
-    if (sqlMetrics) {
-        startTime = Date.now();
-    }
-    
-    // Track response size
-    let responseSize = 0;
-    
+var query = async function (req, response) {
     req.setTimeout(0); // no timeout
     var db = req.params.db,
         q = req.body.q || req.query.q,
@@ -38,8 +25,6 @@ var query = function (req, response) {
         store = req.body.store || req.query.store,
         userName,
         fileName,
-        writeStream,
-        rem,
         headers,
         uri,
         key = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -48,17 +33,16 @@ var query = function (req, response) {
         });
 
     var postData = {
-            convert_types: true,
-            q,
-            base64,
-            srs,
-            lifetime,
-            client_encoding: client_encoding || "UTF8",
-            format: format ? format : "geojson",
-            key: typeof req?.session?.gc2ApiKey !== "undefined" ? req.session.gc2ApiKey : "xxxxx", //Dummy key is sent to prevent start of session
-            custom_data: custom_data || ""
-        },
-        options;
+        convert_types: true,
+        q,
+        base64,
+        srs,
+        lifetime,
+        client_encoding: client_encoding || "UTF8",
+        format: format ? format : "geojson",
+        key: typeof req?.session?.gc2ApiKey !== "undefined" ? req.session.gc2ApiKey : "xxxxx", //Dummy key is sent to prevent start of session
+        custom_data: custom_data || ""
+    };
 
     // Check if user is a sub user
     if (req?.session?.screenName && req?.session?.subUser) {
@@ -69,14 +53,7 @@ var query = function (req, response) {
 
     uri = custom_data !== null && custom_data !== undefined && custom_data !== "null" ? config.host + "/api/v2/sqlwrapper/" + userName : config.host + "/api/v2/sql/" + userName;
 
-    options = {
-        method: 'POST',
-        uri: uri,
-        json: postData
-    };
-
-    // log out the options object for debugging purposes.
-    console.log(options.method, options.uri, options.json.format);
+    console.log(uri);
 
     if (format === "excel") {
         fileName = key + ".xlsx";
@@ -97,58 +74,45 @@ var query = function (req, response) {
         }
     }
 
-    // if (!store) {
-    //     //response.writeHead(200, headers);
-    // }
-
-    rem = request(options);
-
-    if (store) {
-        writeStream = fs.createWriteStream(__dirname + "/../../public/tmp/stored_results/" + fileName);
+    let upstream;
+    try {
+        upstream = await fetch(uri, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(postData)
+        });
+    } catch (err) {
+        console.error(err);
+        if (!response.headersSent) response.status(500).send({success: false, message: err.message});
+        return;
     }
 
-    rem.on('response', function(res) {
-        if (!store) {
-            response.writeHead(res.statusCode, headers);
-        }
-        
-        // Track query status in the counter
-        if (sqlMetrics) {
-            sqlMetrics.counter.inc({
-                db: db,
-                format: format,
-                status: res.statusCode >= 400 ? 'error' : 'success'
-            });
-        }
-    });
+    const nodeStream = upstream.body ? Readable.fromWeb(upstream.body) : Readable.from([]);
 
-    rem.on('data', function (chunk) {
-        responseSize += chunk.length;
-        if (store) {
-            writeStream.write(chunk, 'binary');
-        } else {
-            response.write(chunk);
-        }
-    });
-    
-    rem.on('end', function () {
-        // End timer and record duration with labels
-        if (sqlMetrics) {
-            const durationMs = Date.now() - startTime;
-            sqlMetrics.duration.observe({ db: db, format: format }, durationMs);
-            
-            // Record response size
-            sqlMetrics.responseSize.observe({ db: db, format: format }, responseSize);
-        }
-        
-        if (store) {
+    if (store) {
+        const writeStream = fs.createWriteStream(__dirname + "/../../public/tmp/stored_results/" + fileName);
+        nodeStream.on('error', (e) => {
+            console.error(e);
+            writeStream.destroy();
+            if (!response.headersSent) response.status(500).send({success: false, message: e.message});
+        });
+        writeStream.on('error', (e) => {
+            console.error(e);
+            if (!response.headersSent) response.status(500).send({success: false, message: e.message});
+        });
+        writeStream.on('finish', function () {
             console.log("Result saved");
             response.send({"success": true, "file": fileName});
-        } else {
+        });
+        nodeStream.pipe(writeStream);
+    } else {
+        response.writeHead(upstream.status, headers);
+        nodeStream.on('error', (e) => {
+            console.error(e);
             response.end();
-        }
-    });
-
+        });
+        nodeStream.pipe(response);
+    }
 };
 router.all('/api/sql/:db', query);
 router.all('/api/sql/nocache/:db', query);

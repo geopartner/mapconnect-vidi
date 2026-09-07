@@ -180,6 +180,25 @@ module.exports = {
         }
     },
 
+    showDangerToast: (text, options = {delay: 1500, autohide: true}, elementId = "danger-toast") => {
+        try {
+            document.querySelector(`#${elementId} .toast-body`).innerHTML = text;
+            const e = new bootstrap.Toast(document.getElementById(elementId), options);
+            e.show();
+        } catch (e) {
+            console.log("Danger toast could not be shown");
+        }
+    },
+
+    hideDangerToast: (elementId = "danger-toast") => {
+        try {
+            const e = new bootstrap.Toast(document.getElementById(elementId));
+            e.hide();
+        } catch (e) {
+            console.log("Danger toast could not be hidden");
+        }
+    },
+
     removeDuplicates: (inputArray) => {
         let temp = {};
         for (let i = 0; i < inputArray.length; i++) {

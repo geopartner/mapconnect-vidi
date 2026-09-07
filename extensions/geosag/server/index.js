@@ -1,6 +1,6 @@
 /*
  * @author     Rene Borella <rgb@geopartner.dk>
- * @copyright  2025 Geopartner Landinspektører A/S
+ * @copyright  2026 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -14,6 +14,7 @@ var config = require("../../../config/config");
 var dn = require("../../../config/gp/config.geosag");
 
 const debug = false;
+
 function addZero(i) {
   if (i < 10) {
     i = "0" + i;

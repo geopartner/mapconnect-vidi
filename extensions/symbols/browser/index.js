@@ -36,7 +36,6 @@ const config = require('../../../config/config.js');
 const urlVars = urlparser.urlVars;
 
 
-
 /**
  *
  * @returns {string}

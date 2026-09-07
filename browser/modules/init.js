@@ -1,7 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2023 MapCentia ApS
- * @copyright  2025 Geopartner Landinspektører A/S
+ * @copyright  2026 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -106,6 +106,8 @@ module.exports = {
             loadCheckingInterval: 15000,
             mode: 0,
             layerTreeFilterPlaceholder: null,
+            minZoom: null,
+            maxZoom: null,
             allowDownloadLayer: true,
             showLayerGroupChildren: true,
         };
@@ -282,6 +284,9 @@ module.exports = {
         } else {
             me.render();
         }
+
+        // Make updateApp globally available for onclick handlers
+        window.updateApp = updateApp;
     },
 
 

@@ -1,7 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2021 MapCentia ApS
- * @copyright  2025 Geopartner Landinspektører A/S
+ * @copyright  2026 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -11,7 +11,7 @@ const router = express.Router();
 const config = require('../config/config.js');
 const extensionsConfig = require('../config/gp/config.extensions.js');
 
-router.get('/api/datafordeler/*', (req, response) => {
+router.get('/api/datafordeler/*', async (req, response) => {
     const userName = extensionsConfig?.datafordeler?.username;
     const pwd = extensionsConfig?.datafordeler?.password;
     const token = extensionsConfig?.datafordeler?.token;
@@ -19,9 +19,9 @@ router.get('/api/datafordeler/*', (req, response) => {
     let creds = token ? `&token=${token}` : `&username=${userName}&password=${pwd}`;
     let requestURL = host + decodeURIComponent(req.url.substr(17)) + creds;
     requestURL = requestURL.replace('false', 'FALSE');
-    get(requestURL, response);
+    await get(requestURL, response);
 });
-router.get('/api/dataforsyningen/*', (req, response) => {
+router.get('/api/dataforsyningen/*', async (req, response) => {
     const userName = extensionsConfig?.dataforsyningen?.username;
     const pwd = extensionsConfig?.dataforsyningen?.password;
     const token = extensionsConfig?.dataforsyningen?.token;
@@ -102,24 +102,43 @@ router.get('/api/dataforsyningen/*', (req, response) => {
         tileMatrixValue = 'L' + tileMatrixValue.padStart(2, '0').toString();
         console.log(tileMatrixValue);
         // replace the tileMatrix value in the url with the new value
-        requestURL = requestURL.replace(/tileMatrix=\d+/, 'tileMatrix='+tileMatrixValue);
+        requestURL = requestURL.replace(/tileMatrix=\d+/, 'tileMatrix=' + tileMatrixValue);
     }
-    
-    get(requestURL, response);
+
+    await get(requestURL, response);
 });
 
-const get = (url, res) => {
+const get = async (url, res) => {
     // Let the user decide if they want to redirect or wait for the response
     if (config?.df?.redirect) {
         res.redirect(url);
-    
-    // or wait for the response
-    } else {
-        let options = {
-            method: 'GET',
-            uri: url
-        };
-        request(options).on('error', (e) => console.error(e)).pipe(res);
+        return;
     }
+
+    // or wait for the response
+    let upstream;
+    try {
+        upstream = await fetch(url, {method: 'GET'});
+    } catch (e) {
+        console.error(e);
+        if (!res.headersSent) res.status(502).end();
+        return;
+    }
+
+    res.writeHead(upstream.status, {
+        'content-type': upstream.headers.get('content-type') || 'application/octet-stream'
+    });
+
+    if (!upstream.body) {
+        res.end();
+        return;
+    }
+
+    const nodeStream = Readable.fromWeb(upstream.body);
+    nodeStream.on('error', (e) => {
+        console.error(e);
+        res.end();
+    });
+    nodeStream.pipe(res);
 }
 module.exports = router;

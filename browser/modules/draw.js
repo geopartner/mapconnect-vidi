@@ -1,7 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2021 MapCentia ApS
- * @copyright  2025 Geopartner Landinspektører A/S
+ * @copyright  2026 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -253,7 +253,7 @@ module.exports = {
             });
 
             cloud.get().map.addControl(drawControl);
-            $(".leaflet-draw-draw-circlemarker").append('<i class="fa fa-comment" aria-hidden="true"></i>').css("background-image", "none");
+            $(".leaflet-draw-draw-circlemarker").append('<i class="bi bi-chat-left-text" aria-hidden="true"></i>').css("background-image", "none");
 
             drawOn = true;
 
@@ -441,13 +441,6 @@ module.exports = {
     getState: () => {
         let drawnItems = serializeLayers.serializeDrawnItems(true);
         return {drawnItems};
-    },
-
-    /**
-     * Returns the selected drawing
-     */
-    getSelectedDrawing: () => {
-        return selectedDrawing;
     },
 
     /**

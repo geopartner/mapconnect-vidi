@@ -16,6 +16,7 @@ import SelectWidget from "./SelectWidget.jsx";
 import TimeWidget from "./TimeWidget.jsx";
 import {coordAll} from "@turf/turf";
 import {createRoot} from "react-dom/client";
+import {flushSync} from "react-dom";
 import config from "../../../config/config";
 
 /**
@@ -46,6 +47,14 @@ let editor;
 
 let editedFeature = false;
 let isVectorLayer = false;
+
+// Holder for the current edit session's state. The form's onSubmit closure
+// captures *this object* (a stable module-level reference) rather than the
+// per-call locals `e`/`eventFeatureCopy`, so when stopEdit() nulls the holder
+// the closure can no longer reach the Leaflet layer or its feature.properties.
+// React 18 sometimes retains the unmounted Form's onSubmit via alternate
+// fiber state; this indirection makes that retention harmless.
+let editSession = null;
 
 let featureWasEdited = false;
 
@@ -466,6 +475,8 @@ module.exports = {
                             };
                             break;
                         case `text`:
+                        case `json`:
+                        case `jsonb`:
                             uiSchema[key] = {
                                 'ui:widget': 'textarea'
                             };
@@ -483,28 +494,21 @@ module.exports = {
 
                 // Properties have priority over default types
                 if (fields[key]?.restriction?.length > 0) {
-                    // if the type is text, change the field to string to get a select
-                    if (fields[key].type === `text`) {
-                        properties[key].type = `string`;
-                    }
-                    let restrictions = fields[key].restriction;
-                    let enumNames = [];
-                    let enumValues = [];
-                    for (let i = 0; i < restrictions.length; i++) {
-                        enumNames.push(restrictions[i].alias);
-                        enumValues.push(restrictions[i].value);
-                    }
-                    if (enumNames.length === enumValues.length) {
-                        properties[key].enum = enumValues;
-                    }
-                    // If there is a restriction, then convert the field to a select
+                    // Use enum + ui:enumNames rather than oneOf+const. AJV compiles oneOf into a
+                    // deeply nested else-chain (one level per branch) which overflows V8's stack
+                    // on large restriction lists (e.g. ~1000 postnumre).
+                    const restrictions = fields[key].restriction;
+                    properties[key].enum = restrictions.map(r => r.value);
                     uiSchema[key] = {
-                        'ui:enumNames': enumNames
+                        ...uiSchema[key],
+                        'ui:enumNames': restrictions.map(r => r.alias),
                     };
+                    if (uiSchema[key]['ui:widget']) {
+                        delete uiSchema[key]['ui:widget'];
+                    }
                 }
             }
         });
-
         return {
             schema: {
                 type: "object",
@@ -595,7 +599,6 @@ module.exports = {
                     return;
                 }
                 if ((type === "POLYGON" || type === "MULTIPOLYGON") && coordAll(geoJson).length < 4) {
-                    console.log(coordAll(geoJson).length)
                     alert(__("You need to plot at least three points"));
                     return;
                 }
@@ -609,14 +612,6 @@ module.exports = {
                     geoJson.properties[key] = formData.formData[key];
                     if (geoJson.properties[key] === undefined) {
                         geoJson.properties[key] = null;
-                    }
-                    if (fields[key]?.type && (fields[key].type === "bytea" ||
-                            fields[key].type.startsWith("time") ||
-                            fields[key].type.startsWith("time") ||
-                            fields[key].type.startsWith("character") ||
-                            fields[key].type.startsWith("json") ||
-                            fields[key].type.startsWith("text")) &&
-                        geoJson.properties[key] !== null) {
                     }
                 });
 
@@ -677,6 +672,9 @@ module.exports = {
                 }
             }
             // Slide panel with attributes in and render form component
+            if (!editorFormRoot) {
+                editorFormRoot = createRoot(EDITOR_FORM_CONTAINER_ID);
+            }
             editorFormRoot.render(
                 <Form
                     key={Date.now()}
@@ -688,10 +686,11 @@ module.exports = {
                     onSubmit={onSubmit}
                     transformErrors={transformErrors}
                     formData={defaultValues}
+                    experimental_defaultFormStateBehavior={{emptyObjectFields: 'skipEmptyDefaults', constAsDefaults: 'skipOneOf'}}
                     focusOnFirstError={false}>
                     <div className="buttons">
                         <button type="submit"
-                                className="btn btn btn-success mb-2 mt-2 w-100">{__("Submit")}</button>
+                                className="btn btn btn-success mb-2 mt-2 w-100 editor-save-btn">{__("Submit")}</button>
                         <button type="button" onClick={_self.stopEditWithConfirm}
                                 className="btn btn btn-outline-secondary mb-2 mt-2 w-100">{__("Cancel")}</button>
                     </div>
@@ -848,7 +847,7 @@ module.exports = {
         if (!isVector) {
             e.setStyle(EDIT_STYLE)
         }
-        const editFeature = () => {
+        const editFeature = async () => {
             serviceWorkerCheck();
             let React = require('react');
 
@@ -941,8 +940,42 @@ module.exports = {
             }
 
             _self.enableSnapping(e.feature.geometry.type, true, e);
-            // Delete some system attributes
-            let eventFeatureCopy = JSON.parse(JSON.stringify(e.feature));
+            // Check if there's a pending queue item for this feature (e.g. user already
+            // edited and submitted, but the request hasn't gone through to the server
+            // yet). Use the queue's snapshot in that case, so the user resumes editing
+            // their pending change instead of overwriting it with fresh DB data.
+            const pkeyField = (metaDataKeys[schemaQualifiedName].pkey) ? metaDataKeys[schemaQualifiedName].pkey : 'gid';
+            const pkeyValue = e.feature.properties?.[pkeyField];
+            let basisProperties = e.feature.properties;
+            if (pkeyValue !== undefined && pkeyValue !== null) {
+                try {
+                    const pendingItem = await apiBridgeInstance.findPendingItemByPkey(schemaQualifiedName, pkeyValue);
+                    if (pendingItem?.feature?.features?.[0]?.properties) {
+                        console.log('Editor: using pending queue item for re-edit', schemaQualifiedName, pkeyValue);
+                        basisProperties = pendingItem.feature.features[0].properties;
+                    }
+                } catch (err) {
+                    console.warn('Editor: failed to look up pending queue item, falling back to fresh data', err);
+                }
+            }
+            // Shallow copy: bytea/bytea[] payloads are referenced, not duplicated.
+            let eventFeatureCopy = {
+                geometry: e.feature.geometry,
+                properties: {...basisProperties}
+            };
+            // Stash on module-level holder so onSubmit reads via indirection.
+            // stopEdit() nulls the holder, breaking retention from React's
+            // potentially-leaked alternate fiber.
+            editSession = {
+                e,
+                eventFeatureCopy,
+                markers,
+                metaDataKeys,
+                schemaQualifiedName,
+                fields,
+                isVectorLayer,
+                me: this
+            };
             delete eventFeatureCopy.properties._vidi_content;
             delete eventFeatureCopy.properties._id;
             delete eventFeatureCopy.properties._vidi_edit_layer_id;
@@ -974,6 +1007,12 @@ module.exports = {
                             eventFeatureCopy.properties[key] = "[" + eventFeatureCopy.properties[key].slice(1, -1) + "]";
                         }
                         break;
+                    case `json`:
+                    case `jsonb`:
+                        if (eventFeatureCopy.properties[key]) {
+                            eventFeatureCopy.properties[key] = JSON.stringify(eventFeatureCopy.properties[key]);
+                        }
+                        break;
                 }
             });
 
@@ -982,7 +1021,14 @@ module.exports = {
              * @param formData
              */
             const onSubmit = (formData) => {
-                let GeoJSON = e.toGeoJSON(GEOJSON_PRECISION), featureCollection;
+                // Read state via the module-level holder so this closure does
+                // not directly capture `e` / `eventFeatureCopy` (Leaflet layer
+                // + shared properties incl. bytea). stopEdit() nulls the
+                // holder, allowing GC even if React 18 retains this onSubmit
+                // via an alternate fiber.
+                const s = editSession;
+                if (!s || !s.e) return; // session torn down
+                let GeoJSON = s.e.toGeoJSON(GEOJSON_PRECISION), featureCollection;
                 delete GeoJSON.properties._vidi_content;
                 delete GeoJSON.properties._id;
                 delete GeoJSON.properties._vidi_edit_layer_id;
@@ -992,14 +1038,14 @@ module.exports = {
 
                 // HACK to handle (Multi)Point layers
                 // Update the GeoJSON from markers
-                switch (eventFeatureCopy.geometry.type) {
+                switch (s.eventFeatureCopy.geometry.type) {
                     case "Point":
-                        GeoJSON.geometry.coordinates = [markers[0].getLatLng().lng, markers[0].getLatLng().lat];
+                        GeoJSON.geometry.coordinates = [s.markers[0].getLatLng().lng, s.markers[0].getLatLng().lat];
                         break;
 
                     case "MultiPoint":
-                        markers.map(function (v, i) {
-                            GeoJSON.geometry.coordinates[i] = [markers[i].getLatLng().lng, markers[i].getLatLng().lat];
+                        s.markers.map(function (v, i) {
+                            GeoJSON.geometry.coordinates[i] = [s.markers[i].getLatLng().lng, s.markers[i].getLatLng().lat];
                         });
                         break;
 
@@ -1010,23 +1056,15 @@ module.exports = {
 
                 // Set GeoJSON properties from form values
                 let fieldConf = false;
-                if (metaDataKeys[schemaQualifiedName].fieldconf) {
-                    fieldConf = JSON.parse(metaDataKeys[schemaQualifiedName].fieldconf);
+                if (s.metaDataKeys[s.schemaQualifiedName].fieldconf) {
+                    fieldConf = JSON.parse(s.metaDataKeys[s.schemaQualifiedName].fieldconf);
                 }
-                Object.keys(fields).map(function (key) {
-                    if ((!key.startsWith("gc2_") && fields[key].type !== "geometry" && !fieldConf[key]?.filter) || metaDataKeys[schemaQualifiedName].pkey === key) {
+                Object.keys(s.fields).map(function (key) {
+                    if ((!key.startsWith("gc2_") && s.fields[key].type !== "geometry" && !fieldConf[key]?.filter) || s.metaDataKeys[s.schemaQualifiedName].pkey === key) {
                         GeoJSON.properties[key] = formData.formData[key];
                         // Set undefined values back to NULL
                         if (GeoJSON.properties[key] === undefined) {
                             GeoJSON.properties[key] = null;
-                        }
-                        if (fields[key]?.type && (fields[key].type === "bytea" ||
-                                fields[key].type.startsWith("time") ||
-                                fields[key].type.startsWith("time") ||
-                                fields[key].type.startsWith("character") ||
-                                fields[key].type.startsWith("json") ||
-                                fields[key].type.startsWith("text")) &&
-                            GeoJSON.properties[key] !== null) {
                         }
                     } else {
                         // Remove system fields, which should not be updated by the user
@@ -1034,7 +1072,7 @@ module.exports = {
                     }
                 });
 
-                if (eventFeatureCopy.geometry.type === `Polygon`) {
+                if (s.eventFeatureCopy.geometry.type === `Polygon`) {
                     GeoJSON = _self.removeDuplicates(GeoJSON);
                 }
 
@@ -1047,17 +1085,18 @@ module.exports = {
                     ]
                 };
 
+                const sIsVectorLayer = s.isVectorLayer;
+                const sSchemaQualifiedName = s.schemaQualifiedName;
+                const sMeta = s.metaDataKeys[s.schemaQualifiedName];
+                const sMe = s.me;
                 const featureIsUpdated = () => {
-                    // switchLayer.registerLayerDataAlternation(schemaQualifiedName);
-                    me.stopEdit();
-
-                    // Reloading only vector layers, as uncommited changes can be displayed only for vector layers
-                    if (isVectorLayer) {
-                        layerTree.reloadLayer("v:" + schemaQualifiedName, true);
+                    sMe.stopEdit();
+                    if (sIsVectorLayer) {
+                        layerTree.reloadLayer("v:" + sSchemaQualifiedName, true);
                     }
                 };
 
-                apiBridgeInstance.updateFeature(featureCollection, db, metaDataKeys[schemaQualifiedName]).then(featureIsUpdated).catch(error => {
+                apiBridgeInstance.updateFeature(featureCollection, db, sMeta).then(featureIsUpdated).catch(error => {
                     console.log('Editor: error occured while performing updateFeature()');
                     throw new Error(error);
                 });
@@ -1069,11 +1108,9 @@ module.exports = {
             const uiSchema = formBuildInformation.uiSchema;
 
             cloud.get().map.closePopup();
-            let eventFeatureParsed = {};
-            for (let [key, value] of Object.entries(eventFeatureCopy.properties)) {
-                eventFeatureParsed[key] = value;
+            if (!editorFormRoot) {
+                editorFormRoot = createRoot(EDITOR_FORM_CONTAINER_ID);
             }
-            console.log('Editor: eventFeatureParsed', eventFeatureParsed);
             editorFormRoot.render(
                 <Form
                     key={Date.now()}
@@ -1082,13 +1119,16 @@ module.exports = {
                     schema={schema} noHtml5Validate
                     widgets={widgets}
                     uiSchema={uiSchema}
-                    formData={eventFeatureParsed}
+                    formData={eventFeatureCopy.properties}
                     onSubmit={onSubmit}
                     transformErrors={transformErrors}
-                    experimental_defaultFormStateBehavior={{emptyObjectFields: 'skipDefaults'}}
+                    experimental_defaultFormStateBehavior={{emptyObjectFields: 'skipDefaults', constAsDefaults: 'skipOneOf'}}
                     focusOnFirstError={false}>
                     <div className="buttons">
-                        <button type="submit" className="btn btn btn-success mb-2 mt-2 w-100">{__("Submit")}</button>
+                        <button type="submit" className="btn btn btn-success mb-2 mt-2 w-100 editor-save-btn d-flex align-items-center justify-content-center">
+                            <span className="editor-save-btn-label">{__("Submit")}</span>
+                            <span className="editor-save-btn-loading d-none">{__("Loading files")}<i className="spinner-border spinner-border-sm ms-1"></i></span>
+                        </button>
                         <button type="button" onClick={_self.stopEditWithConfirm}
                                 className="btn btn btn-outline-secondary mb-2 mt-2 w-100">{__("Cancel")}</button>
                     </div>
@@ -1232,6 +1272,39 @@ module.exports = {
 
         editedFeature = false;
         sqlQuery.resetAll();
+
+        // React 18 retains the previous tree via the fiber's `alternate` even
+        // after unmount() unless we commit a sentinel render first. The
+        // `render(null)` causes React to reconcile against an empty tree,
+        // committing unmounts for every child synchronously inside flushSync.
+        // Then unmount() can fully release the root including the alternate
+        // fiber's memoizedState (which holds RJSF's initialFormState).
+        if (editorFormRoot) {
+            try {
+                const rootToUnmount = editorFormRoot;
+                editorFormRoot = null;
+                flushSync(() => {
+                    rootToUnmount.render(null);
+                });
+                rootToUnmount.unmount();
+            } catch (e) {
+                console.warn('Editor: failed to unmount form tree', e);
+            }
+        }
+
+        // Null the edit session holder. The form's onSubmit closure reads via
+        // `editSession`; clearing it here means any retained closure (e.g.
+        // from a leaked React alternate fiber) can no longer reach the
+        // Leaflet layer or its feature.properties (bytea payloads).
+        if (editSession) {
+            editSession.e = null;
+            editSession.eventFeatureCopy = null;
+            editSession.markers = null;
+            editSession.metaDataKeys = null;
+            editSession.fields = null;
+            editSession.me = null;
+            editSession = null;
+        }
     },
 
     stopEditWithConfirm: () => {

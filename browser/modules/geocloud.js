@@ -19,6 +19,7 @@
 import ndjsonStream from 'can-ndjson-stream';
 import md5 from 'md5';
 import base64url from './base64url.js';
+import apiBridgeInstance from "./api-bridge/Queue";
 
 var geocloud;
 geocloud = (function () {
@@ -338,15 +339,18 @@ geocloud = (function () {
                     url: me.host + me.uri + '/' + me.db,
                     type: me.defaults.method,
                     timeout: timeout,
-                    success: function (response) {
+                    success: async function (response) {
                         if (response.success === false && doNotShowAlertOnError === undefined) {
                             alert(response.message);
                         }
                         if (response.success === true) {
                             if (response.features !== null) {
-                                response = me.transformResponse(response, me.id);
+                                response = await me.transformResponse(response, me.id);
 
-                                let clone = JSON.parse(JSON.stringify(response));
+                                // Shallow clone: only top-level keys are mutated below
+                                // (delete + features reassignment). Sharing nested feature
+                                // references avoids duplicating bytea payloads in memory.
+                                let clone = {...response};
                                 delete clone.peak_memory_usage;
                                 delete clone._execution_time;
                                 let newHash = md5(JSON.stringify(clone));
@@ -355,6 +359,7 @@ geocloud = (function () {
                                     me.dataHasChanged = false;
                                     return
                                 }
+
                                 me.geoJSON = clone;
                                 me.currentGeoJsonHash = newHash
                                 me.dataHasChanged = true;
@@ -394,6 +399,14 @@ geocloud = (function () {
                                 me.geoJSON = null;
                             }
                         }
+                        // Trigger onLoad at the end of the async success body.
+                        // Previously fired from `complete`, but `success` is now
+                        // async so `complete` runs before our await chain finishes
+                        // — me.dataHasChanged would be stale and prepareDataForTableView
+                        // never runs, leaving _vidi_content unset on features.
+                        if (!isRetrying && me.dataHasChanged) {
+                            me.onLoad(me);
+                        }
                     },
                     error: function (x, t, e) {
                         if (t === 'abort') {
@@ -406,13 +419,6 @@ geocloud = (function () {
                             makeRequest();
                         } else {
                             me.defaults.error.apply(me, [me, x, t, e]);
-                        }
-                    },
-                    complete: function (e) {
-                        if (!isRetrying) {
-                            if (me.dataHasChanged) {
-                                me.onLoad(me);
-                            }
                         }
                     }
                 });
@@ -1369,7 +1375,7 @@ geocloud = (function () {
             return (this.mapQuestAerial);
         };
         //ol2, ol3 and leaflet
-        this.addOSM = function () {
+        this.addOSM = function (config) {
             switch (MAPLIB) {
                 case "ol2":
                     this.osm = new OpenLayers.Layer.OSM("osm");
@@ -1385,9 +1391,11 @@ geocloud = (function () {
                     this.map.addLayer(this.osm);
                     break;
                 case "leaflet":
+                    console.log(config);
                     this.osm = new L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                         attribution: "&copy; <a target='_blank' rel='noopener' href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors",
-                        maxZoom: 21,
+                        minZoom: config?.minZoom ?? 1,
+                        maxZoom: config?.maxZoom ?? 21,
                         maxNativeZoom: 18
                     });
                     lControl.addBaseLayer(this.osm, "OSM");
@@ -2052,7 +2060,7 @@ geocloud = (function () {
             var o;
             switch (l) {
                 case "osm":
-                    o = this.addOSM();
+                    o = this.addOSM(config);
                     break;
                 case "mapQuestOSM":
                     o = this.addMapQuestOSM();
@@ -2337,6 +2345,18 @@ geocloud = (function () {
                     break;
                 case "leaflet":
                     this.map.removeLayer(store.layer);
+                    // Also remove from the layer control. addGeoJsonStore adds
+                    // via lControl.addOverlay; without the matching removeLayer
+                    // the control retains an entry that holds the Leaflet layer
+                    // (and its onEachFeature closure → captured features incl.
+                    // bytea payloads).
+                    try {
+                        if (typeof lControl !== 'undefined' && lControl && typeof lControl.removeLayer === 'function') {
+                            lControl.removeLayer(store.layer);
+                        }
+                    } catch (e) {
+                        console.warn('removeGeoJsonStore: failed to remove layer from lControl', e);
+                    }
                     break;
             }
 

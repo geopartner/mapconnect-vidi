@@ -247,8 +247,16 @@
 
 </div>
 
-<div class="toast-container position-fixed bottom-0 end-0 p-3 me-sm-5 embed">
+<div class="toast-container position-fixed bottom-0 end-0 p-3 me-sm-5">
     <div id="info-toast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
+         aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="info-toast-body"></div>
+        </div>
+    </div>
+</div>
+<div class="toast-container position-fixed bottom-0 end-0 p-3 me-sm-5">
+    <div id="danger-toast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive"
          aria-atomic="true">
         <div class="d-flex">
             <div class="toast-body" id="info-toast-body"></div>

@@ -842,6 +842,26 @@ Angiv den kort projektion/grid, som skal anvendes. Default er `EPSG3857` and den
 
     "crs": "EPSG25832"
 
+.. _minzoom:
+
+minZoom
+*****************************************************************
+
+Vidis minimum zoom level. Hvis ikke denne er sat, bliver den ud fra det aktive baggrundskort.
+
+.. code-block:: json
+
+    "minZoom": 8
+
+maxZoom
+*****************************************************************
+
+Vidis maximum zoom level. Hvis ikke denne er sat, bliver den ud fra det aktive baggrundskort.
+
+.. code-block:: json
+
+    "maxZoom": 18
+
 #################################################################
 Referencer
 #################################################################

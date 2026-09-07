@@ -40,7 +40,7 @@ fi
 echo ""
 echo "📊 Changed Files Summary:"
 echo "========================"
-git diff "$OLD_TAG" "$NEW_TAG" --stat
+git --no-pager diff "$OLD_TAG" "$NEW_TAG" --stat
 echo ""
 
 # Export changed files
@@ -50,7 +50,7 @@ mkdir -p "$OUTPUT_DIR"
 echo "📦 Copying changed files to $OUTPUT_DIR/..."
 
 cd "$TEMP_UPSTREAM"
-git diff "$OLD_TAG" "$NEW_TAG" --name-only | while read file; do
+git --no-pager diff "$OLD_TAG" "$NEW_TAG" --name-only | while read file; do
     mkdir -p "$OLDPWD/$OUTPUT_DIR/$(dirname "$file")"
     git show "$NEW_TAG:$file" > "$OLDPWD/$OUTPUT_DIR/$file" 2>/dev/null || true
 done

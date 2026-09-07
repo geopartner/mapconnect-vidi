@@ -749,7 +749,11 @@ module.exports = module.exports = {
                         version: bl?.version ?? '1.1.1',
                     });
                 } else {
-                    result = cloud.get().addBaseLayer(bl.id, bl.db, bl.config, bl.host || null);
+                    result = cloud.get().addBaseLayer(bl.id, bl.db, {
+                        minZoom: BLminZoom,
+                        maxZoom: BLmaxZoom,
+                        maxNativeZoom: BLmaxNativeZoom,
+                    }, bl.host || null);
                 }
             }
         }

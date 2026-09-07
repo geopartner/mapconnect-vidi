@@ -11,7 +11,7 @@ Check-list:
 - [ ] The changes are ready to be tested.
 - [ ] I have noted if anything has changed in the configuration of the software (config-files or other assets.)
 - [ ] I have ensured the code is scrubbed of hardcoded values and authentications.
-- [ ] I have ensured copyright information on files from vidi that has been changed for APGL (` * @copyright  2025 Geopartner Landinspektører A/S`).
+- [ ] I have ensured copyright information on files from vidi that has been changed for APGL (` * @copyright  2026 Geopartner Landinspektører A/S`).
 
 Following is only relevant to PRs containing extentions
 - [ ] I have ensured, that the configuration needed to run this is available.
