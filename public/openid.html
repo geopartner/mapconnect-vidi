@@ -55,6 +55,21 @@
         throw new Error('CodeFlow initialization failed');
     }
 
+    // Extract URL parameter for database override (e.g., ?db=mydb)
+    const getUrlParam = (param) => {
+        const searchParams = new URLSearchParams(window.location.search);
+        return searchParams.get(param);
+    };
+    let dbParam = getUrlParam('db');
+    
+    // Persist dbParam in localStorage so it survives the Keycloak redirect
+    if (dbParam) {
+        localStorage.setItem('gc2_db_param', dbParam);
+    } else {
+        // Try to retrieve from localStorage if not in URL (after redirect from Keycloak)
+        dbParam = localStorage.getItem('gc2_db_param');
+    }
+
     // Minimal JWT decoder (payload only)
     function jwtDecode(token) {
         try {
@@ -199,8 +214,17 @@
 
             const overlap = allowedDatabases.filter(d => databasesWithSuperuser.includes(d))
 
-            // Try to use a previously saved selection
+            // Check if dbParam is provided and different from saved selection
             const savedDbLocal = localStorage.getItem('gc2_selected_db')
+
+            console.log('dbParam:', dbParam, 'savedDbLocal:', savedDbLocal)
+            if (dbParam && allowedDatabases.includes(dbParam) && dbParam !== savedDbLocal) {
+                // dbParam is set and different, show selection UI with dbParam preselected
+                renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, dbParam)
+                return
+            }
+
+            // Try to use a previously saved selection
             let selectedDb
             if (savedDbLocal && allowedDatabases.includes(savedDbLocal)) {
                 selectedDb = savedDbLocal
