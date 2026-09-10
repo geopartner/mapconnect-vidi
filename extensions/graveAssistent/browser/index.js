@@ -172,6 +172,9 @@ module.exports = {
                  */
                 var ReactDOM = require('react-dom');
 
+                // TODO: Get the current schema from urlvars
+                var current_schema = '';
+
                 /**
                  *
                  * @type {{Info: {da_DK: string, en_US: string}, Street View: {da_DK: string, en_US: string}, Choose service: {da_DK: string, en_US: string}, Activate: {da_DK: string, en_US: string}}}
@@ -929,7 +932,7 @@ module.exports = {
                                         if (schema_override) {
                                             me.populateForespoergselOption(schema_override)
                                         } else {
-                                            me.populateForespoergselOption()
+                                            me.populateForespoergselOption(current_schema)
                                         }
                                     }
                                 }))
@@ -1000,7 +1003,7 @@ module.exports = {
                             if (schema_override) {
                                 _self.populateForespoergselOption(schema_override)
                             } else {
-                                _self.populateForespoergselOption()
+                                _self.populateForespoergselOption(current_schema)
                             }
                             // move to last location and clear filters
                             cloud.get().map.fitBounds(_self.state.lastBounds)
@@ -1025,11 +1028,11 @@ module.exports = {
                                 lastBounds: cloud.get().map.getBounds()
                             })
     
-                            // getForespoergsel - use schema is set
+                            // getForespoergsel - use schema override from conf, or the schema the user is in.
                             if (schema_override) {
                                 _self.getForespoergsel(foresp, schema_override)
                             } else {
-                                _self.getForespoergsel(foresp)
+                                _self.getForespoergsel(foresp, current_schema)
                             }
     
                             _self.setState({
@@ -1120,7 +1123,7 @@ module.exports = {
                                 if (schema_override) {
                                     _self.getForespoergsel(String(files[1]), schema_override)
                                 } else {
-                                    _self.getForespoergsel(String(files[1]))
+                                    _self.getForespoergsel(String(files[1]), current_schema)
                                 }
                                 
                             })
