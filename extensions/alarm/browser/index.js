@@ -9,10 +9,12 @@
 
 import {
   buffer as turfBuffer,
+  bbox,
   point as turfPoint,
   nearestPointOnLine,
   featureCollection as turfFeatureCollection,
-  applyFilter,
+  distance as turfDistance,
+
 } from "@turf/turf";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
 
@@ -128,7 +130,6 @@ const resetObj = {
   authed: false,
   user_db: false,
   user_alarmkabel: false,
-  user_alarmkabel_art: null,
 };
 
 // This element contains the styling for the module
@@ -235,9 +236,10 @@ module.exports = {
               if (qstore.length >= 1 && qstore[0].geoJSON) {
                 try {
                   qstore[0].geoJSON.features.forEach(feature => {
-                    foundFeatures.push(feature);
+                    foundFeatures.push(JSON.parse(JSON.stringify(feature)));
                   });
-
+                  sqlQuery.reset(qstore);
+                  resolve(foundFeatures);
                 } catch (err) {
                   reject(err);
                 }
@@ -249,7 +251,7 @@ module.exports = {
             null,
             null,
             [fullLayerName],
-            true,
+            false,
             null,
             null
           );
@@ -547,16 +549,16 @@ module.exports = {
             return;
           }
           if (alarm_skabe_all && alarm_skabe_all.features.length > 0) {
-            try{
-            const alarm_skabe_options = me.createAlarmskabeOptions(alarm_skabe_all.features);
-            me.setState({
-              show_alarmskabe: true,
-              alarm_skab_layer: data.alarm_skab.layer ? data.alarm_skab.layer : null,
-              alarm_skab_key: data.alarm_skab.key ? data.alarm_skab.key : null,
-              alarm_skabe: alarm_skabe_options,
-              alarm_skabe_all: alarm_skabe_all.features,
-            });
-            } catch(e){
+            try {
+              const alarm_skabe_options = me.createAlarmskabeOptions(alarm_skabe_all.features);
+              me.setState({
+                show_alarmskabe: true,
+                alarm_skab_layer: data.alarm_skab.layer ? data.alarm_skab.layer : null,
+                alarm_skab_key: data.alarm_skab.key ? data.alarm_skab.key : null,
+                alarm_skabe: alarm_skabe_options,
+                alarm_skabe_all: alarm_skabe_all.features,
+              });
+            } catch (e) {
               me.createSnack("Error processing alarm skabe options");
             }
           }
@@ -651,13 +653,13 @@ module.exports = {
         }
       }
 
-
       /**
-       * Styles and adds the alarm positions to the map
-       */
+      * Styles and adds the alarm positions to the map
+      */
       addAlarmPositionToMap(geojson) {
         try {
           var myIcon = new L.DivIcon(styleObject.alarmPosition);
+          _clearAll();
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
               return new L.Marker(latlng, { icon: myIcon, interactive: false });
@@ -714,21 +716,46 @@ module.exports = {
        */
       getNearestFeature = (point, features) => {
         let nearest = null;
-        if (!features || features.length === 0) {
+        let nearestDistance = Infinity;
+
+        if (!point || !features || features.length === 0) {
           return null;
         }
-        
-        const tpoint = turfPoint([point.lng, point.lat]);
-        for (let i = 0; i < features.length; i++) {
-          const feature = features[i];
-          const projectedPoint = nearestPointOnLine(feature, tpoint);
-          // You can add any processing for each feature here if needed
-          if (!nearest || turfDistance(tpoint, projectedPoint) < turfDistance(tpoint, nearest)) {
-            nearest = projectedPoint;
+
+        for (const feature of features) {
+          let candidate;
+          let distance;
+
+          if (feature.geometry.type === 'Point') {
+            // Feature er allerede et punkt
+            candidate = feature;
+            distance = turfDistance(point, feature);
+
+          } else if (
+            feature.geometry.type === 'LineString' ||
+            feature.geometry.type === 'MultiLineString'
+          ) {
+            // Find nærmeste punkt på linjen
+            candidate = nearestPointOnLine(feature, point);
+            distance = turfDistance(point, candidate);
+
+          } else {
+            // Ignorer andre geometrityper
+            continue;
+          }
+
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = candidate;
           }
         }
-        
+
         return nearest;
+      };
+
+      resetAlarmSelection = () => {
+        let me = this;
+        me.setState({ kabelpoint: null, alarm_skab_selected: '', });
       };
 
       /**
@@ -750,31 +777,33 @@ module.exports = {
 
         // get the clicked point
         point = e.latlng;
-        utils.cursorStyle().reset();
+
         blocked = true;
-        me.setState({ kabelpoint: null });
+        me.resetAlarmSelection();
         _clearAll();
         const features = await makeSearch(point.lng, point.lat, me.state.user_udpeg_layer);
         if (!features || features.length === 0) {
           console.warn("No feature found at clicked point");
-          me.setState({ kabelpoint: null });
-          _clearAlarmPositions();
+          me.resetAlarmSelection();
+          _clearAll();
           me.createSnack(__("No feature found at clicked point"));
           return;
         }
         try {
+          utils.cursorStyle().reset();
           const tpoint = turfPoint([point.lng, point.lat]);
           const projectedPoint = me.getNearestFeature(tpoint, features);
           point.lng = projectedPoint.geometry.coordinates[0];
           point.lat = projectedPoint.geometry.coordinates[1];
-          me.addAlarmPositionToMap(projectedPoint);
+          _clearAll();
+          me.addSelectedPointToMap(projectedPoint);
           me.setState({ kabelpoint: { point } });
         } catch (err) {
           console.error("Error processing feature:", err);
           me.createSnack(__("Error in search") + ": " + err);
           return;
         }
-      } 
+      }
 
       /**
        * This function starts the query for the alarmkabel based on the selected point.
@@ -806,6 +835,7 @@ module.exports = {
               //console.debug("Got log:", data.log);
               me.addSelectedPointToMap(data.log);
             }
+            me.zoomToResult(data, false);
             return
           })
           .catch((error) => {
@@ -819,6 +849,45 @@ module.exports = {
           });
       };
 
+      zoomToXY = (lng, lat) => {
+        const lngff = parseFloat(lng);
+        const latf = parseFloat(lat);
+        const padding = 0.0001;
+
+        const bounds = L.latLngBounds(
+          [latf - padding, lngff - padding],
+          [latf + padding, lngff + padding]
+        );
+        cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true });
+      };
+
+      /**
+       * This function zooms the map to the result of the alarmkabel query
+       * @param {Object} data - The data returned from the server
+       */
+      zoomToResult = (data, point = true) => {
+        if (data?.log && data.alarm) {
+          const bbox1 = bbox(data.log); //55 / 12
+          const bbox2 = bbox(data.alarm); // 12 / 55
+          const padding = 0.0001;
+       
+          const bounds = point ? L.latLngBounds(
+            [Math.min(bbox1[0], bbox2[1]) - padding, // minLat
+            Math.min(bbox1[1], bbox2[0]) - padding], // minLng
+            [Math.max(bbox1[2], bbox2[3]) + padding, // maxLat
+            Math.max(bbox1[3], bbox2[2]) + padding])  // maxLng
+           :
+          L.latLngBounds(
+            [Math.min(bbox1[1], bbox2[1]) - padding, // minLat  eller 1/1 
+            Math.min(bbox1[0], bbox2[0]) - padding], // minLng  eller 0/0
+            [Math.max(bbox1[3], bbox2[3]) + padding, // maxLat  eller 3/3
+            Math.max(bbox1[2], bbox2[2]) + padding])  // maxLng  eller 2/2
+
+          cloud.get().map.fitBounds(bounds, { animate: true });
+        }
+
+      }
+
       /**
        * This function selects a point in the map for alarmkabel
        * @returns Point
@@ -828,7 +897,7 @@ module.exports = {
         let point = null;
         blocked = false;
         _clearAll();
-
+        me.resetAlarmSelection();
         // if udpeg_layer is set, make sure it is turned on
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
@@ -894,7 +963,7 @@ module.exports = {
         me.createSnack(__("Starting analysis"), true)
 
         // send the point to the server + the direction and alarm_skab
-        me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected, user_alarmkabel_art, me.state.user_alarmkabel_distance)
+        me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected, me.state.user_alarmkabel_art, me.state.user_alarmkabel_distance)
           .then((data) => {
 
             me.createSnack(__("Alarm found"))
@@ -914,7 +983,10 @@ module.exports = {
               //console.debug("Got log:", data.log);
               me.addSelectedPointToMap(data.log);
             }
-            return
+            me.zoomToResult(data, true );
+
+            blocked = false;
+            return;
           })
           .catch((error) => {
             if (error.responseJSON && error.responseJSON.message) {
@@ -941,9 +1013,8 @@ module.exports = {
         if (blocked) {
           return;
         }
-
-
-
+        // disable the selected alarmkabel button 
+        me.resetAlarmSelection();
         // get the clicked point
         point = e.latlng;
         utils.cursorStyle().reset();
@@ -956,8 +1027,13 @@ module.exports = {
           blocked = false;
           return;
         }
-        const feature = me.getNearestFeature(turfPoint([point.lng, point.lat]), features);    
-        if (!feature) {
+        const tpoint = turfPoint([point.lng, point.lat]);
+        const feature = me.getNearestFeature(tpoint, features);
+        if (feature) {
+          _clearAll();
+          me.addSelectedPointToMap(feature);
+        }  
+        if (feature) {
           const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
           me.alarmSkabeChange(skabeId.toString());
         }
@@ -982,7 +1058,7 @@ module.exports = {
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
         }
-
+        me.resetAlarmSelection();
         // change the cursor to crosshair and wait for a click
         utils.cursorStyle().crosshair();
         cloud.get().map.on("click", me.boundHandleAlarmskabClick);
@@ -990,18 +1066,8 @@ module.exports = {
         return
       };
 
-      zoomToXY = (lng, lat) => {
-        const lngff = parseFloat(lng);
-        const latf = parseFloat(lat);
-        const padding = 0.0001;
 
-        const bounds = L.latLngBounds(
-          [latf - padding, lngff - padding],
-          [latf + padding, lngff + padding]
-        );
-        cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true });
-      };
-
+      
       alarmSkabeChange = (skabKeyStr) => {
         if (!skabKeyStr || skabKeyStr === '') {
           this.setState({ alarm_skab_selected: '' });
@@ -1094,10 +1160,11 @@ module.exports = {
                 <div className="col-4"></div>
                 <div className="col-8 d-flex justify-content-between align-items-center">
                   <button
-                    onClick={() => this.selectPointAlarmkabel()}
-                    style={{ width: '150px' }}
                     className="col-4 btn btn-primary "
                     disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
+                    onClick={() => this.selectPointAlarmkabel()}
+                    style={{ width: '150px' }}
+                    title={__("Select point for alarm cable")}
                   >
                     {__("Select point for alarmkabel")}
                   </button>
@@ -1159,7 +1226,7 @@ module.exports = {
             {/* <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div> */}
             <div
               style={{ alignSelf: "center" }}
-              hidden={s.results_alarmskabe.length == 0}
+              hidden={true || s.results_alarmskabe.length == 0}
             >
               <div className='list-group'>
                 {s.results_alarmskabe.map((item, index) => (
