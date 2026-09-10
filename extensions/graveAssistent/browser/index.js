@@ -173,7 +173,9 @@ module.exports = {
                 var ReactDOM = require('react-dom');
 
                 // TODO: Get the current schema from urlvars
-                var current_schema = '';
+                const urlParser = require('../../../browser/modules/urlparser');
+                var current_schema = urlParser.schema;
+                console.log("[Graveassistent] Schema:", current_schema);
 
                 /**
                  *
