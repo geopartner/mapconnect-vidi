@@ -498,7 +498,7 @@ module.exports = {
         "Wrong user name or password": "Forkert brugernavn eller kodeord",
         "Signed in as": "Logget ind som",
         "Not signed in": "Ikke logget ind",
-        "Sign out": "Log ud"
-
+        "Sign out": "Log ud",
+        "You have been logged out because your session was in a different database.": "Du er blevet logget ud, fordi du har logget ind i en anden anden database."
     }
 };
