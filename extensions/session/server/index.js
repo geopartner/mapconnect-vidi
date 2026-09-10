@@ -106,6 +106,7 @@ let start = function (dataToAuthorizeWith, req, response, status) {
         req.session.screenName = data.screen_name;
         req.session.parentDb = data.parentdb;
         req.session.properties = data.properties;
+        req.session.sessionDatabase = dataToAuthorizeWith.database;
 
         console.log("Session started");
 
@@ -180,7 +181,8 @@ router.get('/api/session/status', function (req, response) {
                 screen_name: req?.session?.gc2UserName,
                 email: req?.session?.gc2Email,
                 subuser: req?.session?.subUser,
-                properties: req?.session?.properties
+                properties: req?.session?.properties,
+                sessionDatabase: req?.session?.sessionDatabase
             }
         });
     }

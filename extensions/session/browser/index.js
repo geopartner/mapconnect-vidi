@@ -158,7 +158,37 @@ module.exports = {
                     type: "GET",
                     success: function (data) {
                         if (data.status.authenticated) {
-                            const currentDb = localStorage.getItem('gc2_selected_db');
+                            const currentDb = urlparser.db;
+                            const sessionDb = data.status.sessionDatabase;
+
+                            console.log('currentDb:', currentDb, 'sessionDb:', sessionDb);
+                            
+                            // If session was started in a different database than current, logout
+                            if (sessionDb && currentDb && sessionDb !== currentDb) {
+                                $.ajax({
+                                    dataType: 'json',
+                                    url: "/api/session/stop",
+                                    type: "GET",
+                                    success: function () {
+                                        localStorage.removeItem('gc2_tokens');
+                                        backboneEvents.get().trigger(`session:authChange`, false);
+                                        me.setState({statusText: __("Not signed in")});
+                                        me.setState({alertClass: "info"});
+                                        me.setState({btnText: __("Sign in")});
+                                        me.setState({auth: false});
+                                        $(".gc2-session-lock").hide();
+                                        $(".gc2-session-unlock").show();
+                                        $(".gc2-session-btn-text").html(__("Sign in"));
+                                        userName = null;
+                                        
+                                        // Show danger toast notification
+                                        const message = __("You have been logged out because your session was in a different database.");
+                                        utils.showDangerToast(message, {delay: 15000, autohide: true});
+                                    }
+                                });
+                                return;
+                            }
+                            
                             backboneEvents.get().trigger(`session:authChange`, true);
                             me.setState({sessionScreenName: data.status.screen_name});
                             me.setState({statusText: `${__("Signed in as")} ${data.status.screen_name} (${currentDb})`});
