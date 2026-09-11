@@ -113,6 +113,10 @@ var dict = {
     da_DK: "Forsyningtype",
     en_US: "Pipe",
   },
+  "No geometry found": {
+    da_DK: "Ingen alarmtråde tilknyttet",
+    en_US: "No geometry found",
+  }
   
 };
 

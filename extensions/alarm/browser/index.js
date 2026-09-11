@@ -17,13 +17,9 @@ import {
 
 } from "@turf/turf";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
-
-
-import _, { has } from "underscore";
 import { createRoot } from "react-dom/client";
 
 var React = require("react");
-
 const alarmRef = React.createRef();
 
 /**
@@ -220,7 +216,7 @@ module.exports = {
         let foundFeatures = [];
         let qstore = [];
         const point = turfPoint([lng, lat])
-        const bufferedPolygon = turfBuffer(point, 2, { units: 'meters' })
+        const bufferedPolygon = turfBuffer(point, 20, { units: 'meters' })
         const wkt = geojsonToWKT(bufferedPolygon.geometry)
         if (!wkt || !fullLayerName) {
           return foundFeatures;
@@ -652,35 +648,57 @@ module.exports = {
       }
 
 
-      addSymbolEndpoints(geoJson) {
+      addSymbolEndpoints(geoJson, fromSkab = true) {
+        const me = this;
         if (!geoJson) {
           return;
         }
+        let pnt = null;
+        if (fromSkab) {
+          const selectedSkab = this.state.alarm_skabe_all.find(skab => skab.properties.value === me.state.alarm_skab_selected);
+          if (!selectedSkab) { return; }
+          pnt = selectedSkab ? selectedSkab.geometry.coordinates : null;
+        } 
+        else {
+          pnt = me.state.kabelpoint;
+        }
+
+        if (!pnt) {
+          return;
+        }
+        const epsi = 0.5; // small epsilon value for distance comparison
         var myIcon = new L.DivIcon(styleObject.alarmPosition);
-        for (const feature of geoJson) {
-          const geometry = feature.geometry;
+        try {
+          for (const feature of geoJson) {
+            const geometry = feature.geometry;
 
-          if (geometry.type === 'LineString') {
-            const coordinates = geometry.coordinates;
+            if (geometry.type === 'LineString') {
+              const coordinates = geometry.coordinates;
 
-            if (coordinates.length < 2) {
-              return;
+              if (coordinates.length < 2) {
+                continue;
+              }
+
+              // Første punkt
+              const [startLng, startLat] = coordinates[0];
+              const dist = turfDistance([startLng, startLat], [pnt[0], pnt[1]], { units: 'meters' });
+              if (dist > epsi) {
+                L.marker([startLat, startLng], {
+                  icon: myIcon
+                }).addTo(selectedPoint);
+              }
+              // Sidste punkt
+              const [endLng, endLat] = coordinates[coordinates.length - 1];
+              const dist2 = turfDistance([endLng, endLat], [pnt[0], pnt[1]], { units: 'meters' });
+              if (dist2 > epsi) {
+                L.marker([endLat, endLng], {
+                  icon: myIcon
+                }).addTo(selectedPoint);
+              }
             }
-
-            // Første punkt
-            const [startLng, startLat] = coordinates[0];
-
-            L.marker([startLat, startLng], {
-              icon: myIcon
-            }).addTo(selectedPoint);
-
-            // Sidste punkt
-            const [endLng, endLat] = coordinates[coordinates.length - 1];
-
-            L.marker([endLat, endLng], {
-              icon: myIcon
-            }).addTo(selectedPoint);
           }
+        } catch (error) {
+          console.warn(error, geoJson);
         }
       }
 
@@ -751,12 +769,15 @@ module.exports = {
       getNearestFeature = (point, features) => {
         let nearest = null;
         let nearestDistance = Infinity;
-
+        const me = this;
         if (!point || !features || features.length === 0) {
           return null;
         }
 
         for (const feature of features) {
+          if (!feature.geometry || !feature.geometry.coordinates) {
+            continue;
+          }
           let candidate;
           let distance;
 
@@ -769,9 +790,13 @@ module.exports = {
             feature.geometry.type === 'LineString' ||
             feature.geometry.type === 'MultiLineString'
           ) {
-            // Find nærmeste punkt på linjen
-            candidate = nearestPointOnLine(feature, point);
-            distance = turfDistance(point, candidate);
+            try {
+              candidate = nearestPointOnLine(feature, point);
+              distance = turfDistance(point, candidate);
+            } catch (error) {
+              console.error("Error finding nearest point on line:", error);
+              continue;
+            }
 
           } else {
             // Ignorer andre geometrityper
@@ -814,6 +839,9 @@ module.exports = {
 
         blocked = true;
         me.resetAlarmSelection();
+        me.setState({
+          results_alarmskabe: [],
+        });
         _clearAll();
         const features = await makeSearch(point.lng, point.lat, me.state.user_udpeg_layer);
         if (!features || features.length === 0) {
@@ -860,17 +888,13 @@ module.exports = {
             me.createSnack(__("Alarm found"))
             // if the server returns a result, show it
             if (data) {
-              // console.debug(data);
+              me.addSymbolEndpoints(data.alarm.features, false);
               me.addAlarmPositionToMap(data.alarm, false);
+              me.zoomToResult(data);
+              me.addAlarmPositionToMap(data.alarm, false);
+               me.setState({results_alarmskabe: me.parseAlarmskabeResults(data.alarm.features)});
             }
 
-            // Add the clicked point to the map
-            // if (data.log) {
-            //   //console.debug("Got log:", data.log);
-            //   me.addSelectedPointToMap(data.log);
-            // }
-            me.zoomToResult(data);
-            me.addAlarmPositionToMap(data.alarm, false);
             return
           })
           .catch((error) => {
@@ -901,6 +925,7 @@ module.exports = {
        * @param {Object} data - The data returned from the server
        */
       zoomToResult = (data) => {
+        try {
         if (data.alarm) {
           const box = turfBbox(data.alarm); //55 / 12 eller .alarm
           const padding = 0.0001;
@@ -911,6 +936,9 @@ module.exports = {
           );
 
           cloud.get().map.fitBounds(bounds, { animate: true });
+        }
+        } catch (error) {
+          console.error("Error zooming to result:", error);
         }
 
       }
@@ -924,6 +952,9 @@ module.exports = {
         let point = null;
         blocked = false;
         _clearAll();
+        me.setState({
+          results_alarmskabe: [],
+        });
         me.resetAlarmSelection();
         // if udpeg_layer is set, make sure it is turned on
         if (me.state.user_udpeg_layer) {
@@ -970,10 +1001,19 @@ module.exports = {
           }
 
           // Round the distance to 2 decimals
-          obj.distance = Math.round(obj.distance * 100) / 100;
-          results.push(obj);
+          if (obj.distance) {
+            obj.distance = Math.round(obj.distance * 100) / 100;
+            results.push(obj);
+          }
         });
         return results;
+      };
+
+      hasGeometry = (data) => {
+        if (!data.alarm) {
+          return false;
+        }
+        return data.alarm.features.every(feature => feature.geometry && feature.geometry.coordinates);
       };
 
       /**
@@ -995,21 +1035,21 @@ module.exports = {
 
             me.createSnack(__("Alarm found"))
             // if the server returns a result, show it
-            if (data) {
-              // console.debug(data);
-              me.addAlarmPositionToMap(data.alarm, true);
+            if (!me.hasGeometry(data)) {
+              me.createSnack(__("No geometry found"));
+              return;
+            }
 
-              // Add the results to the list in state
-              me.setState({
-                results_alarmskabe: me.parseAlarmskabeResults(data.alarm.features),
-              });
+            if (data) {
+              me.addAlarmPositionToMap(data.alarm, true);
+              me.addSymbolEndpoints(data.alarm.features, true);
+              const skabId = me.state.alarm_skab_selected;
+              me.setAlarmSkabMarker(skabId, false);
+              me.zoomToResult(data);
+              me.setState({results_alarmskabe: me.parseAlarmskabeResults(data.alarm.features)});
             }
 
             // Add the clicked point to the map
-            const skabId = me.state.alarm_skab_selected;
-            me.setAlarmSkabMarker(skabId, false);
-            me.addSymbolEndpoints(data.alarm.features);
-            me.zoomToResult(data);
 
             blocked = false;
             return;
@@ -1055,14 +1095,15 @@ module.exports = {
         }
         const tpoint = turfPoint([point.lng, point.lat]);
         const feature = me.getNearestFeature(tpoint, features);
-        if (feature) {
+        blocked = false;
+        if (!feature) {
+
+          return;
+        }
           _clearAll();
-          me.addSelectedPointToMap(feature);
-        }
-        if (feature) {
-          const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
-          me.alarmSkabeChange(skabeId.toString());
-        }
+        const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
+        me.addSelectedPointToMap(feature);
+        me.alarmSkabeChange(skabeId.toString());
       };
 
       /**
@@ -1261,7 +1302,7 @@ module.exports = {
             {/* <div className="form-text mb-3">Vælg alarmskab, og udpeg punkt</div> */}
             <div
               style={{ alignSelf: "center" }}
-              hidden={true || s.results_alarmskabe.length == 0}
+              hidden={s.results_alarmskabe.length == 0}
             >
               <div className='list-group'>
                 {s.results_alarmskabe.map((item, index) => (
