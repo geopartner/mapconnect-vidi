@@ -9,6 +9,7 @@
 let utils;
 let backboneEvents;
 let layerTree;
+let urlparser;
 let sessionInstance = false;
 let userName = null;
 let properties = null;
@@ -31,13 +32,15 @@ module.exports = {
         backboneEvents = o.backboneEvents;
         layerTree = o.layerTree;
         anchor = o.anchor;
+        urlparser = o.urlparser;
         window.addEventListener("message", (event) => {
             if (event.data.type === 'gc2-auth-complete') {
                 const data = event.data.data;
+                const currentDb = localStorage.getItem('gc2_selected_db');
                 backboneEvents.get().trigger(`session:authChange`, true);
                 if (sessionInstance) {
                     sessionInstance.setState({
-                        statusText: `${__("Signed in as")} ${data.screen_name} (${data.email})`,
+                        statusText: `${__("Signed in as")} ${data.screen_name} (${currentDb})`,
                         alertClass: "success",
                         btnText: __("Sign out"),
                         auth: true
@@ -113,7 +116,7 @@ module.exports = {
                 let me = this;
                 event.preventDefault();
                 if (!me.state.auth) {
-                    authWin = utils.popupCenter("/openid.html", 600, 800, "Sign in");
+                    authWin = utils.popupCenter("/openid.html?db=" + encodeURIComponent(urlparser.db), 600, 800, "Sign in");
                 } else {
                     $.ajax({
                         dataType: 'json',
@@ -155,9 +158,40 @@ module.exports = {
                     type: "GET",
                     success: function (data) {
                         if (data.status.authenticated) {
+                            const currentDb = urlparser.db;
+                            const sessionDb = data.status.sessionDatabase;
+
+                            console.log('currentDb:', currentDb, 'sessionDb:', sessionDb);
+                            
+                            // If session was started in a different database than current, logout
+                            if (sessionDb && currentDb && sessionDb !== currentDb) {
+                                $.ajax({
+                                    dataType: 'json',
+                                    url: "/api/session/stop",
+                                    type: "GET",
+                                    success: function () {
+                                        localStorage.removeItem('gc2_tokens');
+                                        backboneEvents.get().trigger(`session:authChange`, false);
+                                        me.setState({statusText: __("Not signed in")});
+                                        me.setState({alertClass: "info"});
+                                        me.setState({btnText: __("Sign in")});
+                                        me.setState({auth: false});
+                                        $(".gc2-session-lock").hide();
+                                        $(".gc2-session-unlock").show();
+                                        $(".gc2-session-btn-text").html(__("Sign in"));
+                                        userName = null;
+                                        
+                                        // Show danger toast notification
+                                        const message = __("You have been logged out because your session was in a different database.");
+                                        utils.showDangerToast(message, {delay: 15000, autohide: true});
+                                    }
+                                });
+                                return;
+                            }
+                            
                             backboneEvents.get().trigger(`session:authChange`, true);
                             me.setState({sessionScreenName: data.status.screen_name});
-                            me.setState({statusText: `${__("Signed in as")} ${data.status.screen_name} (${data.status.email})`});
+                            me.setState({statusText: `${__("Signed in as")} ${data.status.screen_name} (${currentDb})`});
                             me.setState({alertClass: "success"});
                             me.setState({btnText: __("Sign out")});
                             me.setState({auth: true});

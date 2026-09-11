@@ -313,6 +313,8 @@ router.post('/api/extension/getForespoergselOption', function (req, response) {
         return
     }
 
+    // TODO Get schema instead of screenname
+
     // Go ahead with the logic
     let schema = s.screenName
     // If schema is set in body, use that
@@ -376,7 +378,7 @@ router.post('/api/extension/getForespoergsel', function (req, response) {
     let buffer = 50
 
     let schema = s.screenName
-    // If schema is set in body, use that
+    // If schema is set in body, use that instead of screenName
     if (b.hasOwnProperty('schema') && b.schema != null && b.schema != undefined) {
         schema = b.schema
     }
