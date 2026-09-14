@@ -13,7 +13,7 @@ require('dotenv').config({path: path.join(__dirname, ".env")});
 
 const metrics = require('./modules/metrics');
 let express = require('express');
-require('express-async-errors'); // forward async route rejections to the central error handler
+//require('express-async-errors'); // forward async route rejections to the central error handler
 let http = require('http');
 let cluster = require('cluster');
 let sticky = require('sticky-session');
