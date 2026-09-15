@@ -307,6 +307,7 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                     } else {
                         let width, height;
                         browser.newPage().then(page => {
+                            let go = undefined; // Track whether to wait for legend (same logic as PDF)
                             const check = async () => {
                                 const isWebGLSupported = await page.evaluate(() => {
                                     const canvas = document.createElement('canvas');
@@ -418,7 +419,18 @@ function print(key, q, req, response, outputPng = false, frame = 0, count, retur
                                 
                                 page.on('console', msg => {
                                     console.log(msg.text());
-                                    if (msg.text().indexOf(`Vidi is now loaded`) !== -1) {
+                                    if (msg.text().indexOf(`No active layers in print`) !== -1) { // Print as soon Vidi is loaded
+                                        go = true;
+                                    }
+                                    if (msg.text().indexOf(`Active layers in print`) !== -1) { // Wait until layers from snapshot is loaded
+                                        go = false; // Wait for overlays to load
+                                    }
+                                    if (
+                                        // Print as soon Vidi is done loading
+                                        (msg.text().indexOf(`Vidi is now loaded`) !== -1 && go) ||
+                                        // Wait until all overlays and basemap are loaded
+                                        (msg.text().indexOf(`Legend loaded`) !== -1 && !go)
+                                    ) {
                                         console.log('App was loaded, generating PNG');
                                         setTimeout(() => {
                                             page.evaluate(`$('.leaflet-top').remove();$('#loadscreen').remove();`).then(() => {

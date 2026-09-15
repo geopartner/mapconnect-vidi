@@ -67,7 +67,13 @@ class LedningsDownload extends React.Component {
         _self.setState({loading:true})
 
         fetch(url, options)
-        .then( r => r.json())
+        .then( r => {
+            if (!r.ok) {
+                //console.log(r.json());
+                throw new Error();
+            }
+            return r.json();
+        })
         .then( d => {
             console.log(d)
             let urlBlob = "data:" + d.mime + ";base64," + d.base64
@@ -85,9 +91,19 @@ class LedningsDownload extends React.Component {
                 a.removeEventListener('click', clickHandler);
                 this.handleClose()
             })
-            .catch(e => console.log(e))
+            .catch(e => {
+                _self.setState({loading: false});
+                const errorMessage = e?.message || 'Der skete en fejl ved blob-konvertering';
+                _self.props.utils?.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                console.log(e);
+            })
         })
-        .catch(e => console.log(e))
+        .catch(e => {
+            _self.setState({loading: false});
+            const errorMessage = e?.message || 'Der skete en fejl ved download';
+            _self.props.utils?.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+            console.log(e);
+        })
     };
 
     render() {
