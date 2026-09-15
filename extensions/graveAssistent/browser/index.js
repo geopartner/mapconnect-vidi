@@ -870,7 +870,9 @@ module.exports = {
                             overskredetDato: false,
                             harFarlig: false,
                             harMegetFarlig: false,
-                            lastBounds: ''
+                            lastBounds: '',
+                            hasError: false,
+                            errorMessage: ''
                         };
 
                         this.readContents = this.readContents.bind(this)
@@ -1004,6 +1006,8 @@ module.exports = {
                             foresp: '',
                             svarUploadTime: '',
                             ejerliste: [],
+                            hasError: false,
+                            errorMessage: ''
                         }, () => {
 
                             // Populate select with foresp. from schema - if set
@@ -1136,10 +1140,13 @@ module.exports = {
                             })
                             .catch(e => {
                                 console.log(e)
+                                const errorMsg = String(e);
                                 _self.setState({
                                     isError: true,
+                                    hasError: true,
+                                    errorMessage: errorMsg,
                                     progress: 100,
-                                    progressText: String(e)
+                                    progressText: errorMsg
                                 })
                             })
                             
@@ -1197,8 +1204,12 @@ module.exports = {
                                 })
                             })
                             .catch(e => {
-                                const errorMessage = e?.message || 'Der skete en fejl ved hentning af eksisterende forespørgsler';
-                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                const errorMsg = e?.message || 'Der skete en fejl ved hentning af eksisterende forespørgsler';
+                                _self.setState({
+                                    hasError: true,
+                                    errorMessage: errorMsg
+                                });
+                                utils.showDangerToast(errorMsg, {delay: 5000, autohide: true});
                                 console.log(e);
                             })
                     }
@@ -1238,8 +1249,12 @@ module.exports = {
                                 })
                             })
                             .catch(e => {
-                                const errorMessage = e?.message || 'Der skete en fejl ved hentning af status';
-                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                const errorMsg = e?.message || 'Der skete en fejl ved hentning af status';
+                                _self.setState({
+                                    hasError: true,
+                                    errorMessage: errorMsg
+                                });
+                                utils.showDangerToast(errorMsg, {delay: 5000, autohide: true});
                                 console.log(e);
                             })
                     }
@@ -1303,8 +1318,12 @@ module.exports = {
                                 })
                             })
                             .catch(e => {
-                                const errorMessage = e?.message || 'An error occurred while fetching the inquiry';
-                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                const errorMsg = e?.message || 'An error occurred while fetching the inquiry';
+                                _self.setState({
+                                    hasError: true,
+                                    errorMessage: errorMsg
+                                });
+                                utils.showDangerToast(errorMsg, {delay: 5000, autohide: true});
                                 console.log(e);
                             })
                     }
@@ -1323,7 +1342,21 @@ module.exports = {
                    
                             if (s.authed) {
                                 // Logged in
-                                if (s.loading) {
+                                if (s.hasError) {
+                                    // Show error UI
+                                    return (
+                                        <div role="tabpanel">
+                                            <div className="form-group p-4">
+                                                <div className="alert alert-danger" role="alert">
+                                                    <h4 className="alert-heading">Fejl i modul</h4>
+                                                    <p>Der opstod en fejl i modulet.</p>
+                                                    <p>Genindlæs siden og prøv igen.</p>
+                                                    <p>Hvis problemet fortsætter, kontakt os på support@geopartner.dk</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                } else if (s.loading) {
                                     // If Loading, show progress
                                     return (
                                         <div role="tabpanel">
