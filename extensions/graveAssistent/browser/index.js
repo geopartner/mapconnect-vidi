@@ -1361,7 +1361,7 @@ module.exports = {
                                                     <button className="btn btn-sm btn-outline-secondary" id="_draw_download_geojson" onClick={_self.onBackClickHandler.bind(this)}>
                                                         <i className="bi bi-arrow-left-short" aria-hidden="true"></i> Tilbage
                                                     </button>
-                                                    <LedningsDownload size = "large" color = "default" variant = "contained" endpoint = "/api/extension/downloadForespoergsel" forespnummer = {s.foresp} schema={schema_override} />
+                                                    <LedningsDownload size = "large" color = "default" variant = "contained" endpoint = "/api/extension/downloadForespoergsel" forespnummer = {s.foresp} schema={getActiveSchema()} utils={utils} />
                                                 </div >
                                                 <div className="d-flex flex-column bg-danger text-center text-light fw-bold p-2" id="graveAssistent-feature-warnings">
                                                     {s.overskredetDato && <div className='p-2'>Denne ledningspakke er ikke længere gyldig!</div>}
