@@ -9,19 +9,17 @@
 
 import {
   buffer as turfBuffer,
+  bbox as turfBbox,
   point as turfPoint,
   nearestPointOnLine,
   featureCollection as turfFeatureCollection,
-  applyFilter,
+  distance as turfDistance,
+
 } from "@turf/turf";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
-
-
-import _, { has } from "underscore";
 import { createRoot } from "react-dom/client";
 
 var React = require("react");
-
 const alarmRef = React.createRef();
 
 /**
@@ -128,7 +126,6 @@ const resetObj = {
   authed: false,
   user_db: false,
   user_alarmkabel: false,
-  user_alarmkabel_art: null,
 };
 
 // This element contains the styling for the module
@@ -219,13 +216,11 @@ module.exports = {
         let foundFeatures = [];
         let qstore = [];
         const point = turfPoint([lng, lat])
-        const bufferedPolygon = turfBuffer(point, 2, { units: 'meters' })
+        const bufferedPolygon = turfBuffer(point, 20, { units: 'meters' })
         const wkt = geojsonToWKT(bufferedPolygon.geometry)
         if (!wkt || !fullLayerName) {
           return foundFeatures;
         }
-
-
         return await new Promise((resolve, reject) => {
           sqlQuery.init(
             qstore,
@@ -235,9 +230,10 @@ module.exports = {
               if (qstore.length >= 1 && qstore[0].geoJSON) {
                 try {
                   qstore[0].geoJSON.features.forEach(feature => {
-                    foundFeatures.push(feature);
+                    foundFeatures.push(JSON.parse(JSON.stringify(feature)));
                   });
-
+                  sqlQuery.reset(qstore);
+                  resolve(foundFeatures);
                 } catch (err) {
                   reject(err);
                 }
@@ -249,15 +245,11 @@ module.exports = {
             null,
             null,
             [fullLayerName],
-            true,
+            false,
             null,
             null
           );
         });
-
-
-        // backboneEvents.get().trigger(`${MAPSTATUS_MODULE_NAME}:updatedata`, featuresManager);
-
       } catch (e) {
         console.error("Error in makeSearch:", e);
       }
@@ -547,16 +539,16 @@ module.exports = {
             return;
           }
           if (alarm_skabe_all && alarm_skabe_all.features.length > 0) {
-            try{
-            const alarm_skabe_options = me.createAlarmskabeOptions(alarm_skabe_all.features);
-            me.setState({
-              show_alarmskabe: true,
-              alarm_skab_layer: data.alarm_skab.layer ? data.alarm_skab.layer : null,
-              alarm_skab_key: data.alarm_skab.key ? data.alarm_skab.key : null,
-              alarm_skabe: alarm_skabe_options,
-              alarm_skabe_all: alarm_skabe_all.features,
-            });
-            } catch(e){
+            try {
+              const alarm_skabe_options = me.createAlarmskabeOptions(alarm_skabe_all.features);
+              me.setState({
+                show_alarmskabe: true,
+                alarm_skab_layer: data.alarm_skab.layer ? data.alarm_skab.layer : null,
+                alarm_skab_key: data.alarm_skab.key ? data.alarm_skab.key : null,
+                alarm_skabe: alarm_skabe_options,
+                alarm_skabe_all: alarm_skabe_all.features,
+              });
+            } catch (e) {
               me.createSnack("Error processing alarm skabe options");
             }
           }
@@ -630,8 +622,11 @@ module.exports = {
       /**
        * Styles and adds the selected point to the map
        */
-      addSelectedPointToMap(geojson) {
+      addSelectedPointToMap(geojson, clear = true) {
         try {
+          if (clear) {
+            _clearAll();
+          }
           var myIcon = new L.DivIcon(styleObject.selectedPoint);
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
@@ -646,18 +641,77 @@ module.exports = {
               });
             },
           }).addTo(selectedPoint);
+
         } catch (error) {
           console.warn(error, geojson);
         }
       }
 
 
+      addSymbolEndpoints(geoJson, fromSkab = true) {
+        const me = this;
+        if (!geoJson) {
+          return;
+        }
+        let pnt = null;
+        if (fromSkab) {
+          const selectedSkab = this.state.alarm_skabe_all.find(skab => skab.properties.value === me.state.alarm_skab_selected);
+          if (!selectedSkab) { return; }
+          pnt = selectedSkab ? selectedSkab.geometry.coordinates : null;
+        } 
+        else {
+          pnt = me.state.kabelpoint;
+        }
+
+        if (!pnt) {
+          return;
+        }
+        const epsi = 0.5; // small epsilon value for distance comparison
+        var myIcon = new L.DivIcon(styleObject.alarmPosition);
+        try {
+          for (const feature of geoJson) {
+            const geometry = feature.geometry;
+
+            if (geometry.type === 'LineString') {
+              const coordinates = geometry.coordinates;
+
+              if (coordinates.length < 2) {
+                continue;
+              }
+
+              // Første punkt
+              const [startLng, startLat] = coordinates[0];
+              const dist = turfDistance([startLng, startLat], [pnt[0], pnt[1]], { units: 'meters' });
+              if (dist > epsi) {
+                L.marker([startLat, startLng], {
+                  icon: myIcon
+                }).addTo(selectedPoint);
+              }
+              // Sidste punkt
+              const [endLng, endLat] = coordinates[coordinates.length - 1];
+              const dist2 = turfDistance([endLng, endLat], [pnt[0], pnt[1]], { units: 'meters' });
+              if (dist2 > epsi) {
+                L.marker([endLat, endLng], {
+                  icon: myIcon
+                }).addTo(selectedPoint);
+              }
+            }
+          }
+        } catch (error) {
+          console.warn(error, geoJson);
+        }
+      }
+
+
       /**
-       * Styles and adds the alarm positions to the map
-       */
-      addAlarmPositionToMap(geojson) {
+      * Styles and adds the alarm positions to the map. Sætter dråbeikon for alarmpositioner
+      */
+      addAlarmPositionToMap(geojson, clear = true) {
         try {
           var myIcon = new L.DivIcon(styleObject.alarmPosition);
+          if (clear) {
+            _clearAll();
+          }
           var l = L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
               return new L.Marker(latlng, { icon: myIcon, interactive: false });
@@ -714,21 +768,53 @@ module.exports = {
        */
       getNearestFeature = (point, features) => {
         let nearest = null;
-        if (!features || features.length === 0) {
+        let nearestDistance = Infinity;
+        const me = this;
+        if (!point || !features || features.length === 0) {
           return null;
         }
-        
-        const tpoint = turfPoint([point.lng, point.lat]);
-        for (let i = 0; i < features.length; i++) {
-          const feature = features[i];
-          const projectedPoint = nearestPointOnLine(feature, tpoint);
-          // You can add any processing for each feature here if needed
-          if (!nearest || turfDistance(tpoint, projectedPoint) < turfDistance(tpoint, nearest)) {
-            nearest = projectedPoint;
+
+        for (const feature of features) {
+          if (!feature.geometry || !feature.geometry.coordinates) {
+            continue;
+          }
+          let candidate;
+          let distance;
+
+          if (feature.geometry.type === 'Point') {
+            // Feature er allerede et punkt
+            candidate = feature;
+            distance = turfDistance(point, feature);
+
+          } else if (
+            feature.geometry.type === 'LineString' ||
+            feature.geometry.type === 'MultiLineString'
+          ) {
+            try {
+              candidate = nearestPointOnLine(feature, point);
+              distance = turfDistance(point, candidate);
+            } catch (error) {
+              console.error("Error finding nearest point on line:", error);
+              continue;
+            }
+
+          } else {
+            // Ignorer andre geometrityper
+            continue;
+          }
+
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = candidate;
           }
         }
-        
+
         return nearest;
+      };
+
+      resetAlarmSelection = () => {
+        let me = this;
+        me.setState({ kabelpoint: null, alarm_skab_selected: '', });
       };
 
       /**
@@ -750,31 +836,36 @@ module.exports = {
 
         // get the clicked point
         point = e.latlng;
-        utils.cursorStyle().reset();
+
         blocked = true;
-        me.setState({ kabelpoint: null });
+        me.resetAlarmSelection();
+        me.setState({
+          results_alarmskabe: [],
+        });
         _clearAll();
         const features = await makeSearch(point.lng, point.lat, me.state.user_udpeg_layer);
         if (!features || features.length === 0) {
           console.warn("No feature found at clicked point");
-          me.setState({ kabelpoint: null });
-          _clearAlarmPositions();
+          me.resetAlarmSelection();
+          _clearAll();
           me.createSnack(__("No feature found at clicked point"));
           return;
         }
         try {
+          utils.cursorStyle().reset();
           const tpoint = turfPoint([point.lng, point.lat]);
           const projectedPoint = me.getNearestFeature(tpoint, features);
           point.lng = projectedPoint.geometry.coordinates[0];
           point.lat = projectedPoint.geometry.coordinates[1];
-          me.addAlarmPositionToMap(projectedPoint);
+          _clearAll();
+          me.addSelectedPointToMap(projectedPoint);
           me.setState({ kabelpoint: { point } });
         } catch (err) {
           console.error("Error processing feature:", err);
           me.createSnack(__("Error in search") + ": " + err);
           return;
         }
-      } 
+      }
 
       /**
        * This function starts the query for the alarmkabel based on the selected point.
@@ -797,15 +888,13 @@ module.exports = {
             me.createSnack(__("Alarm found"))
             // if the server returns a result, show it
             if (data) {
-              // console.debug(data);
-              me.addAlarmPositionToMap(data.alarm);
+              me.addSymbolEndpoints(data.alarm.features, false);
+              me.addAlarmPositionToMap(data.alarm, false);
+              me.zoomToResult(data);
+              me.addAlarmPositionToMap(data.alarm, false);
+               me.setState({results_alarmskabe: me.parseAlarmskabeResults(data.alarm.features)});
             }
 
-            // Add the clicked point to the map
-            if (data.log) {
-              //console.debug("Got log:", data.log);
-              me.addSelectedPointToMap(data.log);
-            }
             return
           })
           .catch((error) => {
@@ -819,6 +908,41 @@ module.exports = {
           });
       };
 
+      zoomToXY = (lng, lat) => {
+        const lngff = parseFloat(lng);
+        const latf = parseFloat(lat);
+        const padding = 0.0001;
+
+        const bounds = L.latLngBounds(
+          [latf - padding, lngff - padding],
+          [latf + padding, lngff + padding]
+        );
+        cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true });
+      };
+
+      /**
+       * This function zooms the map to the result of the alarmkabel query
+       * @param {Object} data - The data returned from the server
+       */
+      zoomToResult = (data) => {
+        try {
+        if (data.alarm) {
+          const box = turfBbox(data.alarm); //55 / 12 eller .alarm
+          const padding = 0.0001;
+
+          const bounds = L.latLngBounds(
+            [box[1] - padding, box[0] - padding], // minLat, minLng
+            [box[3] + padding, box[2] + padding]  // maxLat, maxLng
+          );
+
+          cloud.get().map.fitBounds(bounds, { animate: true });
+        }
+        } catch (error) {
+          console.error("Error zooming to result:", error);
+        }
+
+      }
+
       /**
        * This function selects a point in the map for alarmkabel
        * @returns Point
@@ -828,7 +952,10 @@ module.exports = {
         let point = null;
         blocked = false;
         _clearAll();
-
+        me.setState({
+          results_alarmskabe: [],
+        });
+        me.resetAlarmSelection();
         // if udpeg_layer is set, make sure it is turned on
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
@@ -874,10 +1001,19 @@ module.exports = {
           }
 
           // Round the distance to 2 decimals
-          obj.distance = Math.round(obj.distance * 100) / 100;
-          results.push(obj);
+          if (obj.distance) {
+            obj.distance = Math.round(obj.distance * 100) / 100;
+            results.push(obj);
+          }
         });
         return results;
+      };
+
+      hasGeometry = (data) => {
+        if (!data.alarm) {
+          return false;
+        }
+        return data.alarm.features.every(feature => feature.geometry && feature.geometry.coordinates);
       };
 
       /**
@@ -894,27 +1030,29 @@ module.exports = {
         me.createSnack(__("Starting analysis"), true)
 
         // send the point to the server + the direction and alarm_skab
-        me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected, user_alarmkabel_art, me.state.user_alarmkabel_distance)
+        me.queryPointAlarmskab(point, me.state.alarm_direction_selected, me.state.alarm_skab_selected, me.state.user_alarmkabel_art, me.state.user_alarmkabel_distance)
           .then((data) => {
 
             me.createSnack(__("Alarm found"))
             // if the server returns a result, show it
-            if (data) {
-              // console.debug(data);
-              me.addAlarmPositionToMap(data.alarm);
+            if (!me.hasGeometry(data)) {
+              me.createSnack(__("No geometry found"));
+              return;
+            }
 
-              // Add the results to the list in state
-              me.setState({
-                results_alarmskabe: me.parseAlarmskabeResults(data.alarm.features),
-              });
+            if (data) {
+              me.addAlarmPositionToMap(data.alarm, true);
+              me.addSymbolEndpoints(data.alarm.features, true);
+              const skabId = me.state.alarm_skab_selected;
+              me.setAlarmSkabMarker(skabId, false);
+              me.zoomToResult(data);
+              me.setState({results_alarmskabe: me.parseAlarmskabeResults(data.alarm.features)});
             }
 
             // Add the clicked point to the map
-            if (data.log) {
-              //console.debug("Got log:", data.log);
-              me.addSelectedPointToMap(data.log);
-            }
-            return
+
+            blocked = false;
+            return;
           })
           .catch((error) => {
             if (error.responseJSON && error.responseJSON.message) {
@@ -941,9 +1079,8 @@ module.exports = {
         if (blocked) {
           return;
         }
-
-
-
+        // disable the selected alarmkabel button 
+        me.resetAlarmSelection();
         // get the clicked point
         point = e.latlng;
         utils.cursorStyle().reset();
@@ -956,11 +1093,17 @@ module.exports = {
           blocked = false;
           return;
         }
-        const feature = me.getNearestFeature(turfPoint([point.lng, point.lat]), features);    
+        const tpoint = turfPoint([point.lng, point.lat]);
+        const feature = me.getNearestFeature(tpoint, features);
+        blocked = false;
         if (!feature) {
-          const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
-          me.alarmSkabeChange(skabeId.toString());
+
+          return;
         }
+          _clearAll();
+        const skabeId = feature ? feature.properties[me.state.alarm_skab_key] : null;
+        me.addSelectedPointToMap(feature);
+        me.alarmSkabeChange(skabeId.toString());
       };
 
       /**
@@ -982,7 +1125,7 @@ module.exports = {
         if (me.state.user_udpeg_layer) {
           me.turnOnLayer(me.state.user_udpeg_layer);
         }
-
+        me.resetAlarmSelection();
         // change the cursor to crosshair and wait for a click
         utils.cursorStyle().crosshair();
         cloud.get().map.on("click", me.boundHandleAlarmskabClick);
@@ -990,36 +1133,35 @@ module.exports = {
         return
       };
 
-      zoomToXY = (lng, lat) => {
-        const lngff = parseFloat(lng);
-        const latf = parseFloat(lat);
-        const padding = 0.0001;
-
-        const bounds = L.latLngBounds(
-          [latf - padding, lngff - padding],
-          [latf + padding, lngff + padding]
-        );
-        cloud.get().map.fitBounds(bounds, { maxZoom: 21, animate: true });
+      /**
+       * Sets the marker for the selected alarmskab on the map.
+       */
+      setAlarmSkabMarker = (skabId, clear = false) => {
+        const me = this;
+        const selectedSkab = this.state.alarm_skabe_all.find(skab => skab.properties.value === skabId);
+        if (selectedSkab) {
+          const coordinates = selectedSkab.geometry.coordinates;
+          me.zoomToXY(coordinates[0], coordinates[1]);
+          me.addSelectedPointToMap(selectedSkab, clear);
+        }
       };
 
+      /**
+       * 
+       * @param {string} skabKeyStr The key of the alarmskab as a string.
+       * @returns 
+       */
       alarmSkabeChange = (skabKeyStr) => {
+        const me = this;
         if (!skabKeyStr || skabKeyStr === '') {
           this.setState({ alarm_skab_selected: '' });
           return;
         }
-        const skabKey = parseInt(skabKeyStr, 10); // Convert to integer
+        const skabId = parseInt(skabKeyStr, 10); // Convert to integer
         this.setState({
-          alarm_skab_selected: skabKey
+          alarm_skab_selected: skabId
         });
-        const selectedSkab = this.state.alarm_skabe_all.find(skab => skab.properties.value === skabKey);
-        if (selectedSkab) {
-          console.log("Selected alarmskab:", selectedSkab);
-          const coordinates = selectedSkab.geometry.coordinates;
-          this.zoomToXY(coordinates[0], coordinates[1]);
-          this.addAlarmPositionToMap(selectedSkab);
-        } else {
-          console.warn("Alarmskab not found for key:", skabKey);
-        }
+        me.setAlarmSkabMarker(skabId, true);
       };
 
       /**
@@ -1094,10 +1236,11 @@ module.exports = {
                 <div className="col-4"></div>
                 <div className="col-8 d-flex justify-content-between align-items-center">
                   <button
-                    onClick={() => this.selectPointAlarmkabel()}
-                    style={{ width: '150px' }}
                     className="col-4 btn btn-primary "
                     disabled={!this.allowAlarmkabel() && s.user_alarmkabel_art}
+                    onClick={() => this.selectPointAlarmkabel()}
+                    style={{ width: '150px' }}
+                    title={__("Select point for alarm cable")}
                   >
                     {__("Select point for alarmkabel")}
                   </button>

@@ -115,11 +115,22 @@
             }
         })
     }
-    function renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, preselectedDb) {
+    function renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, preselectedDb, dbParam) {
         const container = document.getElementById('container');
         container.innerHTML = '';
         const wrap = document.createElement('div');
         wrap.className = 'container p-3';
+
+        console.log('Allowed databases:', allowedDatabases, 'Preselected database:', preselectedDb, 'Databases with superuser:', databasesWithSuperuser, 'DB param:', dbParam);
+        
+        // Add warning if supplied db is not in the list
+        if (!allowedDatabases.includes(dbParam)) {
+            const warning = document.createElement('div');
+            warning.className = 'alert alert-warning mb-3';
+            warning.textContent = `Det ser ikke ud til du kan bruge "${dbParam}". Vælg venligst fra de tilgængelige databaser nedenfor. Du vil ikke have nogen rettigheder i den nuværende database.`;
+            wrap.appendChild(warning);
+        }
+        
         const title = document.createElement('h5');
         title.textContent = 'Select database';
         wrap.appendChild(title);
@@ -189,7 +200,6 @@
     codeFlow.redirectHandle().then(async isSignedIn => {
         if (isSignedIn) {
             const token = JSON.parse(localStorage.getItem('gc2_tokens') || '{}')['accessToken']
-            //const token = JSON.parse(localStorage.getItem('gc2_tokens') || '{}')['accessToken']
             const nonce = localStorage.getItem('gc2_nonce')
             const {database, superuser} = jwtDecode(token)
             if (!database) {
@@ -220,46 +230,37 @@
             console.log('dbParam:', dbParam, 'savedDbLocal:', savedDbLocal)
             if (dbParam && allowedDatabases.includes(dbParam) && dbParam !== savedDbLocal) {
                 // dbParam is set and different, show selection UI with dbParam preselected
-                renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, dbParam)
+                renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, dbParam, dbParam)
                 return
             }
 
-            // Try to use a previously saved selection
+            // If more than one database is allowed, always show the selector
+            if (allowedDatabases.length > 1) {
+                const preselectedDb = savedDbLocal && allowedDatabases.includes(savedDbLocal) ? savedDbLocal : allowedDatabases[0]
+                renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, preselectedDb, dbParam)
+                return
+            }
+
+            // Try to use a previously saved selection for single database
             let selectedDb
             if (savedDbLocal && allowedDatabases.includes(savedDbLocal)) {
                 selectedDb = savedDbLocal
-                // If selected saved DB supports superuser, ask for role selection
-                if (overlap.includes(selectedDb)) {
-                    const savedSuperuser = localStorage.getItem('gc2_selected_superuser')
-                    if (savedSuperuser !== null) {
-                        proceed(token, nonce, selectedDb, savedSuperuser === '1' || savedSuperuser === 'true')
-                        return
-                    }
-                    // Ask for role selection for this single DB
-                    renderSelectionUI([selectedDb], databasesWithSuperuser, token, nonce, selectedDb)
-                    return
-                }
             } else {
-                // If more than one database is allowed, ask the user to pick one
                 selectedDb = allowedDatabases[0]
-                if (allowedDatabases.length > 1) {
-                    renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, allowedDatabases[0])
-                    return
-                }
                 // Persist the choice for future sign-ins/refreshes (only database)
                 if (selectedDb) {
                     localStorage.setItem('gc2_selected_db', selectedDb)
                 }
             }
 
-            // If only a single DB and it supports superuser, ask for role selection
-            if (selectedDb && overlap.includes(selectedDb)) {
+            // If any databases have superuser privileges, show the selector
+            if (databasesWithSuperuser.length > 0) {
                 const savedSuperuser = localStorage.getItem('gc2_selected_superuser')
-                if (savedSuperuser !== null) {
+                if (savedSuperuser !== null && selectedDb && overlap.includes(selectedDb)) {
                     proceed(token, nonce, selectedDb, savedSuperuser === '1' || savedSuperuser === 'true')
                     return
                 }
-                renderSelectionUI([selectedDb], databasesWithSuperuser, token, nonce, selectedDb)
+                renderSelectionUI(allowedDatabases, databasesWithSuperuser, token, nonce, selectedDb, dbParam)
                 return
             }
 

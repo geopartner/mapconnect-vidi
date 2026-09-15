@@ -31,6 +31,10 @@ var dict = {
     da_DK: "Udpeg ledning",
     en_US: "Select pipe",
   },
+  "Select point for alarm cable": {
+    da_DK: "Udpeg punkt på alarmkabel",
+    en_US: "Select point on alarm cable",
+  },
   "Error in search": {
     da_DK: "Fejl i søgning",
     en_US: "Error in search",
@@ -109,6 +113,10 @@ var dict = {
     da_DK: "Forsyningtype",
     en_US: "Pipe",
   },
+  "No geometry found": {
+    da_DK: "Ingen alarmtråde tilknyttet",
+    en_US: "No geometry found",
+  }
   
 };
 

@@ -1,7 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2019 MapCentia ApS
- * @copyright  2026 Geopartner Landinspektører A/S
+ * @copyright  2026-     Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -269,6 +269,7 @@ module.exports = {
         "Click here then draw a square on the map, to zoom in to an area": "Klik her og træk derefter en firkant på kortet for at zoome til et område",
         "Create a screenshot of the map. The screenshot is downloaded as a PNG file": "Lav et screenshot af kortet. Screenshot'et bliver downloaded som en PNG fil",
         "Screenshot is ready": "Screenshot er klar",
+        "Screenshot failed": "Screenshot mislykkedes",
 
         // APIBridge
         "Not authorized to perform this action": "Ikke autoriseret til at udføre denne handling.",
@@ -498,7 +499,7 @@ module.exports = {
         "Wrong user name or password": "Forkert brugernavn eller kodeord",
         "Signed in as": "Logget ind som",
         "Not signed in": "Ikke logget ind",
-        "Sign out": "Log ud"
-
+        "Sign out": "Log ud",
+        "You have been logged out because your session was in a different database.": "Du er blevet logget ud, fordi du har logget ind i en anden anden database."
     }
 };
