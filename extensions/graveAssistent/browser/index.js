@@ -846,6 +846,15 @@ module.exports = {
                     applyFilter(filter);
                 };
 
+                /**
+                 * Helper function to get active schema
+                 * Returns schema_override if set, otherwise returns current_schema
+                 * @returns {string} The active schema to use
+                 */
+                var getActiveSchema = function () {
+                    return schema_override || current_schema;
+                };
+
 
 
                 /**
@@ -937,12 +946,8 @@ module.exports = {
                                     if (me.state.authed) {
                                         me.populateDClayers()
 
-                                        // Populate select with foresp. from schema - if set
-                                        if (schema_override) {
-                                            me.populateForespoergselOption(schema_override)
-                                        } else {
-                                            me.populateForespoergselOption(current_schema)
-                                        }
+                                        // Populate select with foresp. from schema
+                                        me.populateForespoergselOption(getActiveSchema())
                                     }
                                 }))
                                 .catch(e => me.setState({
@@ -1010,12 +1015,8 @@ module.exports = {
                             errorMessage: ''
                         }, () => {
 
-                            // Populate select with foresp. from schema - if set
-                            if (schema_override) {
-                                _self.populateForespoergselOption(schema_override)
-                            } else {
-                                _self.populateForespoergselOption(current_schema)
-                            }
+                            // Populate select with foresp. from schema
+                            _self.populateForespoergselOption(getActiveSchema())
                             // move to last location and clear filters
                             cloud.get().map.fitBounds(_self.state.lastBounds)
                             clearFilters()
@@ -1039,12 +1040,8 @@ module.exports = {
                                 lastBounds: cloud.get().map.getBounds()
                             })
     
-                            // getForespoergsel - use schema override from conf, or the schema the user is in.
-                            if (schema_override) {
-                                _self.getForespoergsel(foresp, schema_override)
-                            } else {
-                                _self.getForespoergsel(foresp, current_schema)
-                            }
+                            // getForespoergsel - use active schema
+                            _self.getForespoergsel(foresp, getActiveSchema())
     
                             _self.setState({
                                 done: true
@@ -1109,17 +1106,11 @@ module.exports = {
                                 var [status, consolidated] = files
                                 //console.log(files);
 
-                                if (schema_override) {
-                                    return [Promise.all([
-                                        pushStatus(status, statusKey, schema_override),
-                                        pushForespoergsel(consolidated, statusKey, schema_override)
-                                    ]),consolidated.forespNummer]
-                                } else {
-                                    return [Promise.all([
-                                        pushStatus(status, statusKey),
-                                        pushForespoergsel(consolidated, statusKey)
-                                    ]),consolidated.forespNummer]
-                                }
+                                const activeSchema = getActiveSchema();
+                                return [Promise.all([
+                                    pushStatus(status, statusKey, activeSchema),
+                                    pushForespoergsel(consolidated, statusKey, activeSchema)
+                                ]),consolidated.forespNummer]
                             }).then(function(files) {
                                 //console.log(files)
                                 _self.setState({
@@ -1131,11 +1122,7 @@ module.exports = {
                                     foresp: String(files[1])
                                 })
 
-                                if (schema_override) {
-                                    _self.getForespoergsel(String(files[1]), schema_override)
-                                } else {
-                                    _self.getForespoergsel(String(files[1]), current_schema)
-                                }
+                                _self.getForespoergsel(String(files[1]), getActiveSchema())
                                 
                             })
                             .catch(e => {
@@ -1299,12 +1286,7 @@ module.exports = {
                                 cloud.get().map.fitBounds(bounds)
                                 
                                 // Apply filter
-
-                                if (schema_override) {
-                                    _self.getStatus(f.statuskey, schema_override)
-                                } else {
-                                    _self.getStatus(f.statuskey)
-                                }
+                                _self.getStatus(f.statuskey, getActiveSchema())
 
                                 applyFilter(buildFilter(f.forespnummer))
 
