@@ -1358,6 +1358,7 @@ module.exports = {
         });
         _clearAll();
         api.turnOff(BlueIdea.Forbrugere_layerName);
+        cloud.get().map.off("click", me.boundHandleEditClick);
         try {
           api.filter(BlueIdea.Forbrugere_layerName, {
             "match": "any",
@@ -1580,10 +1581,8 @@ module.exports = {
         // if we hit a matrikel, we remove it from the list, if we hit somewhere without a matrikel, we add it and the adresse it represents to the lists
 
         blocked = false;
-        // Remove the click event listener for the map
-        cloud.get().map.off("click", me.boundHandleEditClick);
-
         // if the click is blocked, return
+        if (blocked) return;
 
         // get the clicked point
         let point = e.latlng;
@@ -1961,6 +1960,7 @@ module.exports = {
           utils.cursorStyle().reset();
           blocked = true;
         }
+        cloud.get().map.off("click", me.boundHandleEditClick);
 
         // set the new values based on the index in the list
         this.setState({
@@ -1969,6 +1969,7 @@ module.exports = {
           user_ventil_layer: this.state.project.forsyningsarter[valueIndex].ventil_layer,
           user_ventil_layer_key: this.state.project.forsyningsarter[valueIndex].ventil_layer_key,
           user_ventil_export: this.state.project.forsyningsarter[valueIndex].ventil_export,
+          edit_matr:false
         });
         api.turnOn(this.state.project.forsyningsarter[valueIndex].udpeg_layer);
       }
