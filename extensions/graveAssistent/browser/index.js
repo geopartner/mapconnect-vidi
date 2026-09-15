@@ -685,9 +685,10 @@ module.exports = {
                         // Do async job and resolve
                         fetch('/api/extension/upsertForespoergsel', opts)
                             .then(r => {
-                                const data = r.json();
-                                resolve(data)
+                                if (!r.ok) throw new Error();
+                                return r.json();
                             })
+                            .then(data => resolve(data))
                             .catch(e => {
                                 const errorMessage = e?.message || 'Der skete en fejl ved upload';
                                 utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
@@ -773,9 +774,10 @@ module.exports = {
                         // Do async job and resolve
                         fetch('/api/extension/upsertStatus', opts)
                             .then(r => {
-                                const data = r.json();
-                                resolve(data)
+                                if (!r.ok) throw new Error();
+                                return r.json();
                             })
+                            .then(data => resolve(data))
                             .catch(e => {
                                 const errorMessage = e?.message || 'Der skete en fejl';
                                 utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
@@ -921,7 +923,10 @@ module.exports = {
                         backboneEvents.get().on(`session:authChange`, () => {
                             console.log('Auth changed!')
                             fetch("/api/session/status")
-                                .then(r => r.json())
+                                .then(r => {
+                                    if (!r.ok) throw new Error();
+                                    return r.json();
+                                })
                                 .then(obj => me.setState({
                                     authed: obj.status.authenticated
                                 }, () => {
@@ -1181,14 +1186,21 @@ module.exports = {
 
                         // Do async job
                         fetch('/api/extension/getForespoergselOption', opts)
-                            .then(r => r.json())
+                            .then(r => {
+                                if (!r.ok) throw new Error();
+                                return r.json();
+                            })
                             .then(d => {
                                 //console.log(d)
                                 _self.setState({
                                     forespOptions: d
                                 })
                             })
-                            .catch(e => console.log(e))
+                            .catch(e => {
+                                const errorMessage = e?.message || 'Der skete en fejl ved hentning af eksisterende forespørgsler';
+                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                console.log(e);
+                            })
                     }
 
                     /**
@@ -1212,7 +1224,10 @@ module.exports = {
 
                         // Do async job
                         fetch('/api/extension/getStatus', opts)
-                            .then(r => r.json())
+                            .then(r => {
+                                if (!r.ok) throw new Error();
+                                return r.json();
+                            })
                             .then(d => {
                                 let a = []
                                 d.forEach(f => {
@@ -1222,7 +1237,11 @@ module.exports = {
                                     ejerliste: a
                                 })
                             })
-                            .catch(e => console.log(e))
+                            .catch(e => {
+                                const errorMessage = e?.message || 'Der skete en fejl ved hentning af status';
+                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                console.log(e);
+                            })
                     }
 
                     /**
@@ -1245,7 +1264,10 @@ module.exports = {
                         }
                         // Do async job
                         fetch('/api/extension/getForespoergsel', opts)
-                            .then(r => r.json())
+                            .then(r => {
+                                if (!r.ok) throw new Error();
+                                return r.json();
+                            })
                             .then(d => {
                                 //console.log(d);
 
