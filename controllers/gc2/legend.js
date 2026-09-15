@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2026 MapCentia ApS
+ * @copyright  2026-     Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -11,6 +12,13 @@ const config = require('../../config/config.js').gc2;
 router.get('/api/legend/:db', async function (req, response) {
 
     const l = req.query.l, db = req.params.db;
+    
+    // Guard against invalid legend layer parameter, improves print stability
+    if (!l || l === 'false') {
+        response.send([]);
+        return;
+    }
+    
     const url = config.host + "/api/v1/legend/json/" + db + "?l=" + encodeURIComponent(l);
 
     // Network errors reject here and are forwarded to the central
