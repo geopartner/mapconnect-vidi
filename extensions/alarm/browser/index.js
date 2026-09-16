@@ -81,7 +81,6 @@ var switchLayer = require("./../../../browser/modules/switchLayer");
  * @type {string}
  */
 var exId = "alarm";
-var exBufferDistance = 0.1;
 
 /**
  *
@@ -299,12 +298,8 @@ module.exports = {
         if (config.extensionConfig.alarm.indirekte_ledning_farve) {
           styleObject.selectedIndirekteLedning.color = config.extensionConfig.alarm.indirekte_ledning_farve;
         }
-        if (config.extensionConfig.alarm.ventil_forbundet_farve) {
-          styleObject.ventil_forbundet.fillColor = config.extensionConfig.alarm.ventil_forbundet_farve;
-        }
-        if (config.extensionConfig.alarm.ventil_ikke_forbundet_farve) {
-          styleObject.ventil.fillColor = config.extensionConfig.alarm.ventil_ikke_forbundet_farve;
-        }
+       
+        
       }
 
       /**

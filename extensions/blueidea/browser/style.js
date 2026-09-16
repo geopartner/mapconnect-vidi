@@ -30,9 +30,16 @@ var styleObject = {
     },
     selectedPoint: {
       html: `
-    <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
-    <path d="M12 11.293l10.293-10.293.707.707-10.293 10.293 10.293 10.293-.707.707-10.293-10.293-10.293 10.293-.707-.707 10.293-10.293-10.293-10.293.707-.707 10.293 10.293z"/>
-    </svg>
+        <svg width="24" height="24" viewBox="-12 -12 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke-linecap="round">
+    <g stroke="#c5c9d0" stroke-width="4" opacity="0.4">
+    <line x1="-6" y1="-6" x2="6" y2="6" />
+    <line x1="-6" y1="6" x2="6" y2="-6" />
+  </g>
+  <g stroke="#0b0b0b" stroke-width="2">
+    <line x1="-6" y1="-6" x2="6" y2="6" />
+    <line x1="-6" y1="6" x2="6" y2="-6" />
+  </g>
+</svg>
     `,
       className: "",
       iconSize: [24, 24], // size of the icon

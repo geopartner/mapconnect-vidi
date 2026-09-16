@@ -7,21 +7,21 @@ class ProjectComponent extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-           isAnalyzing: false 
+            isAnalyzing: false
         };
     }
 
     componentDidMount() {
-      let me = this;
-      this.props.backboneEvents.get().on("blueidea:setAnalyzingOff", () => {
-        me.setState({isAnalyzing: false})
-        this.forceUpdate();
-       });
+        let me = this;
+        this.props.backboneEvents.get().on("blueidea:setAnalyzingOff", () => {
+            me.setState({ isAnalyzing: false })
+            this.forceUpdate();
+        });
 
-       this.props.backboneEvents.get().on("blueidea:setAnalyzingOn", () => {
-        me.setState({isAnalyzing: true})
-        this.forceUpdate();
-       });
+        this.props.backboneEvents.get().on("blueidea:setAnalyzingOn", () => {
+            me.setState({ isAnalyzing: true })
+            this.forceUpdate();
+        });
     }
 
     componentWillUnmount() {
@@ -76,7 +76,7 @@ class ProjectComponent extends React.Component {
 
         //  project.allowDeleteEndDate && project.projectEndDate; Hvis får lyst til at  gøre afslutningsdato sletbar igen
         if (breakType === '1') {
-          this.clearDates();
+            this.clearDates();
         }
     }
 
@@ -98,6 +98,9 @@ class ProjectComponent extends React.Component {
         const sagsnr = this.sanitizeInput(e.target.value);
         this.props.onChange({ projectName: sagsnr });
     };
+    handleIncludeAffectedConsumersChange = (e) => {
+        this.props.onChange({ includeAffectedConsumers: e.target.checked });
+    };
     handleClearClick = () => {
         this.props.onChange({ isReadOnly: false });
         this.props.onChange({ projectName: '' });
@@ -112,10 +115,10 @@ class ProjectComponent extends React.Component {
         this.props.onChange({ projectName: '' });
         this.props.onHandleSaveProject(this.props.project);
     }
- 
+
 
     render() {
-        const { pipeSelected, project} = this.props;
+        const { pipeSelected, project } = this.props;
         const { isAnalyzing } = this.state;
         const isReadOnly = project.isReadOnly || pipeSelected;
         const editProject = this.props.editProject;
@@ -131,7 +134,7 @@ class ProjectComponent extends React.Component {
         const showNextStep = pipeSelected && !editProject;
         return (
             <>
-                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                <div className="row mx-auto g-2 my-1 align-items-center flex-nowrap">
                     <label className="col-4 col-form-label text-nowrap" >{this.__("Forsyningstype")}</label>
                     <select
                         onChange={(e) => { this.handleForsyningsart_selectedChange(e.target.value) }}
@@ -148,8 +151,7 @@ class ProjectComponent extends React.Component {
                     </select>
                 </div>
 
-
-                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                <div className="row mx-auto g-2 my-1 align-items-center flex-nowrap">
                     <label className="col-4 col-form-label text-nowrap" >{this.__("Break-type")}</label>
                     <select
                         onChange={(e) => { this.handleBreakTypeChange(e.target.value) }}
@@ -166,7 +168,7 @@ class ProjectComponent extends React.Component {
                     </select>
                 </div>
 
-                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                <div className="row mx-auto g-2 my-1 align-items-center flex-nowrap">
                     <label className="col-4 col-form-label text-nowrap" >{this.__("Forventet-start")}</label>
                     <input
                         className="col form-control"
@@ -179,7 +181,7 @@ class ProjectComponent extends React.Component {
                     />
                 </div>
 
-                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                <div className="row mx-auto g-2 my-1 align-items-center flex-nowrap">
                     <label className="col-4 col-form-label text-nowrap" >{this.__("Forventet-slut")}</label>
                     {showTrash ? (
                         <i
@@ -189,8 +191,8 @@ class ProjectComponent extends React.Component {
                             title="Nulstil dato"
                         ></i>
                     ) : (
-                        <label className="col-auto" style={{display: 'none'}}></label>
-                        )}
+                        <label className="col-auto" style={{ display: 'none' }}></label>
+                    )}
                     <input
                         className="col form-control"
                         disabled={isReadOnly}
@@ -202,7 +204,7 @@ class ProjectComponent extends React.Component {
                     />
                 </div>
 
-                <div className="row mx-auto g-2 my-2 align-items-center flex-nowrap">
+                <div className="row mx-auto g-2 my-1 align-items-center flex-nowrap">
                     <label className="col-4 col-form-label text-nowrap" >{this.__("admin info")}</label>
                     <input
                         className="col form-control"
@@ -213,6 +215,26 @@ class ProjectComponent extends React.Component {
                         type="text"
                     />
                 </div>
+                <div className="row mx-auto g-2 my-1 align-items-center flex-nowrap" title={this.__("Include affected consumers")}>
+                    <label className="col-4 col-form-label text-nowrap">
+                        {this.__("Affected consumers")}
+                    </label>
+
+                    <div className="col-2">
+                        <div className="form-check form-switch">
+                            <input
+                                checked={project.includeAffectedConsumers}
+                                className="form-check-input"
+                                onChange={this.handleIncludeAffectedConsumersChange}
+                                type="checkbox"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="col-6"></div>
+                </div>
+
+
                 {!pipeSelected && (
                     <div className="row mx-auto gap-3 my-2">
                         <span className="col" style={{ color: '#ee9b10' }}>

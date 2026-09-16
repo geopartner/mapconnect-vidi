@@ -272,6 +272,14 @@ var dict = {
     da_DK: "Der opstod en fejl under forsøg på at gøre bruddet inaktivt",
     en_US: "An error occurred while trying to stop the project",
   },
+  "Affected consumers": {
+    da_DK: "Indirekte forbrugere",
+    en_US: "Indirectly consumers",
+  },
+  "Include affected consumers": {
+    da_DK: "Inkluderer indirekte berørte forbrugere",
+    en_US: "Include indirectly affected consumers",
+  }
   
 };
 
