@@ -274,11 +274,11 @@ var dict = {
   },
   "Affected consumers": {
     da_DK: "Indirekte forbrugere",
-    en_US: "Affected consumers",
+    en_US: "Indirectly consumers",
   },
   "Include affected consumers": {
-    da_DK: "Inkluderer indrirekte berørte forbrugere",
-    en_US: "Include  affected consumers",
+    da_DK: "Inkluderer indirekte berørte forbrugere",
+    en_US: "Include indirectly affected consumers",
   }
   
 };

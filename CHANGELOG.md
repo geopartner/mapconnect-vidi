@@ -40,6 +40,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [2026.6.3] - 2026-15-9
 - lukkeplan. Adding parcel stay active until toggled or another functionality is started.
+- lukkeplan. Adding toggle for Include indirectly affected consumers
 
 
 ## [2026.6.3] - 2026-29-6
