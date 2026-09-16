@@ -756,26 +756,40 @@ module.exports = {
         body.beregnaarsag = me.state.project.brudtype;
         body.gyldig_til = me.state.project.projectEndDate;
         body.sagstekst = me.state.project?.projectName.trim() ?? '';
+        body.berorte = me.state.project.includeAffectedConsumers ?? false;
+
         try {
-          let response = await $.ajax({
-            url: "/api/extension/lukkeliste/" + me.state.user_id + "/query",
-            type: "POST",
-            data: JSON.stringify(body),
-            contentType: "application/json",
+          let response = await fetch("/api/extension/lukkeliste/" + me.state.user_id + "/query", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
           });
-          return response;
+
+          let data = await response.json();
+
+          if (!response.ok) {
+            throw data; // Kaster JSON-fejlsvaret, svarende til error.responseJSON i $.ajax
+          }
+          return data;
         } catch (error) {
-          throw error.responseJSON;
+          console.error("Error querying point in Lukkeliste:", error);
+          throw error;
         }
       };
 
-      refreshProjectLayer() {
+      // Hjælpefunktion til pause/delay
+      delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      async refreshProjectLayer() {
         api.turnOff(BlueIdea.Aktive_brud_layeName);
         console.log("Refreshing project layer off");
-        setTimeout(function () {
-          api.turnOn(BlueIdea.Aktive_brud_layeName);
-          console.log("Refreshing project layer on");
-        }, 500);
+
+        await this.delay(500);
+
+        api.turnOn(BlueIdea.Aktive_brud_layeName);
+        console.log("Refreshing project layer on");
       }
 
       listProjects = async (refresh = false) => {
@@ -1956,7 +1970,7 @@ module.exports = {
 
         // turn off previous selection action if active
         if (!blocked) {
-          cloud.get().map.off("click", this.boundSelectPointLukkeliste ());
+          cloud.get().map.off("click", this.boundSelectPointLukkeliste());
           utils.cursorStyle().reset();
           blocked = true;
         }
@@ -1969,7 +1983,7 @@ module.exports = {
           user_ventil_layer: this.state.project.forsyningsarter[valueIndex].ventil_layer,
           user_ventil_layer_key: this.state.project.forsyningsarter[valueIndex].ventil_layer_key,
           user_ventil_export: this.state.project.forsyningsarter[valueIndex].ventil_export,
-          edit_matr:false
+          edit_matr: false
         });
         api.turnOn(this.state.project.forsyningsarter[valueIndex].udpeg_layer);
       }
