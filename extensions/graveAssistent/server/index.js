@@ -317,6 +317,8 @@ router.post('/api/extension/getForespoergselOption', function (req, response) {
         return
     }
 
+    // TODO Get schema instead of screenname
+
     // Go ahead with the logic
     let schema = s.screenName
     // If schema is set in body, use that

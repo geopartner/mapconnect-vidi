@@ -756,26 +756,40 @@ module.exports = {
         body.beregnaarsag = me.state.project.brudtype;
         body.gyldig_til = me.state.project.projectEndDate;
         body.sagstekst = me.state.project?.projectName.trim() ?? '';
+        body.berorte = me.state.project.includeAffectedConsumers ?? false;
+
         try {
-          let response = await $.ajax({
-            url: "/api/extension/lukkeliste/" + me.state.user_id + "/query",
-            type: "POST",
-            data: JSON.stringify(body),
-            contentType: "application/json",
+          let response = await fetch("/api/extension/lukkeliste/" + me.state.user_id + "/query", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
           });
-          return response;
+
+          let data = await response.json();
+
+          if (!response.ok) {
+            throw data; // Kaster JSON-fejlsvaret, svarende til error.responseJSON i $.ajax
+          }
+          return data;
         } catch (error) {
-          throw error.responseJSON;
+          console.error("Error querying point in Lukkeliste:", error);
+          throw error;
         }
       };
 
-      refreshProjectLayer() {
+      // Hjælpefunktion til pause/delay
+      delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      async refreshProjectLayer() {
         api.turnOff(BlueIdea.Aktive_brud_layeName);
         console.log("Refreshing project layer off");
-        setTimeout(function () {
-          api.turnOn(BlueIdea.Aktive_brud_layeName);
-          console.log("Refreshing project layer on");
-        }, 500);
+
+        await this.delay(500);
+
+        api.turnOn(BlueIdea.Aktive_brud_layeName);
+        console.log("Refreshing project layer on");
       }
 
       listProjects = async (refresh = false) => {
@@ -1358,6 +1372,7 @@ module.exports = {
         });
         _clearAll();
         api.turnOff(BlueIdea.Forbrugere_layerName);
+        cloud.get().map.off("click", me.boundHandleEditClick);
         try {
           api.filter(BlueIdea.Forbrugere_layerName, {
             "match": "any",
@@ -1580,10 +1595,8 @@ module.exports = {
         // if we hit a matrikel, we remove it from the list, if we hit somewhere without a matrikel, we add it and the adresse it represents to the lists
 
         blocked = false;
-        // Remove the click event listener for the map
-        cloud.get().map.off("click", me.boundHandleEditClick);
-
         // if the click is blocked, return
+        if (blocked) return;
 
         // get the clicked point
         let point = e.latlng;
@@ -1957,10 +1970,11 @@ module.exports = {
 
         // turn off previous selection action if active
         if (!blocked) {
-          cloud.get().map.off("click", this.boundSelectPointLukkeliste ());
+          cloud.get().map.off("click", this.boundSelectPointLukkeliste());
           utils.cursorStyle().reset();
           blocked = true;
         }
+        cloud.get().map.off("click", me.boundHandleEditClick);
 
         // set the new values based on the index in the list
         this.setState({
@@ -1969,6 +1983,7 @@ module.exports = {
           user_ventil_layer: this.state.project.forsyningsarter[valueIndex].ventil_layer,
           user_ventil_layer_key: this.state.project.forsyningsarter[valueIndex].ventil_layer_key,
           user_ventil_export: this.state.project.forsyningsarter[valueIndex].ventil_export,
+          edit_matr: false
         });
         api.turnOn(this.state.project.forsyningsarter[valueIndex].udpeg_layer);
       }
