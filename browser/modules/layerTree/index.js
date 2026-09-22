@@ -47,7 +47,7 @@ import {
 import MetaSettingForm from "./MetaSettingForm";
 import Download from './Download';
 import {getResolutions} from "../crs";
-import { createRoot } from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 import config from '../../../config/config';
 
 
@@ -98,6 +98,7 @@ let moduleState = {
     webGLStores: {},
     virtualLayers: [],
     tileContentCache: {},
+    tileError: {},
     editorFilters: {},
     editorFiltersActive: {},
     fitBoundsActiveOnLayers: {},
@@ -345,13 +346,22 @@ module.exports = {
             if (popupEl) {
                 popupEl.querySelectorAll('.accordion-collapse').forEach(el => {
                     if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
-                        try { bootstrap.Collapse.getInstance(el)?.dispose(); } catch (e) {}
+                        try {
+                            bootstrap.Collapse.getInstance(el)?.dispose();
+                        } catch (e) {
+                        }
                     }
                     el.replaceWith(el.cloneNode(false));
                 });
             }
-            try { vectorPopUp.off(); } catch (e) {}
-            try { vectorPopUp.closePopup(); } catch (e) {}
+            try {
+                vectorPopUp.off();
+            } catch (e) {
+            }
+            try {
+                vectorPopUp.closePopup();
+            } catch (e) {
+            }
             vectorPopUp = undefined;
         }
     },
@@ -962,6 +972,15 @@ module.exports = {
                 };
                 poll.bind(this, data)();
             }
+        });
+
+        /**
+         * Listening to an event that indicates if a layer has an error (an invalid image)
+         * Display error icon in layertree
+         */
+        backboneEvents.get().on(`tileLayerError:layers`, (data) => {
+            moduleState.tileError[data.id] = data.error;
+            $(`[data-gc2-layer-key^="${data.id}."]`).find(`.js-tiles-error`).css(`display`, (data.error ? `inline` : `none`));
         });
 
         /**
@@ -3132,10 +3151,9 @@ module.exports = {
      *
      * @returns {Object}
      */
-    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true, parentPath = "") => {
+    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true) => {
         let base64SubgroupName = Base64.encode(`subgroup_${subgroup.id}_level_${level}_${uuidv4()}`).replace(/=/g, "");
-        const fullPath = parentPath ? `${parentPath}|${subgroup.id}` : subgroup.id;
-        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox, fullPath);
+        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox);
 
         $(parentNode).append(markup);
         $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-id`).append(`
@@ -3175,7 +3193,7 @@ module.exports = {
                     } = _self.checkIfLayerIsActive(forcedState, precheckedLayers, child.layer);
                     _self.createLayerRecord(child.layer, container, layerIsActive, activeLayerName, subgroup.id);
                 } else if (child.type === GROUP_CHILD_TYPE_GROUP) {
-                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel, true, fullPath);
+                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel);
                 } else {
                     throw new Error(`Invalid layer group`);
                 }
@@ -3620,7 +3638,9 @@ module.exports = {
                         if (document.getElementById(componentContainerId)) {
                             createRoot(document.getElementById(componentContainerId)).render(
                                 <LayerFilter
-                                    ref={instance => { filterComp[layerKey] = instance }}
+                                    ref={instance => {
+                                        filterComp[layerKey] = instance
+                                    }}
                                     layer={layer}
                                     layerMeta={meta.parseLayerMeta(layerKey)}
                                     presetFilters={presetFilters}
@@ -3963,9 +3983,34 @@ module.exports = {
         moduleState.fitBoundsActiveOnLayers[layerKey] = true;
     },
     onApplyDownloadHandler: (layerKey, format) => {
-        let whereClause = _self.getActiveLayerFilters(layerKey)[0];
-        let sql = `SELECT *
-                   FROM ${layerKey}`
+        let whereClause = _self.getActiveLayerFilters(layerKey)[0] ?? '1=1';
+        const metaByKey = meta.getMetaByKey(layerKey);
+        const versioning = metaByKey['versioning'];
+        if (versioning) {
+            whereClause += ` AND gc2_version_end_date is null`;
+        }
+        const cols = [];
+        let colsStr = '';
+        const fieldConf = JSON.parse(metaByKey['fieldconf']);
+        const pkey = metaByKey['pkey'];
+        if (fieldConf) {
+            Object.entries(metaByKey.fields).forEach(([i, val]) => {
+                if ( (fieldConf?.[i]?.querable === true ||
+                    (fieldConf?.[i]?.type === 'geometry' || i === pkey))
+                    && fieldConf?.[i]?.ignore !== true
+                ) {
+                    cols.push(i);
+                }
+            });
+            cols.sort((a, b) => {
+                return fieldConf[a].sort_id - fieldConf[b].sort_id;
+            });
+            colsStr = '"' + cols.join('","') + '"';
+        } else {
+            colsStr = '*';
+        }
+
+        let sql = `SELECT ${colsStr} FROM ${layerKey}`
         if (whereClause) {
             sql += ` WHERE ${whereClause}`;
         }
