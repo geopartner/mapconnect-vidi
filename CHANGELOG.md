@@ -31,6 +31,8 @@ The changes and additions made will be reflected by the date which they are depl
 - [geosag] It is now possible to add matrikler based on geometry created (or uploaded) in the draw tool. This is a requested feature.
 - [embed] New attribute for embed: `data-vidi-override-config`. This attributes overrides the config used in the token, and allows for a tertiary config to be loaded alongside the state.
 
+--- Below is the changelog from parent-project ---
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -38,10 +40,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [CalVer](https://calver.org/).
 
-## [2026.6.3] - 2026-15-9
-- lukkeplan. Adding parcel stay active until toggled or another functionality is started.
-- lukkeplan. Adding toggle for Include indirectly affected consumers
+## [2026.9.0] - 2026-22-9
+### Added
+- Street View: in embed mode the street view options (Mapillary, Google Street View, Skråfoto, Google Maps
+  and COWI, when configured) are now selected via a drawer control on the map instead of the side panel.
+- Layer tree now shows an error icon on layers whose tiles fail to load. Tile loading errors are
+  broadcast on the `tileLayerError:layers` event, so the icon appears and disappears as errors occur and resolve.
+  Only works for non-tiled layers.
 
+### Changed
+- The screenshot button icon changed from a camera to an image icon (the camera icon is
+  now used by the street view drawer).
+
+### Fixed
+- Non-tiled overlays no longer get their top and bottom cut off when the map runs in a
+  projected CRS such as EPSG:25832. `Leaflet.NonTiledLayer` (and the derived
+  `L.NonTiledUTFGrid`) computed the request bbox from `map.getBounds()`, whose synthesized
+  NW/SE corners shrink vertically when the lat/lng grid is rotated relative to the screen
+  (UTM meridian convergence). The bbox is now derived from the viewport's actual
+  top-left/bottom-right corners. This also fixes the vertical offset in UTF-grid
+  hover/click hit-testing in EPSG:25832.
 
 ## [2026.6.3] - 2026-29-6
 ### Fixed
