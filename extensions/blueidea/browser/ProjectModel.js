@@ -27,7 +27,8 @@ class ProjectModel {
     isReadOnly = false,
     projectEndDate,
     projectStartDate,
-    projectName = ''
+    projectName = '',
+    includeAffectedConsumers = false,
   } = {}) {
     const now = new Date()
     if (!projectEndDate) {
@@ -42,6 +43,7 @@ class ProjectModel {
     this.projectStartDate = projectStartDate ?? now;
     this.projectEndDate = projectEndDate;
     this.projectName = projectName;
+    this.includeAffectedConsumers = includeAffectedConsumers; 
   }
 
   __ = (txt) => {
@@ -68,6 +70,7 @@ class ProjectModel {
 
   clearData = () => {
     this.projectName = '';
+    this.includeAffectedConsumers = false;
   }
   static empty() {
     return new ProjectModel();

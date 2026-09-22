@@ -1,6 +1,7 @@
 /*
  * @author     Alexander Shumilov
  * @copyright  2013-2025 MapCentia ApS
+ * @copyright  2026-     Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -262,8 +263,10 @@ module.exports = {
         cloud.get().map.on("simpleMapScreenshoter.done", () => {
             utils.showInfoToast(__("Screenshot is ready"), {delay: 2000, autohide: true})
         });
-        cloud.get().map.on('simpleMapScreenshoter.error', () => {
-            alert("Something went wrong");
+
+        cloud.get().map.on('simpleMapScreenshoter.error', (e) => {
+            utils.showInfoToast(__("Screenshot failed"), {delay: 3000, autohide: true})
+            console.error('[Screenshot] Error Event:', e);
             resetPrintBtn();
         });
 

@@ -1,7 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
  * @copyright  2013-2018 MapCentia ApS
- * @copyright  2026 Geopartner Landinspektører A/S
+ * @copyright  2026-     Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -269,6 +269,7 @@ module.exports = {
         "Click here then draw a square on the map, to zoom in to an area": "Click here then draw a square on the map, to zoom in to an area",
         "Create a screenshot of the map. The screenshot is downloaded as a PNG file": "Create a screenshot of the map. The screenshot is downloaded as a PNG file",
         "Screenshot is ready": "Screenshot is ready",
+        "Screenshot failed": "Screenshot failed",
 
         // APIBridge
         "Not authorized to perform this action": "Not authorized to perform this action",

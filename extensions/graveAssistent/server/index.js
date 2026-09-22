@@ -126,9 +126,6 @@ var buildSQLArray = function (features, table, geom_col, crs, timestamp, statusK
     into.push('svar_uploadtime')
     into.push('statuskey')
 
-
-
-
     // Build final string
     let str = 'INSERT INTO ' + table + ' (' + into.join(',') + ') VALUES ' + values.join(',')
 
@@ -173,7 +170,6 @@ router.post('/api/extension/downloadForespoergsel', function (req, response) {
     }
 
     // Get contents of each type as a starting point.
-    //TODO: add crs toggle here
     let getChain = []
     let layers = ['lines', 'points', 'polygons', 'graveforespoergsel']
 
@@ -181,6 +177,14 @@ router.post('/api/extension/downloadForespoergsel', function (req, response) {
     // If schema is set in body, use that
     if (b.hasOwnProperty('schema') && b.schema != null && b.schema != undefined) {
         schema = b.schema
+    }
+
+    // Guard against no, or emtpy schema
+    if (!schema || schema.trim() === "") {
+        response.status(500).json({
+            error: "Empty or no schema"
+        })
+        return
     }
 
     // Define how to get features - might dump, idk
@@ -322,6 +326,14 @@ router.post('/api/extension/getForespoergselOption', function (req, response) {
         schema = b.schema
     }
 
+    // Guard against no, or emtpy schema
+    if (!schema || schema.trim() === "") {
+        response.status(500).json({
+            error: "Empty or no schema"
+        })
+        return
+    }
+
     let q = "SELECT forespnummer, bemaerkning, svar_uploadtime, statuskey FROM " + schema + '.' + TABLEPREFIX + "graveforespoergsel ORDER by forespnummer DESC"
     
     
@@ -381,6 +393,14 @@ router.post('/api/extension/getForespoergsel', function (req, response) {
     // If schema is set in body, use that instead of screenName
     if (b.hasOwnProperty('schema') && b.schema != null && b.schema != undefined) {
         schema = b.schema
+    }
+
+    // Guard against no, or emtpy schema
+    if (!schema || schema.trim() === "") {
+        response.status(500).json({
+            error: "Empty or no schema"
+        })
+        return
     }
 
     // Go ahead with the logic
@@ -453,6 +473,14 @@ router.post('/api/extension/getStatus', function (req, response) {
     // If schema is set in body, use that
     if (b.hasOwnProperty('schema') && b.schema != null && b.schema != undefined) {
         schema = b.schema
+    }
+
+    // Guard against no, or emtpy schema
+    if (!schema || schema.trim() === "") {
+        response.status(500).json({
+            error: "Empty or no schema"
+        })
+        return
     }
 
     // Go ahead with the logic
@@ -540,6 +568,14 @@ router.post('/api/extension/upsertForespoergsel', function (req, response) {
     // If schema is set in body, use that
     if (b.hasOwnProperty('schema') && b.schema != null && b.schema != undefined) {
         schema = b.schema
+    }
+
+    // Guard against no, or emtpy schema
+    if (!schema || schema.trim() === "") {
+        response.status(500).json({
+            error: "Empty or no schema"
+        })
+        return
     }
 
     try {
@@ -664,6 +700,14 @@ router.post('/api/extension/upsertStatus', function (req, response) {
         schema = b.schema
     }
 
+    // Guard against no, or emtpy schema
+    if (!schema || schema.trim() === "") {
+        response.status(500).json({
+            error: "Empty or no schema"
+        })
+        return
+    }
+
     try {
         // Build featurecollection
         var ejere = b.Ledningsejerliste
@@ -718,43 +762,6 @@ router.post('/api/extension/upsertStatus', function (req, response) {
 
 
 });
-
-// Use FeatureAPI
-function FeatureAPI(req, featurecollection, table, crs) {
-    var userstr = userString(req)
-    var postData = JSON.stringify(featurecollection)
-    //console.log(postData)
-    var options = {
-        headers: {
-            'Content-Type': 'application/json; charset=utf-8',
-            'Content-Length': Buffer.byteLength(postData),
-            'GC2-API-KEY': req.session.gc2ApiKey
-        },
-        uri: GC2_HOST + '/api/v2/feature/' + userstr + '/' + req.session.screenName + '.' + table + '.the_geom' + '/' + crs,
-        body: postData,
-        method: 'POST'
-    };
-
-    return new Promise(function (resolve, reject) {
-        //console.log(q.substring(0, 60))
-        fetch(url, options)
-            .then(r => r.json())
-            .then(data => {
-                // if message is present, is error
-                if (data.hasOwnProperty('message')) {
-                    console.log(data)
-                    reject(data)
-                } else {
-                    //console.log('Success: ' + data.success + ' - Q: ' + postData.substring(0, 60))
-                    resolve(data)
-                }
-            })
-            .catch(error => {
-                console.log(error)
-                reject(error)
-            })
-    });
-};
 
 // Use SQLAPI
 function SQLAPI(q, req) {

@@ -685,9 +685,10 @@ module.exports = {
                         // Do async job and resolve
                         fetch('/api/extension/upsertForespoergsel', opts)
                             .then(r => {
-                                const data = r.json();
-                                resolve(data)
+                                if (!r.ok) throw new Error();
+                                return r.json();
                             })
+                            .then(data => resolve(data))
                             .catch(e => {
                                 const errorMessage = e?.message || 'Der skete en fejl ved upload';
                                 utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
@@ -773,9 +774,10 @@ module.exports = {
                         // Do async job and resolve
                         fetch('/api/extension/upsertStatus', opts)
                             .then(r => {
-                                const data = r.json();
-                                resolve(data)
+                                if (!r.ok) throw new Error();
+                                return r.json();
                             })
+                            .then(data => resolve(data))
                             .catch(e => {
                                 const errorMessage = e?.message || 'Der skete en fejl';
                                 utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
@@ -844,6 +846,15 @@ module.exports = {
                     applyFilter(filter);
                 };
 
+                /**
+                 * Helper function to get active schema
+                 * Returns schema_override if set, otherwise returns current_schema
+                 * @returns {string} The active schema to use
+                 */
+                var getActiveSchema = function () {
+                    return schema_override || current_schema;
+                };
+
 
 
                 /**
@@ -868,7 +879,9 @@ module.exports = {
                             overskredetDato: false,
                             harFarlig: false,
                             harMegetFarlig: false,
-                            lastBounds: ''
+                            lastBounds: '',
+                            hasError: false,
+                            errorMessage: ''
                         };
 
                         this.readContents = this.readContents.bind(this)
@@ -921,7 +934,10 @@ module.exports = {
                         backboneEvents.get().on(`session:authChange`, () => {
                             console.log('Auth changed!')
                             fetch("/api/session/status")
-                                .then(r => r.json())
+                                .then(r => {
+                                    if (!r.ok) throw new Error();
+                                    return r.json();
+                                })
                                 .then(obj => me.setState({
                                     authed: obj.status.authenticated
                                 }, () => {
@@ -930,12 +946,8 @@ module.exports = {
                                     if (me.state.authed) {
                                         me.populateDClayers()
 
-                                        // Populate select with foresp. from schema - if set
-                                        if (schema_override) {
-                                            me.populateForespoergselOption(schema_override)
-                                        } else {
-                                            me.populateForespoergselOption(current_schema)
-                                        }
+                                        // Populate select with foresp. from schema
+                                        me.populateForespoergselOption(getActiveSchema())
                                     }
                                 }))
                                 .catch(e => me.setState({
@@ -999,14 +1011,12 @@ module.exports = {
                             foresp: '',
                             svarUploadTime: '',
                             ejerliste: [],
+                            hasError: false,
+                            errorMessage: ''
                         }, () => {
 
-                            // Populate select with foresp. from schema - if set
-                            if (schema_override) {
-                                _self.populateForespoergselOption(schema_override)
-                            } else {
-                                _self.populateForespoergselOption(current_schema)
-                            }
+                            // Populate select with foresp. from schema
+                            _self.populateForespoergselOption(getActiveSchema())
                             // move to last location and clear filters
                             cloud.get().map.fitBounds(_self.state.lastBounds)
                             clearFilters()
@@ -1030,12 +1040,8 @@ module.exports = {
                                 lastBounds: cloud.get().map.getBounds()
                             })
     
-                            // getForespoergsel - use schema override from conf, or the schema the user is in.
-                            if (schema_override) {
-                                _self.getForespoergsel(foresp, schema_override)
-                            } else {
-                                _self.getForespoergsel(foresp, current_schema)
-                            }
+                            // getForespoergsel - use active schema
+                            _self.getForespoergsel(foresp, getActiveSchema())
     
                             _self.setState({
                                 done: true
@@ -1100,17 +1106,11 @@ module.exports = {
                                 var [status, consolidated] = files
                                 //console.log(files);
 
-                                if (schema_override) {
-                                    return [Promise.all([
-                                        pushStatus(status, statusKey, schema_override),
-                                        pushForespoergsel(consolidated, statusKey, schema_override)
-                                    ]),consolidated.forespNummer]
-                                } else {
-                                    return [Promise.all([
-                                        pushStatus(status, statusKey),
-                                        pushForespoergsel(consolidated, statusKey)
-                                    ]),consolidated.forespNummer]
-                                }
+                                const activeSchema = getActiveSchema();
+                                return [Promise.all([
+                                    pushStatus(status, statusKey, activeSchema),
+                                    pushForespoergsel(consolidated, statusKey, activeSchema)
+                                ]),consolidated.forespNummer]
                             }).then(function(files) {
                                 //console.log(files)
                                 _self.setState({
@@ -1122,19 +1122,18 @@ module.exports = {
                                     foresp: String(files[1])
                                 })
 
-                                if (schema_override) {
-                                    _self.getForespoergsel(String(files[1]), schema_override)
-                                } else {
-                                    _self.getForespoergsel(String(files[1]), current_schema)
-                                }
+                                _self.getForespoergsel(String(files[1]), getActiveSchema())
                                 
                             })
                             .catch(e => {
                                 console.log(e)
+                                const errorMsg = String(e);
                                 _self.setState({
                                     isError: true,
+                                    hasError: true,
+                                    errorMessage: errorMsg,
                                     progress: 100,
-                                    progressText: String(e)
+                                    progressText: errorMsg
                                 })
                             })
                             
@@ -1181,14 +1180,25 @@ module.exports = {
 
                         // Do async job
                         fetch('/api/extension/getForespoergselOption', opts)
-                            .then(r => r.json())
+                            .then(r => {
+                                if (!r.ok) throw new Error();
+                                return r.json();
+                            })
                             .then(d => {
                                 //console.log(d)
                                 _self.setState({
                                     forespOptions: d
                                 })
                             })
-                            .catch(e => console.log(e))
+                            .catch(e => {
+                                const errorMsg = e?.message || 'Der skete en fejl ved hentning af eksisterende forespørgsler';
+                                _self.setState({
+                                    hasError: true,
+                                    errorMessage: errorMsg
+                                });
+                                utils.showDangerToast(errorMsg, {delay: 5000, autohide: true});
+                                console.log(e);
+                            })
                     }
 
                     /**
@@ -1212,7 +1222,10 @@ module.exports = {
 
                         // Do async job
                         fetch('/api/extension/getStatus', opts)
-                            .then(r => r.json())
+                            .then(r => {
+                                if (!r.ok) throw new Error();
+                                return r.json();
+                            })
                             .then(d => {
                                 let a = []
                                 d.forEach(f => {
@@ -1222,7 +1235,15 @@ module.exports = {
                                     ejerliste: a
                                 })
                             })
-                            .catch(e => console.log(e))
+                            .catch(e => {
+                                const errorMsg = e?.message || 'Der skete en fejl ved hentning af status';
+                                _self.setState({
+                                    hasError: true,
+                                    errorMessage: errorMsg
+                                });
+                                utils.showDangerToast(errorMsg, {delay: 5000, autohide: true});
+                                console.log(e);
+                            })
                     }
 
                     /**
@@ -1245,7 +1266,10 @@ module.exports = {
                         }
                         // Do async job
                         fetch('/api/extension/getForespoergsel', opts)
-                            .then(r => r.json())
+                            .then(r => {
+                                if (!r.ok) throw new Error();
+                                return r.json();
+                            })
                             .then(d => {
                                 //console.log(d);
 
@@ -1262,12 +1286,7 @@ module.exports = {
                                 cloud.get().map.fitBounds(bounds)
                                 
                                 // Apply filter
-
-                                if (schema_override) {
-                                    _self.getStatus(f.statuskey, schema_override)
-                                } else {
-                                    _self.getStatus(f.statuskey)
-                                }
+                                _self.getStatus(f.statuskey, getActiveSchema())
 
                                 applyFilter(buildFilter(f.forespnummer))
 
@@ -1281,8 +1300,12 @@ module.exports = {
                                 })
                             })
                             .catch(e => {
-                                const errorMessage = e?.message || 'An error occurred while fetching the inquiry';
-                                utils.showDangerToast(errorMessage, {delay: 5000, autohide: true});
+                                const errorMsg = e?.message || 'An error occurred while fetching the inquiry';
+                                _self.setState({
+                                    hasError: true,
+                                    errorMessage: errorMsg
+                                });
+                                utils.showDangerToast(errorMsg, {delay: 5000, autohide: true});
                                 console.log(e);
                             })
                     }
@@ -1301,7 +1324,21 @@ module.exports = {
                    
                             if (s.authed) {
                                 // Logged in
-                                if (s.loading) {
+                                if (s.hasError) {
+                                    // Show error UI
+                                    return (
+                                        <div role="tabpanel">
+                                            <div className="form-group p-4">
+                                                <div className="alert alert-danger" role="alert">
+                                                    <h4 className="alert-heading">Fejl i modul</h4>
+                                                    <p>Der opstod en fejl i modulet.</p>
+                                                    <p>Genindlæs siden og prøv igen.</p>
+                                                    <p>Hvis problemet fortsætter, kontakt os på support@geopartner.dk</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                } else if (s.loading) {
                                     // If Loading, show progress
                                     return (
                                         <div role="tabpanel">
@@ -1324,7 +1361,7 @@ module.exports = {
                                                     <button className="btn btn-sm btn-outline-secondary" id="_draw_download_geojson" onClick={_self.onBackClickHandler.bind(this)}>
                                                         <i className="bi bi-arrow-left-short" aria-hidden="true"></i> Tilbage
                                                     </button>
-                                                    <LedningsDownload size = "large" color = "default" variant = "contained" endpoint = "/api/extension/downloadForespoergsel" forespnummer = {s.foresp} schema={schema_override} />
+                                                    <LedningsDownload size = "large" color = "default" variant = "contained" endpoint = "/api/extension/downloadForespoergsel" forespnummer = {s.foresp} schema={getActiveSchema()} utils={utils} />
                                                 </div >
                                                 <div className="d-flex flex-column bg-danger text-center text-light fw-bold p-2" id="graveAssistent-feature-warnings">
                                                     {s.overskredetDato && <div className='p-2'>Denne ledningspakke er ikke længere gyldig!</div>}
