@@ -215,6 +215,11 @@ var _zoomToFeature = function (table, key, fid) {
         cloud.zoomToExtentOfgeoJsonStore(this);
     };
 
+    // Add support for non-INT fids
+    if (isNaN(fid)) {
+        fid = `'${fid}'`;
+    }
+
     dataStore = new geocloud.sqlStore({
         jsonp: false,
         method: "POST",
