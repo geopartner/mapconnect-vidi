@@ -2,6 +2,10 @@
 
 The changes and additions made will be reflected by the date which they are deployed to production.
 
+## 2026-10-01
+- new config  `show_berorte` for lukkeplan. Control displaying  toggle for including indirect customer      
+- new config `snap_distance` for lukkeplan. Control the distance when analyzing the network
+
 ## 2026-08-27
 - refactor alarm and lukkeplan extension 
 - The word BlueIdea is removed from UI.
