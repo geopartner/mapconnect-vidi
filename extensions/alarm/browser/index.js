@@ -1170,6 +1170,19 @@ module.exports = {
         }
       };
 
+      /**
+       * Handles change of the search direction select
+       */
+      alarmDirectionChange = (e) => {
+        const me = this;
+        me.setState({ 
+          alarm_direction_selected: e.target.value,
+         });
+
+        me.resetAlarmSelection();
+        _clearAll();
+      };
+
 
       /**
        * Renders component
@@ -1207,7 +1220,7 @@ module.exports = {
                 <select
                   className="col form-select"
                   value={s.alarm_direction_selected}
-                  onChange={(e) => this.setState({ alarm_direction_selected: e.target.value })}
+                  onChange={this.alarmDirectionChange}
                 >
                   <option value="FT">{__('From-To')}</option>
                   <option value="TF">{__('To-From')}</option>
