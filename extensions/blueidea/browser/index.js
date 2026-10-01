@@ -464,6 +464,8 @@ module.exports = {
           results_matrikler: [],
           results_ventiler: [],
           results_log: {},
+          show_affected_consumers: false,
+          snapDistance: 1,
           user_lukkeliste: null,
           user_blueidea: null,
           user_id: null,
@@ -696,6 +698,8 @@ module.exports = {
                   user_id: config.extensionConfig.blueidea.userid,
                   user_profileid: data.profileid || null,
                   user_db: data.db || false,
+                  show_affected_consumers: config.extensionConfig.blueidea?.show_berorte ?? false,
+                  snapDistance: config.extensionConfig.blueidea?.snap_distance ?? 1,
                   selected_profileid: userProfiles[0] || '',
                   lukkeliste_ready: lukkestatus,
                   forsyningsart_selected: 0,
@@ -715,6 +719,12 @@ module.exports = {
                   }
                 });
 
+                if (me.state.user_udpeg_layer) {
+                  me.turnOnLayer(me.state.user_udpeg_layer);
+                }
+                if (me.state.user_ventil_layer) {
+                  me.turnOnLayer(me.state.user_ventil_layer);
+                }
 
                 resolve(data);
               },
@@ -757,7 +767,7 @@ module.exports = {
         body.gyldig_til = me.state.project.projectEndDate;
         body.sagstekst = me.state.project?.projectName.trim() ?? '';
         body.berorte = me.state.project.includeAffectedConsumers ?? false;
-
+        body.snap_distance = me.state.snapDistance; 
         try {
           let response = await fetch("/api/extension/lukkeliste/" + me.state.user_id + "/query", {
             method: "POST",
@@ -1407,6 +1417,11 @@ module.exports = {
       selectPointLukkeliste = async function (e) {
         let me = this;
         let point = null;
+        // get the clicked point
+        if (!e.latlng) {
+          return;
+        }
+        point = e.latlng;
 
         // Remove the click event listener for the map
         cloud.get().map.off("click", me.boundSelectPointLukkeliste);
@@ -1421,8 +1436,7 @@ module.exports = {
 
         me.createSnack(__("Starting analysis"), true)
 
-        // get the clicked point
-        point = e.latlng;
+        
         utils.cursorStyle().reset();
         blocked = true;
 
@@ -2258,6 +2272,7 @@ module.exports = {
                       editProject={this.state.editProject}
                       onChange={this.updateProject}
                       pipeSelected={pipeSelected}
+                      showAffectedConsumers={this.state.show_affected_consumers}
                       onHandleSaveProject={this.handleSaveProjectDates}
                       onReadyPointLukkeliste={this.readyPointLukkeliste}
                       onClearLukkeliste={this.clearLukkeliste}
