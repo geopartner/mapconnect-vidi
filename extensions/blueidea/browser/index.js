@@ -1966,6 +1966,7 @@ module.exports = {
 
       setSelectedForsyningsart = (valueIndex) => {
         // turn off the udpeg layer of the last forsyningsart
+        const me = this;
         api.turnOff(this.state.project.forsyningsarter[this.state.project.forsyningsart_selected].udpeg_layer);
 
         // turn off previous selection action if active
