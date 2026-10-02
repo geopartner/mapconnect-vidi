@@ -557,20 +557,20 @@ module.exports = {
         const _self = this;
         const s = _self.state;
 
-        if (!s.authed) {
-          return (
-            <div role="tabpanel" >
-              <div className="form-group" >
-                <div id="drift-feature-login" className="alert alert-info" role="alert" >
-                  {__("MissingLogin")}
-                </div>
-                <div className="d-grid mx-auto">
-                  <button onClick={() => this.clickLogin()} type="button" className="btn btn-primary">{__("Login")}</button>
-                </div>
-              </div>
-            </div>
-          );
-        }
+        // if (!s.authed) {
+        //   return (
+        //     <div role="tabpanel" >
+        //       <div className="form-group" >
+        //         <div id="drift-feature-login" className="alert alert-info" role="alert" >
+        //           {__("MissingLogin")}
+        //         </div>
+        //         <div className="d-grid mx-auto">
+        //           <button onClick={() => this.clickLogin()} type="button" className="btn btn-primary">{__("Login")}</button>
+        //         </div>
+        //       </div>
+        //     </div>
+        //   );
+        // }
 
         return (
           <div role="tabpanel">
@@ -601,9 +601,7 @@ module.exports = {
               <h6>{__("Plugin Tooltip")}</h6>
               <p>{__("Info")}</p>
 
-              <FeatureTableComposition>
-
-              </FeatureTableComposition>
+       
 
             </div>
 
@@ -629,7 +627,7 @@ module.exports = {
     // Append to DOM
     //==============
     try {
-      createRoot(document.getElementById(MODULE_NAME)).render(<Drift ref={alarmRef} henvendelserManager={henvendelserManager} />);
+      createRoot(document.getElementById(MODULE_NAME)).render(<Drift ref={driftRef} henvendelserManager={henvendelserManager} />);
     } catch (e) {
       throw "Failed to load DOM";
     }
