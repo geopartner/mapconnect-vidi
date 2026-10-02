@@ -121,6 +121,34 @@ const jordstykkeQuery = `
   FROM 
     matrikel_datahub.vw_jordstykke
 `;
+const adgangsadresseQuery = `
+SELECT gid as adrguid, 
+id_lokalid, 
+registrering_fra, 
+registreringsaktoer, 
+registrering_til, 
+geo_danmark_bygning, 
+status, 
+virkning_fra, 
+virkningsaktoer, 
+virkning_til, 
+adgangsadressebetegnelse, 
+husnummertekst, 
+vejnavn, 
+postnr, 
+navn, 
+kommuneinddeling, 
+adgangsadresseurl, 
+the_geom,
+matrikelnummer, 
+ejerlavskode, 
+kommunenavn, 
+kommunekode, 
+vejkode, 
+bfenummer,
+ejerlavsnavn
+	FROM dar_datahub.vw_adgangsadresser_geom
+`;
 
 const queryJordstykker = async (req, res, next) => {
   // This endpoint tries to mimics the DAWA endpoint, but uses the datahub instead
@@ -335,6 +363,43 @@ const queryJordstykkeByFeatureCollection = async (req, res, next) => {
     res.status(500).json({ error: error });
   }
 };
+
+const queryAdgangsadresseByadrguid = async (req, res, next) => {
+  // This endpoint queries adgangsadresse by adrguid and returns adress records, incl jordstykke information
+
+
+  // build the query
+  var sql = adgangsadresseQuery;
+
+  //console.log(req.params);
+
+  // Get the path parameters from the request
+  var adrguid = req.params.adrguid;
+
+  // if adrguid is given in path, use it as filter
+  if (adrguid) {
+    sql +=
+      " WHERE id_lokalid = '" +
+      adrguid +
+      "' ";
+  }
+
+  // Return the result of the query from datahub
+  try {
+    const result = await queryDatahub(sql);
+
+    // if no result, or result.success is false, return error
+    if (!result || !result._success) {
+      return res.status(500).json({ error: result._message, q: sql });
+    }
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error });
+  }
+};
+
+router.get("/api/datahub/adgangsadresse/:adrguid", queryAdgangsadresseByadrguid);
 
 router.get("/api/datahub/jordstykker", queryJordstykker);
 router.post("/api/datahub/jordstykker", queryJordstykker);

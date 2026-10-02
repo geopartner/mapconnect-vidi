@@ -693,32 +693,33 @@ var onSearchLoad = function () {
 var getEjdNr = function (adgangsadresseid) {
   var bfenr;
   $.ajax({
-    url: "https://dawa.aws.dk/adgangsadresser/" + adgangsadresseid,
+    //url: "https://dawa.aws.dk/adgangsadresser/" + adgangsadresseid,
+    url: "/api/datahub/adgangsadresse/" + adgangsadresseid,
     type: "get",
     async: false,
     success: function (data, status) {
       //console.log(data);
-      if (data.id == null) {
+      if (data.gid == null) {
         //nothing.. return null
         return null;
       } else {
 
-        var bfe = $.ajax({
-          url: data.jordstykke.href,
-          type: "get",
-          async: false,
-          success: function (data, status) {
-            if (data.matrikelnr == null) {
-              //nothing.. return null
-              return null;
-            } else {
-              var bfe = data;
-              return bfe;
-            }
-          },
-        });
+        // var bfe = $.ajax({
+        //   url: data.jordstykke.href,
+        //   type: "get",
+        //   async: false,
+        //   success: function (data, status) {
+        //     if (data.matrikelnr == null) {
+        //       //nothing.. return null
+        //       return null;
+        //     } else {
+        //       var bfe = data;
+        //       return bfe;
+        //     }
+        //   },
+        // });
 
-        bfenr = bfe.responseJSON.sfeejendomsnr.toString();
+        bfenr = data.bfenummer.toString();
         console.log("bfenr: ", bfenr);
 
         // Move information out into config
