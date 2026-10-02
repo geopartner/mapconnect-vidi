@@ -13,7 +13,8 @@ var config = require("../../../config/config.js");
 
 var fetch = require("node-fetch");
 
-
+const SCHEMA = "drift";
+const TABLEDATA = "henvendelse_aktiv";
 
 // SET GC2 HOST
 GC2_HOST = config.gc2.host;
@@ -56,21 +57,37 @@ var userString = function (req) {
   return userstr;
 };
 
- 
+
 
 router.post("/api/extension/drift", function (req, response) {
   if (!guard(req, response)) {
     return;
   }
-  const alarm_skab =  req.body;
- 
+  const alarm_skab = req.body;
+
   let query = `SELECT ${alarm_skab.key} as value, ${alarm_skab.name} as text, ${alarm_skab.geom} from ${alarm_skab.layer}`;
   SQLAPI(query, req, { format: "geojson", srs: 4326 })
     .then(data => response.status(200).json(data))
-    .catch(err => response.status(500).send(err));  
+    .catch(err => response.status(500).send(err));
 });
 
- 
+router.get("/api/extension/mapstatus/GetActiveHenvendelser/:userId", function (req, response) {
+  if (!guard(req, response)) {
+    return;
+  }
+  // const userId = req.params.userId;
+  const sql = `SELECT overskrift, placering, navn, problemtypeid, ansvarligid, kommentar, indberetningdato, haendelsedato, udkaldid, prioritetid, statusid, oprettetdato, oprettetid, gid,forsyningtypeid FROM ${SCHEMA}.${TABLEDATA} `;
+
+  SQLAPI(sql, req)
+    .then((result) => {
+      response.json(result);
+    })
+    .catch((err) => {
+      console.error("Fejl i SQLAPI:", err);
+      response.status(500).send("Fejl ved databaseopslag");
+    });
+});
+
 
 // Query alarmkabel-plugin in database
 router.post("/api/extension/drift/query", function (req, response) {
@@ -99,8 +116,8 @@ router.post("/api/extension/drift/query", function (req, response) {
   // set timeout to 30s
   req.setTimeout(TIMEOUT);
 
-    // Create the query to insert into the database
-    const q = `
+  // Create the query to insert into the database
+  const q = `
       INSERT INTO lukkeliste.beregnalarmlog(
       the_geom, 
       forsyningsart, 
@@ -139,14 +156,14 @@ router.post("/api/extension/drift/query", function (req, response) {
         )
       );
 
-        // get log
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.beregnalarmlog where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
+      // get log
+      promises.push(
+        SQLAPI(
+          `SELECT * from lukkeliste.beregnalarmlog where beregnuuid = '${beregnuuid}'`,
+          req,
+          { format: "geojson", srs: 4326 }
+        )
+      );
 
       // when promises are complete, return the result
       Promise.all(promises)
@@ -168,34 +185,34 @@ router.post("/api/extension/drift/query", function (req, response) {
 }
 );
 
- 
+
 router.post("/api/extension/drift/query", function (req, response) {
   if (!guard(req, response)) {
     return;
   }
 
   // guard against missing lat and lng in body
-    if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
-      response.status(401).send("Missing lat or lng");
-      return;
-    }
+  if (!req.body.hasOwnProperty("lat") || !req.body.hasOwnProperty("lng")) {
+    response.status(401).send("Missing lat or lng");
+    return;
+  }
 
-    // guard against missing alarmskab
-    if (!req.body.hasOwnProperty("alarmskab")) {
-      response.status(401).send("Missing alarmskab id");
-      return;
-    }
+  // guard against missing alarmskab
+  if (!req.body.hasOwnProperty("alarmskab")) {
+    response.status(401).send("Missing alarmskab id");
+    return;
+  }
 
-    // set timeout to 30s
-    req.setTimeout(TIMEOUT);
+  // set timeout to 30s
+  req.setTimeout(TIMEOUT);
 
-    // create the string we need to query the database
-    // q = `SELECT lukkeliste.fnc_beregn_afstand_alarmnet('${req.body.alarmskab}'::int, 
-    // ST_Transform(ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),25832)::geometry, 
-    // '${req.body.direction}', 
-    // '${req.session.screenName}')`;
-    // Create the query to insert into the database
-    const q = `
+  // create the string we need to query the database
+  // q = `SELECT lukkeliste.fnc_beregn_afstand_alarmnet('${req.body.alarmskab}'::int, 
+  // ST_Transform(ST_GeomFromEWKT('SRID=4326;Point(${req.body.lng} ${req.body.lat})'),25832)::geometry, 
+  // '${req.body.direction}', 
+  // '${req.session.screenName}')`;
+  // Create the query to insert into the database
+  const q = `
       INSERT INTO lukkeliste.beregnalarmlog(
       the_geom, 
       forsyningsart, 
@@ -224,50 +241,50 @@ router.post("/api/extension/drift/query", function (req, response) {
 
 
 
-    console.log(q);
-    SQLAPI(q, req)
-      .then((uuid) => {
-        let beregnuuid = uuid.returning[0].beregnuuid;
-        let promises = [];
+  console.log(q);
+  SQLAPI(q, req)
+    .then((uuid) => {
+      let beregnuuid = uuid.returning[0].beregnuuid;
+      let promises = [];
 
-        console.log(q, " -> ", beregnuuid);
+      console.log(q, " -> ", beregnuuid);
 
-        // get points
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.vw_alarm_afstand where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
+      // get points
+      promises.push(
+        SQLAPI(
+          `SELECT * from lukkeliste.vw_alarm_afstand where beregnuuid = '${beregnuuid}'`,
+          req,
+          { format: "geojson", srs: 4326 }
+        )
+      );
 
-        // get log
-        promises.push(
-          SQLAPI(
-            `SELECT * from lukkeliste.beregnalarmlog where beregnuuid = '${beregnuuid}'`,
-            req,
-            { format: "geojson", srs: 4326 }
-          )
-        );
+      // get log
+      promises.push(
+        SQLAPI(
+          `SELECT * from lukkeliste.beregnalarmlog where beregnuuid = '${beregnuuid}'`,
+          req,
+          { format: "geojson", srs: 4326 }
+        )
+      );
 
-        // when promises are complete, return the result
-        Promise.all(promises)
-          .then((res) => {
-            response.status(200).json({
-              alarm: res[0],
-              log: res[1],
-            });
-          })
-          .catch((err) => {
-            console.error(err);
-            response.status(500).json(err);
+      // when promises are complete, return the result
+      Promise.all(promises)
+        .then((res) => {
+          response.status(200).json({
+            alarm: res[0],
+            log: res[1],
           });
-      })
-      .catch((err) => {
-        console.error(err);
-        response.status(500).json(err);
-      });
-  }
+        })
+        .catch((err) => {
+          console.error(err);
+          response.status(500).json(err);
+        });
+    })
+    .catch((err) => {
+      console.error(err);
+      response.status(500).json(err);
+    });
+}
 );
 
 

@@ -9,7 +9,7 @@ import React from 'react';
 
 // browser components:
 import CreateProjectForm from "./CreateProjectForm.js";
-import DraggableBox from "./DraggableBox.js";
+import DraggableBox from "../../common/DraggableBox.js";
 import FeatureTableComposition from './FeatureTableComposition.js'
 
 import ProjectSelector from "./ProjectSelector.js";

@@ -1,8 +1,7 @@
-/*
- * @author     Gunnar Jul Jensen <gjj@geopartner.dk>
- * @copyright  2020- Geopartner A/S
- * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
- */
+/* @author     Gunnar Jul Jensen <gjj@geopartner.dk>
+* @copyright  2020- Geopartner A/S
+* @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
+*/
 
 "use strict";
 
@@ -18,6 +17,10 @@ import {
 } from "@turf/turf";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
 import { createRoot } from "react-dom/client";
+import FeatureHenvendelser from "./FeatureHenvendelser.js";
+import FeatureTableComposition from "./FeatureTableComposition.js";
+import HenvendelseManager from "../manager/HenvendelseManager.js";
+import DraggableBox from "../../common/DraggableBox.js";
 
 var React = require("react");
 const driftRef = React.createRef();
@@ -27,6 +30,7 @@ const driftRef = React.createRef();
  * @type {*|exports|module.exports}
  */
 var cloud;
+let henvendelserManager = null;
 
 /**
  *
@@ -80,7 +84,7 @@ var switchLayer = require("./../../../browser/modules/switchLayer");
  *
  * @type {string}
  */
-var exId = "drift";
+var MODULE_NAME = "drift";
 
 /**
  *
@@ -169,6 +173,8 @@ module.exports = {
     mapObj.addLayer(alarmPositions);
 
 
+
+    henvendelserManager = new HenvendelseManager(cloud.get().map, backboneEvents, MODULE_NAME);
     /**
      *
      */
@@ -261,13 +267,18 @@ module.exports = {
         this.sqlQuery = props.sqlQuery;
         this.state = {
           active: false,
-          authed: false,
-         layersOnStart: [],
+          authed: true,
+
+          henvendelserManager: props.henvendelserManager,
+          layersOnStart: [],
+          showHenvendelser: false,
         };
- 
+        this.portalContainer = document.createElement('div');
+        document.body.appendChild(this.portalContainer);
+
       }
 
-   
+
 
       /**
        * Handle activation on mount
@@ -279,7 +290,7 @@ module.exports = {
         backboneEvents.get().on("deactivate:all", () => { });
         this.getConfig();
         // Activates module
-        backboneEvents.get().on(`on:${exId}`, () => {
+        backboneEvents.get().on(`on:${MODULE_NAME}`, () => {
           //console.debug("Starting alarm");
           me.setState({
             active: true,
@@ -301,7 +312,7 @@ module.exports = {
         });
 
         // Deactivates module
-        backboneEvents.get().on(`off:${exId} reset:all`, () => {
+        backboneEvents.get().on(`off:${MODULE_NAME} reset:all`, () => {
           console.debug("Stopping alarm");
 
           // remove layersOnStart
@@ -359,7 +370,7 @@ module.exports = {
 
 
 
- 
+
 
       /**
        * 
@@ -412,7 +423,7 @@ module.exports = {
         }
         return result;
       }
- 
+
 
       /**
         * Get the alarm configuration from the extension config
@@ -442,10 +453,10 @@ module.exports = {
             user_udpeg_layer: data.udpeg_layer
           });
         }
- 
+
       }
- 
-  
+
+
       /**
        * Creates a new snackbar
        * @param {*} text
@@ -536,8 +547,8 @@ module.exports = {
         return nearest;
       };
 
-    
- 
+
+
 
       /**
        * Renders component
@@ -563,6 +574,25 @@ module.exports = {
 
         return (
           <div role="tabpanel">
+            <div className="d-grid mx-auto mt-2">
+              <button onClick={() => this.setState({ showHenvendelser: true })} type="button" className="btn btn-outline-primary">Vis henvendelser</button>
+            </div>
+            {s.showHenvendelser &&
+              ReactDOM.createPortal(
+                <DraggableBox
+                  headerText='Henvendelser'
+                  initialStyle={{ bottom: '100px', height: '560px', right: '100px', minWidth: '470px', width: '470px', minHeight: '560px', maxWidth: '470px' }}
+                  onExcel={() => { }}
+                  onMouseDown={(e) => { e.stopPropagation(); }}
+                  showMinimizeButton={false}
+                >
+                  <FeatureHenvendelser
+                    featuresManager={this.state.henvendelserManager}
+                    onClose={() => this.setState({ showHenvendelser: false })}
+                  />
+                </DraggableBox>,
+                this.portalContainer)
+            }
 
 
             <div
@@ -570,12 +600,14 @@ module.exports = {
             >
               <h6>{__("Plugin Tooltip")}</h6>
               <p>{__("Info")}</p>
-            
 
- 
+              <FeatureTableComposition>
+
+              </FeatureTableComposition>
+
             </div>
 
-    
+
           </div>
 
         );
@@ -585,19 +617,19 @@ module.exports = {
     }
 
     utils.createMainTab(
-      exId,
+      MODULE_NAME,
       __("Plugin Tooltip"),
       __("Info"),
       require("./../../../browser/modules/height")().max,
       "bi-cone-striped",
       false,
-      exId
+      MODULE_NAME
     );
 
     // Append to DOM
     //==============
     try {
-      createRoot(document.getElementById(exId)).render(<Drift ref={alarmRef} />);
+      createRoot(document.getElementById(MODULE_NAME)).render(<Drift ref={alarmRef} henvendelserManager={henvendelserManager} />);
     } catch (e) {
       throw "Failed to load DOM";
     }
@@ -608,7 +640,7 @@ module.exports = {
       url,
       utils.screen().width - 100,
       utils.screen().height - 100,
-      exId
+      MODULE_NAME
     );
   },
 

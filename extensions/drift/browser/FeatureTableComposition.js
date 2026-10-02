@@ -6,15 +6,15 @@
 
 import React from "react";
 import DraggableBox from "../../common/DraggableBox.js";
-import FeatureTablePipe from "./FeatureTablePipe.js";
-import FeatureTableNode from "./FeatureTableNode.js";
-import styleObject from "./style.js";
+//import FeatureTablePipe from "./FeatureTablePipe.js";
+//import FeatureTableNode from "./FeatureTableNode.js";
+//import styleObject from "./style.js";
 import { getResolutions } from '../../../browser/modules/crs';
 import { booleanIntersects as turfIntersects, buffer as turfBuffer } from "@turf/turf";
 import { feature as turfFeature, point as turfPoint } from "@turf/helpers";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
 
-const MAPSTATUS_MODULE_NAME = `mapstatus`;
+const MAPSTATUS_MODULE_NAME = `drift`;
 
 class FeatureTableComposition extends React.Component {
     static get Ledninger() {  return 'ledninger';  }
@@ -175,7 +175,7 @@ class FeatureTableComposition extends React.Component {
                     <div className="tab-content">
                         {activeTab === FeatureTableComposition.Ledninger && (
                             <div className="tab-pane fade show active" role="tabpanel">
-                                <FeatureTablePipe
+                                {/* <FeatureTablePipe
                                     autoZoom={this.state?.autoZoom}
                                     activeProject={this.props.activeProject}
                                     backboneEvents={this.props.backboneEvents}
@@ -200,13 +200,13 @@ class FeatureTableComposition extends React.Component {
                                     }}
                                     styles={styleObject}
                                     isReadOnly={isReadOnly}
-                                />
+                                /> */}
                             </div>
                         )}
 
                         {activeTab === FeatureTableComposition.Broende && (
                             <div className="tab-pane fade show active" role="tabpanel">
-                                <FeatureTableNode
+                                {/* <FeatureTableNode
                                     autoZoom={this.state?.autoZoom}
                                     activeProject={this.props.activeProject}
                                     backboneEvents={this.props.backboneEvents}
@@ -231,7 +231,7 @@ class FeatureTableComposition extends React.Component {
                                     }}
                                     styles={styleObject}
                                     isReadOnly={isReadOnly}
-                                />
+                                /> */}
                             </div>
                         )}
                     </div>
