@@ -1,7 +1,6 @@
 /*
  * @author     Alexander Shumilov
- * @copyright  2013-2023 MapCentia ApS
- * @copyright  2026-     Geopartner Landinspektører A/S
+ * @copyright  2013-2023 MapCentia ApS, Rene Borella <rgb@geopartner.dk>
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -47,7 +46,7 @@ import {
 import MetaSettingForm from "./MetaSettingForm";
 import Download from './Download';
 import {getResolutions} from "../crs";
-import { createRoot } from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 import config from '../../../config/config';
 
 
@@ -98,6 +97,7 @@ let moduleState = {
     webGLStores: {},
     virtualLayers: [],
     tileContentCache: {},
+    tileError: {},
     editorFilters: {},
     editorFiltersActive: {},
     fitBoundsActiveOnLayers: {},
@@ -135,6 +135,32 @@ module.exports = {
             if (typeof filterComp[l] === "object") {
                 filterComp[l].setState({"arbitraryFilters": f});
             }
+        }
+
+        api.sqlFilter = (l, f) => {
+            moduleState.editorFilters[l] = [f];
+            moduleState.editorFiltersActive[l] = true;
+            _self.onApplyEditorFiltersHandler({"layerKey": l});
+            if (typeof filterComp[l] === "object") {
+                filterComp[l].setState({"editorFilters": [f]});
+                filterComp[l].setState({"editorFiltersActive": true});
+            }
+        }
+
+        api.resetFilters = (l) => {
+            const empty = {
+                    match: `any`,
+                    columns: [{
+                        fieldname: `null`,
+                        expression: `null`,
+                        value: ``
+                    }]
+                }
+            api.filter(l, empty);
+            api.sqlFilter(l, '');
+            filterComp[l].setState({"editorFiltersActive": false});
+            moduleState.editorFiltersActive[l] = false;
+            _self.onDisableArbitraryFiltersHandler(l)
         }
 
         return this;
@@ -345,13 +371,22 @@ module.exports = {
             if (popupEl) {
                 popupEl.querySelectorAll('.accordion-collapse').forEach(el => {
                     if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
-                        try { bootstrap.Collapse.getInstance(el)?.dispose(); } catch (e) {}
+                        try {
+                            bootstrap.Collapse.getInstance(el)?.dispose();
+                        } catch (e) {
+                        }
                     }
                     el.replaceWith(el.cloneNode(false));
                 });
             }
-            try { vectorPopUp.off(); } catch (e) {}
-            try { vectorPopUp.closePopup(); } catch (e) {}
+            try {
+                vectorPopUp.off();
+            } catch (e) {
+            }
+            try {
+                vectorPopUp.closePopup();
+            } catch (e) {
+            }
             vectorPopUp = undefined;
         }
     },
@@ -962,6 +997,15 @@ module.exports = {
                 };
                 poll.bind(this, data)();
             }
+        });
+
+        /**
+         * Listening to an event that indicates if a layer has an error (an invalid image)
+         * Display error icon in layertree
+         */
+        backboneEvents.get().on(`tileLayerError:layers`, (data) => {
+            moduleState.tileError[data.id] = data.error;
+            $(`[data-gc2-layer-key^="${data.id}."]`).find(`.js-tiles-error`).css(`display`, (data.error ? `inline` : `none`));
         });
 
         /**
@@ -2588,7 +2632,7 @@ module.exports = {
                                     if (column.value === `true`) value = `TRUE`;
                                     if (column.value === `false`) value = `FALSE`;
 
-                                    block = `${column.fieldname} ${column.expression} ${value}`;
+                                    block = `"${column.fieldname}" ${column.expression} ${value}`;
                                     break;
                                 case `date`:
                                 case `timestamp with time zone`:
@@ -2599,7 +2643,7 @@ module.exports = {
                                         throw new Error(`Unable to apply ${column.expression} expression to ${column.fieldname} (${layerDescription.fields[key].type} type)`);
                                     }
 
-                                    block = `${column.fieldname} ${column.expression} '${column.value}'`;
+                                    block = `"${column.fieldname}" ${column.expression} '${column.value}'`;
                                     break;
                                 case `text`:
                                 case `string`:
@@ -2611,9 +2655,9 @@ module.exports = {
                                     }
 
                                     if (column.expression === 'like') {
-                                        block = `${column.fieldname} ILIKE '%${column.value}%'`;
+                                        block = `"${column.fieldname}" ILIKE '%${column.value}%'`;
                                     } else {
-                                        block = `${column.fieldname} ${column.expression} '${column.value}'`;
+                                        block = `"${column.fieldname}" ${column.expression} '${column.value}'`;
                                     }
 
                                     break;
@@ -2628,7 +2672,7 @@ module.exports = {
                                         throw new Error(`Unable to apply ${column.expression} expression to ${column.fieldname} (${layerDescription.fields[key].type} type)`);
                                     }
 
-                                    block = `${column.fieldname} ${column.expression} ${column.value}`;
+                                    block = `"${column.fieldname}" ${column.expression} ${column.value}`;
                                     break;
                                 default:
                                     console.error(`Unable to process filter with type '${layerDescription.fields[key].type}'`);
@@ -3132,10 +3176,9 @@ module.exports = {
      *
      * @returns {Object}
      */
-    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true, parentPath = "") => {
+    createSubgroupRecord: (subgroup, forcedState, precheckedLayers, parentNode, level = 0, initiallyClosed = true) => {
         let base64SubgroupName = Base64.encode(`subgroup_${subgroup.id}_level_${level}_${uuidv4()}`).replace(/=/g, "");
-        const fullPath = parentPath ? `${parentPath}|${subgroup.id}` : subgroup.id;
-        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox, fullPath);
+        let markup = markupGeneratorInstance.getSubgroupControlRecord(base64SubgroupName, subgroup.id, level, window.vidiConfig.showLayerGroupCheckbox);
 
         $(parentNode).append(markup);
         $(parentNode).find(`[data-gc2-subgroup-id="${subgroup.id}"]`).find(`.js-subgroup-id`).append(`
@@ -3175,7 +3218,7 @@ module.exports = {
                     } = _self.checkIfLayerIsActive(forcedState, precheckedLayers, child.layer);
                     _self.createLayerRecord(child.layer, container, layerIsActive, activeLayerName, subgroup.id);
                 } else if (child.type === GROUP_CHILD_TYPE_GROUP) {
-                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel, true, fullPath);
+                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel);
                 } else {
                     throw new Error(`Invalid layer group`);
                 }
@@ -3620,7 +3663,9 @@ module.exports = {
                         if (document.getElementById(componentContainerId)) {
                             createRoot(document.getElementById(componentContainerId)).render(
                                 <LayerFilter
-                                    ref={instance => { filterComp[layerKey] = instance }}
+                                    ref={instance => {
+                                        filterComp[layerKey] = instance
+                                    }}
                                     layer={layer}
                                     layerMeta={meta.parseLayerMeta(layerKey)}
                                     presetFilters={presetFilters}
@@ -3963,9 +4008,34 @@ module.exports = {
         moduleState.fitBoundsActiveOnLayers[layerKey] = true;
     },
     onApplyDownloadHandler: (layerKey, format) => {
-        let whereClause = _self.getActiveLayerFilters(layerKey)[0];
-        let sql = `SELECT *
-                   FROM ${layerKey}`
+        let whereClause = _self.getActiveLayerFilters(layerKey)[0] ?? '1=1';
+        const metaByKey = meta.getMetaByKey(layerKey);
+        const versioning = metaByKey['versioning'];
+        if (versioning) {
+            whereClause += ` AND gc2_version_end_date is null`;
+        }
+        const cols = [];
+        let colsStr = '';
+        const fieldConf = JSON.parse(metaByKey['fieldconf']);
+        const pkey = metaByKey['pkey'];
+        if (fieldConf) {
+            Object.entries(metaByKey.fields).forEach(([i, val]) => {
+                if ( (fieldConf?.[i]?.querable === true ||
+                    (fieldConf?.[i]?.type === 'geometry' || i === pkey))
+                    && fieldConf?.[i]?.ignore !== true
+                ) {
+                    cols.push(i);
+                }
+            });
+            cols.sort((a, b) => {
+                return fieldConf[a].sort_id - fieldConf[b].sort_id;
+            });
+            colsStr = '"' + cols.join('","') + '"';
+        } else {
+            colsStr = '*';
+        }
+
+        let sql = `SELECT ${colsStr} FROM ${layerKey}`
         if (whereClause) {
             sql += ` WHERE ${whereClause}`;
         }

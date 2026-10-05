@@ -771,6 +771,9 @@ geocloud = (function () {
                     // Insert in tile pane, so non-tiled and tiled layers can be sorted
                     // options.pane = ;
                     url = url + '&cachebust=' + Math.random();
+                    // Render with <img> instead of <canvas>. A canvas drawn from a cross-origin
+                    // image is tainted, which makes screenshots (dom-to-image) fail on toDataURL()
+                    options.useCanvas = false;
                     l = new L.nonTiledLayer.wms(url, options);
                 } else {
                     l = new L.TileLayer.WMS(url, options);
@@ -783,6 +786,9 @@ geocloud = (function () {
                 }
                 if (defaults.loadingEvent) {
                     l.on("loading", defaults.loadingEvent);
+                }
+                if (defaults.tileErrorEvent) {
+                    l.on("tileerror", defaults.tileErrorEvent);
                 }
 
                 break;
@@ -2046,6 +2052,9 @@ geocloud = (function () {
             let l;
             if (conf?.singleTile) {
                 conf.pane = 'tilePane';
+                // Render with <img> instead of <canvas>. A canvas drawn from a cross-origin
+                // image is tainted, which makes screenshots (dom-to-image) fail on toDataURL()
+                conf.useCanvas = conf.useCanvas ?? false;
                 l = new L.nonTiledLayer.wms(url, conf);
             } else {
                 l = new L.TileLayer.WMS(url, conf);

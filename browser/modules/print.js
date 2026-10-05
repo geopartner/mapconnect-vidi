@@ -106,19 +106,19 @@ module.exports = {
         state.listen(MODULE_ID, `state_change`);
 
         // On init, load the print state from the application state if it exists
-        state.getState().then(applicationState => {
-            console.log("Application state loaded for print module", applicationState.modules.print, applicationState.modules.print.sticky);
-            if (typeof applicationState.modules.print !== "undefined") {
-                let params = applicationState.modules.print;
-                for (let i = 0; i < params.bounds.length; i++) {
-                    boxCount = i;
-                    _self.control(false,
-                        params.scales, params.tmpl, params.pageSize,
-                        params.orientation, params.legend,
-                        params.bounds[i], params.scale, params.title, params.comment, params.sticky, false);
-                }
-            }
-        });
+        //state.getState().then(applicationState => {
+        //    console.log("Application state loaded for print module", applicationState.modules.print, applicationState.modules.print.sticky);
+        //    if (typeof applicationState.modules.print !== "undefined") {
+        //        let params = applicationState.modules.print;
+        //        for (let i = 0; i < params.bounds.length; i++) {
+        //            boxCount = i;
+        //            _self.control(false,
+        //                params.scales, params.tmpl, params.pageSize,
+        //                params.orientation, params.legend,
+        //                params.bounds[i], params.scale, params.title, params.comment, params.sticky, false);
+        //        }
+        //    }
+        //});
 
         backboneEvents.get().on("end:print", function (response) {
             // When printing is done, show the download and open buttons

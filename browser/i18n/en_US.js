@@ -240,6 +240,7 @@ module.exports = {
         "Filter editor": "Filter editor",
         "Layer is visible": "Layer is visible",
         "Layer has filter": "Layer has filter",
+        "Layer has error": "Layer has error",
         "Parents": "Parents",
         "Children": "Children",
         "Back": "Back",
@@ -251,6 +252,8 @@ module.exports = {
         "Filter is required for showing data": "Filter is required for showing data",
         "More tools": "More tools",
         "Change layer type": "Change layer type",
+        "Creating download file": "Creating download file",
+        "File was downloaded": "File was downloaded",
 
         // Base layers
         "Side-by-side mode": "Side-by-side mode",

@@ -130,7 +130,7 @@ class ProjectComponent extends React.Component {
         // const hideDate = toDate === '' ? true : false;
         const now = new Date();
         const minDateTime = now.toISOString().slice(0, 16);
-
+        const showAffectedConsumers = this.props.showAffectedConsumers;
         const showNextStep = pipeSelected && !editProject;
         return (
             <>
@@ -215,6 +215,7 @@ class ProjectComponent extends React.Component {
                         type="text"
                     />
                 </div>
+                {showAffectedConsumers && (
                 <div className="row mx-auto g-2 my-1 align-items-center flex-nowrap" title={this.__("Include affected consumers")}>
                     <label className="col-4 col-form-label text-nowrap">
                         {this.__("Affected consumers")}
@@ -232,7 +233,7 @@ class ProjectComponent extends React.Component {
                     </div>
 
                     <div className="col-6"></div>
-                </div>
+                </div>)}
 
 
                 {!pipeSelected && (

@@ -91,7 +91,7 @@ router.post(
     //console.log(req.body.features)
     //console.log(req.body.db)
 
-    var session_error_message = "Fejl i session, prøv at logge ind igen.";
+    var session_error_message = "Fejl i session. Du kan være logget ind i den forkerte database, prøv at logge ind igen.";
 
     // Guard against no session
     if (!req.session) {
@@ -101,10 +101,8 @@ router.post(
     // If there is a session, log who
     console.log('documentCreateSendFeature:', 'Username',req.session.gc2UserName,'ParentDB:',req.session.parentDb,'Expires:', req.session.cookie._expires);
 
-    console.log(req.session)
-
-    // Guard against session with wrong parentdb (vmr)
-    if (req.session.parentDb != 'vmr') {
+    // Guard against session with wrong parentdb (vmr or e2e(test))
+    if (req.session.parentDb != 'vmr' && req.session.parentDb != 'e2e') {
       return response.status(500).send( session_error_message );
     }
 
@@ -540,14 +538,14 @@ function createAddressPart(dnTitle, adrguid) {
         //   values.esrejendomsnr,
         customData: {
           row: null,
-          oisvejkode: values.vejstykke.kode,
+          oisvejkode: values.kode,
 //          oisejendomsnr: values.esrejendomsnr,
-          oiskommunenr: values.kommune.kode,
-          oismatrikelnummer: values.matrikelnr,
+          oiskommunenr: values.kommunekode,
+          oismatrikelnummer: values.matrikelnummer,
           oisejerlav:
-            values.jordstykke.ejerlav.navn +
+            values.ejerlavsnavn +
             " (" +
-            values.jordstykke.ejerlav.kode +
+            values.ejerlavskode +
             ")",
         },
         account: "",
@@ -556,10 +554,10 @@ function createAddressPart(dnTitle, adrguid) {
         addresses: [
           {
             typeId: 1,
-            street: values.vejstykke.navn + " " + values.husnr,
+            street: values.vejnavn + " " + values.husnummertekst,
             region: "",
-            zip: values.postnummer.nr,
-            city: values.postnummer.navn,
+            zip: values.postnr,
+            city: values.navn,
             country: "",
             primary: true,
           },
@@ -724,7 +722,7 @@ function getFoldersDn(caseid, nodetype) {
 //https://dawa.aws.dk/adgangsadresser/0a3f5094-ae76-32b8-e044-0003ba298018
 function GetDawaAddress(adrguid) {
   var options = {
-    url: "https://dawa.aws.dk/adgangsadresser/" + adrguid,
+    url: "/api/datahub/adgangsadresse/" + adrguid,
     method: "GET",
   };
   return new Promise(function (resolve, reject) {

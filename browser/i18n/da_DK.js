@@ -240,6 +240,7 @@ module.exports = {
         "Filter editor": "Filter editor",
         "Layer is visible": "Laget er synligt",
         "Layer has filter": "Laget har filter",
+        "Layer has error": "Laget har fejl",
         "Parents": "Forældre",
         "Children": "Børn",
         "Back": "Tilbage",
@@ -251,6 +252,8 @@ module.exports = {
         "Filter is required for showing data": "Filter skal anvendes før data vises",
         "More tools": "Flere værktøjer",
         "Change layer type": "Skift lagtype",
+        "Creating download file": "Skaber download fil",
+        "File was downloaded": "Fil blev downloaded",
 
         // Base layers
         "Side-by-side mode": "Dobbelt baggrundskort",

@@ -104,6 +104,8 @@ router.get("/api/extension/blueidea/:userid", function (req, response) {
     forsyningsarter: user.forsyningsarter ? user.forsyningsarter : [],
     debug: user.debug ? user.debug : null,
     layersOnStart: user.layersOnStart ? user.layersOnStart : [],
+    snap_distance: user.snap_distance ? user.snap_distance : 1,
+    show_berorte: user.show_berorte ? user.show_berorte : false,
   };
 
   // Check if the database is correctly setup, and the session is allowed to access it
@@ -304,6 +306,7 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
         beregnaarsag,
         brud_status,
         sagstekst,
+        snap_distance,
         berorte
       )
       VALUES (
@@ -320,6 +323,7 @@ router.post("/api/extension/lukkeliste/:userid/query", function (req, response) 
         ${beregnaarsag},
         ${brud_status},
         '${sagstekst}',
+        ${req.body.snap_distance},
         ${req.body.berorte} 
       )
       RETURNING beregnuuid

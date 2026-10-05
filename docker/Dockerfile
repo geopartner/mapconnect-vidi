@@ -1,12 +1,13 @@
 ###############################################################################
 # Base image
 ###############################################################################
-FROM debian:bookworm-slim AS base
+FROM debian:trixie AS base
 LABEL maintainer="Martin Høgh <mh@mapcentia.com>"
 
 # Non-interactive mode for apt
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 # Install packages
 RUN apt-get -y update &&\

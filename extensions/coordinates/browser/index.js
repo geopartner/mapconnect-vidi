@@ -1,5 +1,5 @@
 /*
- * @author     Martin Høgh <mh@mapcentia.com>
+ * @author     Martin Høgh <mh@mapcentia.com>, Rene Borella <rgb@geopartner.dk>
  * @copyright  2013-2025 MapCentia ApS
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
@@ -283,7 +283,7 @@ module.exports = {
                         }
                         break;
                     case "utm":
-                        let z = utmZone.getZone(cloud.get().map.getCenter().lat, cloud.get().map.getCenter().lng);
+                        let z = lockedUtmZone || utmZone.getZone(cloud.get().map.getCenter().lat, cloud.get().map.getCenter().lng);
                         let crss = {
                             "source": "+proj=utm +zone=" + z + " +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
                             "dest": "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"

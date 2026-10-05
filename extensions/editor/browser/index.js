@@ -1322,10 +1322,8 @@ module.exports = {
                 method: 'GET',
                 url: '/connection-check.ico'
             }).done((data, textStatus, jqXHR) => {
-                if (jqXHR.statusText === 'ONLINE') {
+                if (jqXHR.statusText === 'OK') {
                     resolve();
-                } else if (jqXHR.statusText === 'OFFLINE') {
-                    reject();
                 } else {
                     console.warn(`Unable the determine the online status`);
                     reject();
