@@ -150,15 +150,24 @@ const adgangsadresseQuery = `
     ejerlavsnavn
 	FROM dar_datahub.vw_adgangsadresser_geom
 `;
-
 const jordstykkeAdresseQuery = `
-SELECT gid, samletfastejendomlokalid, 
-arealberegningsmetode, arealtype, 
-brugsretsareal, matrikelnummer, 
-ejerlavskode, ejerlavsnavn, kommunekode, 
-registreretareal, vejareal, vejarealberegningsstatus, 
-fredskov_areal, adresser
-	FROM dar_datahub.vw_jordstykke_adresse
+  SELECT
+    gid,
+    samletfastejendomlokalid,
+    arealberegningsmetode,
+    arealtype,
+    brugsretsareal,
+    matrikelnummer,
+    ejerlavskode,
+    ejerlavsnavn,
+    kommunekode,
+    registreretareal,
+    vejareal,
+    vejarealberegningsstatus,
+    fredskov_areal,
+    kvhx
+	FROM 
+    dar_datahub.vw_jordstykke_adresse
 `;
 
 
@@ -239,15 +248,15 @@ const queryJordstykkeByMatrAndElav = async (req, res, next) => {
 
   // Get the path parameters from the request
   var matr = req.params.matr;
-  var ejerlavkode = req.params.ejerlavkode;
+  var ejerlavskode = req.params.ejerlavskode;
 
-  // if matr and ejerlavkode is given in path, use it as filter
-  if (matr && ejerlavkode) {
+  // if matr and ejerlavskode is given in path, use it as filter
+  if (matr && ejerlavskode) {
     sql +=
       " WHERE matrikelnummer = '" +
       matr +
       "' AND ejerlavskode = " +
-      ejerlavkode +
+      ejerlavskode +
       " ";
   }
 
@@ -417,19 +426,19 @@ const queryJordstykkeadresse = async (req, res, next) => {
 
 
   // build the query
-  var sql = jordstykkeadresseQuery;
+  var sql = jordstykkeAdresseQuery;
 
   //console.log(req.params);
 
   // Get the path parameters from the request
-  var ejerlavkode = req.params.ejerlavkode;
+  var ejerlavskode = req.params.ejerlavskode;
   var matrikelnummer = req.params.matr;
 
-  // if ejerlavkode and matrikelnummer are given in path, use them as filter
+  // if ejerlavskode and matrikelnummer are given in path, use them as filter
   if (ejerlavskode && matrikelnummer) {
     sql +=
       " WHERE ejerlavskode = '" +
-      ejerlavkode +
+      ejerlavskode +
       "' AND matrikelnummer = '" +
       matrikelnummer +
       "' ";
@@ -452,7 +461,7 @@ const queryJordstykkeadresse = async (req, res, next) => {
 
 
 
-router.get("/api/datahub/jordstykkeadresse/:ejerlavkode/:matr", queryJordstykkeadresse);
+router.get("/api/datahub/jordstykkeadresse/:ejerlavskode/:matr", queryJordstykkeadresse);
 
 router.get("/api/datahub/adgangsadresse/:adrguid", queryAdgangsadresseByadrguid);
 
@@ -464,7 +473,7 @@ router.get("/api/datahub/:service/autocomplete", autocompleteSpoofer);
 router.post("/api/datahub/jordstykker/geojson", queryJordstykkeByFeatureCollection);
 
 router.get(
-  "/api/datahub/jordstykker/:ejerlavkode/:matr",
+  "/api/datahub/jordstykker/:ejerlavskode/:matr",
   queryJordstykkeByMatrAndElav
 );
 
