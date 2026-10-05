@@ -239,9 +239,10 @@ const findAddressesInMatrikel = async function (feature) {
 
     // Send the query to the server
     let response = await $.ajax({
-      url: "https://api.dataforsyningen.dk/adresser",
-      type: "GET",
-      data: query,
+      //url: "https://api.dataforsyningen.dk/adresser",
+      url: "/api/datahub/jordstykkeadresse/" + feature.properties.ejerlavkode + "/" + feature.properties.matrikelnr,
+      type: "GET"//,
+      //data: query,
     });
 
     return response;
@@ -1676,7 +1677,7 @@ module.exports = {
 
         // Merge the new adresse and matrilkel into the existing lists
         let newAdresser = Object.assign({}, me.state.results_adresser);
-        adresse.forEach((a) => {
+        adresse.features.forEach((a) => {
           newAdresser[a.kvhx] = a;
         });
 

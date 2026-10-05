@@ -426,9 +426,9 @@ const queryJordstykkeadresse = async (req, res, next) => {
   var matrikelnummer = req.params.matr;
 
   // if ejerlavkode and matrikelnummer are given in path, use them as filter
-  if (ejerlavkode && matrikelnummer) {
+  if (ejerlavskode && matrikelnummer) {
     sql +=
-      " WHERE ejerlavkode = '" +
+      " WHERE ejerlavskode = '" +
       ejerlavkode +
       "' AND matrikelnummer = '" +
       matrikelnummer +
