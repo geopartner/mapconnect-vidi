@@ -121,6 +121,7 @@ const jordstykkeQuery = `
   FROM 
     matrikel_datahub.vw_jordstykke
 `;
+
 const adgangsadresseQuery = `
   SELECT 
     gid as adrguid, 
@@ -150,6 +151,7 @@ const adgangsadresseQuery = `
     ejerlavsnavn
 	FROM dar_datahub.vw_adgangsadresser_geom
 `;
+
 const jordstykkeAdresseQuery = `
   SELECT
     gid,
@@ -165,11 +167,28 @@ const jordstykkeAdresseQuery = `
     vejareal,
     vejarealberegningsstatus,
     fredskov_areal,
+    adrguid,
+    registrering_fra,
+    registreringsaktoer,
+    registrering_til,
+    adressebetegnelse,
+    doerbetegnelse,
+    "dør",
+    etage,
+    bygning,
+    husnummer,
+    status, virkning_fra,
+    virkningsaktoer,
+    virkning_til,
+    adgangsadressebetegnelse,
+    husnummertekst,
+    vejnavn,
+    postnummer,
+    postnrnavn,
     kvhx
 	FROM 
     dar_datahub.vw_jordstykke_adresse
 `;
-
 
 const queryJordstykker = async (req, res, next) => {
   // This endpoint tries to mimics the DAWA endpoint, but uses the datahub instead
