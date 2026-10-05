@@ -91,7 +91,7 @@ router.post(
     //console.log(req.body.features)
     //console.log(req.body.db)
 
-    var session_error_message = "Fejl i session, prøv at logge ind igen.";
+    var session_error_message = "Fejl i session. Du kan være logget ind i den forkerte database, prøv at logge ind igen.";
 
     // Guard against no session
     if (!req.session) {
@@ -101,10 +101,8 @@ router.post(
     // If there is a session, log who
     console.log('documentCreateSendFeature:', 'Username',req.session.gc2UserName,'ParentDB:',req.session.parentDb,'Expires:', req.session.cookie._expires);
 
-    console.log(req.session)
-
-    // Guard against session with wrong parentdb (vmr)
-    if (req.session.parentDb != 'vmr') {
+    // Guard against session with wrong parentdb (vmr or e2e(test))
+    if (req.session.parentDb != 'vmr' && req.session.parentDb != 'e2e') {
       return response.status(500).send( session_error_message );
     }
 

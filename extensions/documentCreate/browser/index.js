@@ -653,8 +653,7 @@ var onSearchLoad = function () {
   resultLayer.clearLayers();
   resultLayer.addLayer(this.layer);
 
-  //this er retur-obj fra GC2.io, så der skal laves opslag til DAWA
-  console.log(this.geoJSON.features[0].properties.id);
+  //console.log(this.geoJSON.features[0].properties.id);
   filterKey = $("#documentCreate-custom-search").val();
   //find esr, adresseid og mere fra DAWA
   getEjdNr(this.geoJSON.features[0].properties.id);
@@ -699,38 +698,21 @@ var getEjdNr = function (adgangsadresseid) {
     async: false,
     success: function (data, status) {
       //console.log(data);
-      if (data.gid == null) {
+      if (data._rows <= 0) {
         //nothing.. return null
         return null;
-      } else {
+      } if (data._rows == 1) {
+        // just the one
+        bfenr = data.features[0].properties.bfenummer.toString();
 
-        // var bfe = $.ajax({
-        //   url: data.jordstykke.href,
-        //   type: "get",
-        //   async: false,
-        //   success: function (data, status) {
-        //     if (data.matrikelnr == null) {
-        //       //nothing.. return null
-        //       return null;
-        //     } else {
-        //       var bfe = data;
-        //       return bfe;
-        //     }
-        //   },
-        // });
-
-        bfenr = data.bfenummer.toString();
-        console.log("bfenr: ", bfenr);
+        //console.log("bfenr: ", bfenr);
+        //console.log("adgangsadresseid: ", adgangsadresseid);
 
         // Move information out into config
         for (let l in config.extensionConfig.documentCreate.tables) {
-          config.extensionConfig.documentCreate.tables[l].defaults.adgangsadresseid =
-            adgangsadresseid;
-          config.extensionConfig.documentCreate.tables[l].defaults.bfenr =
-            bfenr;
-            console.log("adgangsadresseid: ", adgangsadresseid);
+          config.extensionConfig.documentCreate.tables[l].defaults.adgangsadresseid = adgangsadresseid;
+          config.extensionConfig.documentCreate.tables[l].defaults.bfenr = bfenr;
         }
-
         return 1;
       }
     },
