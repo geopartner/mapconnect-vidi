@@ -176,14 +176,14 @@ const jordstykkeAdresseQuery = `
     "dør",
     etage,
     bygning,
-    husnummer,
+    husnummer as husnr,
     status, virkning_fra,
     virkningsaktoer,
     virkning_til,
     adgangsadressebetegnelse,
     husnummertekst,
     vejnavn,
-    postnummer,
+    postnummer as postnr,
     postnrnavn,
     kvhx
 	FROM 

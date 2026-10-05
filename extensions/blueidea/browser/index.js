@@ -234,15 +234,12 @@ const findAddressesInMatrikel = async function (feature) {
     let query = {
       ejerlavkode: feature.properties.ejerlavkode,
       matrikelnr: feature.properties.matrikelnr,
-      struktur: "flad",
     };
 
     // Send the query to the server
     let response = await $.ajax({
-      //url: "https://api.dataforsyningen.dk/adresser",
       url: "/api/datahub/jordstykkeadresse/" + feature.properties.ejerlavkode + "/" + feature.properties.matrikelnr,
-      type: "GET"//,
-      //data: query,
+      type: "GET"
     });
 
     return response;
@@ -1042,8 +1039,8 @@ module.exports = {
             // for each adresse in list, check if it is a kvhx, and add it to the merged list
             for (let j = 0; j < results[i].length; j++) {
               let feature = results[i][j];
-              if (feature.kvhx) {
-                merged[feature.kvhx] = feature;
+              if (feature.properties.kvhx) {
+                merged[feature.properties.kvhx] = feature.properties;
               }
             }
           }
@@ -1678,7 +1675,7 @@ module.exports = {
         // Merge the new adresse and matrilkel into the existing lists
         let newAdresser = Object.assign({}, me.state.results_adresser);
         adresse.features.forEach((a) => {
-          newAdresser[a.kvhx] = a;
+          newAdresser[a.properties.kvhx] = a.properties;
         });
 
         // Set the new state
