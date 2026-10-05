@@ -71,12 +71,37 @@ router.post("/api/extension/drift", function (req, response) {
     .catch(err => response.status(500).send(err));
 });
 
-router.get("/api/extension/mapstatus/GetActiveHenvendelser/:userId", function (req, response) {
+router.get("/api/extension/drift/GetActiveHenvendelser/:pagenumber/:pagesize", function (req, response) {
   if (!guard(req, response)) {
     return;
   }
+  const pageNumber = parseInt(req.params.pagenumber, 10);
+  const pageSize = parseInt(req.params.pagesize, 10);
   // const userId = req.params.userId;
-  const sql = `SELECT overskrift, placering, navn, problemtypeid, ansvarligid, kommentar, indberetningdato, haendelsedato, udkaldid, prioritetid, statusid, oprettetdato, oprettetid, gid,forsyningtypeid FROM ${SCHEMA}.${TABLEDATA} `;
+  //const sql = `SELECT overskrift, placering, navn, problemtypeid, ansvarligid, kommentar, indberetningdato, haendelsedato, udkaldid, prioritetid, statusid, oprettetdato, oprettetid, gid,forsyningtypeid,  COUNT(*) OVER () AS totalt_antal FROM ${SCHEMA}.${TABLEDATA} `;
+  const sql = `SELECT
+    ha.gid,
+    ha.overskrift,
+    ha.placering,
+    ha.navn,
+    lp.name as problemtype,
+    ha.ansvarligid,
+    ha.kommentar,
+    ha.indberetningdato,
+    ha.haendelsedato,
+    ha.udkaldid,
+    ha.prioritetid,
+    ha.statusid,
+    ha.oprettetdato,
+    ha.oprettetid,
+    ha.forsyningtypeid,
+	  ST_AsText(the_geom) as WKT,
+    COUNT(*) OVER () AS totalt_antal
+    FROM drift.henvendelse_aktiv ha
+    LEFT JOIN drift.listepost lp ON ha.problemtypeid = lp.id
+    LEFT JOIN drift.driftbruger db ON  ha.ansvarligid = db.id
+    OFFSET ${pageNumber * pageSize}
+    LIMIT ${pageSize}`
 
   SQLAPI(sql, req)
     .then((result) => {
