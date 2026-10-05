@@ -310,7 +310,9 @@ module.exports = {
         // Stop listening to any events, deactivate controls, but
         // keep effects of the module until they are deleted manually or reset:all is
         backboneEvents.get().on("deactivate:all", () => { });
-        this.getConfig();
+        this.getConfig().catch((e) => {
+          console.error("Error in getConfig:", e);
+        });
         // Activates module
         backboneEvents.get().on(`on:${exId}`, () => {
           //console.debug("Starting alarm");
@@ -327,7 +329,9 @@ module.exports = {
                 api.turnOn(layer);
               });
             }
-            return this.getConfig();
+            return this.getConfig().catch((e) => {
+              console.error("Error in getConfig:", e);
+            });
           } else {
             me.setState(resetObj);
           }
@@ -528,29 +532,29 @@ module.exports = {
         }
 
         if (status.hasKabelskab) {
-          const alarm_skabe_all = await me.getAlarmSkabe(config.extensionConfig.alarm.alarm_skab);
+          try {
+            const alarm_skabe_all = await me.getAlarmSkabe(config.extensionConfig.alarm.alarm_skab);
 
-          if (!alarm_skabe_all) {
-            return;
-          }
-          if (alarm_skabe_all && alarm_skabe_all.features.length > 0) {
-            try {
-              const alarm_skabe_options = me.createAlarmskabeOptions(alarm_skabe_all.features);
-              me.setState({
-                show_alarmskabe: true,
-                alarm_skab_layer: data.alarm_skab.layer ? data.alarm_skab.layer : null,
-                alarm_skab_key: data.alarm_skab.key ? data.alarm_skab.key : null,
-                alarm_skabe: alarm_skabe_options,
-                alarm_skabe_all: alarm_skabe_all.features,
-              });
-            } catch (e) {
-              me.createSnack("Error processing alarm skabe options");
+            if (!alarm_skabe_all) {
+              return;
             }
+            if (alarm_skabe_all && alarm_skabe_all.features.length > 0) {
+              try {
+                const alarm_skabe_options = me.createAlarmskabeOptions(alarm_skabe_all.features);
+                me.setState({
+                  show_alarmskabe: true,
+                  alarm_skab_layer: data.alarm_skab.layer ? data.alarm_skab.layer : null,
+                  alarm_skab_key: data.alarm_skab.key ? data.alarm_skab.key : null,
+                  alarm_skabe: alarm_skabe_options,
+                  alarm_skabe_all: alarm_skabe_all.features,
+                });
+              } catch (e) {
+                me.createSnack("Error processing alarm skabe options");
+              }
+            }
+          } catch (e) {
+            me.createSnack("Error fetching alarm skabe data");
           }
-
-
-
-
         }
       }
 
