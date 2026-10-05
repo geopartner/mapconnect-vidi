@@ -1,7 +1,6 @@
 /*
  * @author     Alexander Shumilov
- * @copyright  2013-2023 MapCentia ApS
- * @copyright  2026-     Geopartner Landinspektører A/S
+ * @copyright  2013-2023 MapCentia ApS, Rene Borella <rgb@geopartner.dk>
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -136,6 +135,32 @@ module.exports = {
             if (typeof filterComp[l] === "object") {
                 filterComp[l].setState({"arbitraryFilters": f});
             }
+        }
+
+        api.sqlFilter = (l, f) => {
+            moduleState.editorFilters[l] = [f];
+            moduleState.editorFiltersActive[l] = true;
+            _self.onApplyEditorFiltersHandler({"layerKey": l});
+            if (typeof filterComp[l] === "object") {
+                filterComp[l].setState({"editorFilters": [f]});
+                filterComp[l].setState({"editorFiltersActive": true});
+            }
+        }
+
+        api.resetFilters = (l) => {
+            const empty = {
+                    match: `any`,
+                    columns: [{
+                        fieldname: `null`,
+                        expression: `null`,
+                        value: ``
+                    }]
+                }
+            api.filter(l, empty);
+            api.sqlFilter(l, '');
+            filterComp[l].setState({"editorFiltersActive": false});
+            moduleState.editorFiltersActive[l] = false;
+            _self.onDisableArbitraryFiltersHandler(l)
         }
 
         return this;
@@ -2607,7 +2632,7 @@ module.exports = {
                                     if (column.value === `true`) value = `TRUE`;
                                     if (column.value === `false`) value = `FALSE`;
 
-                                    block = `${column.fieldname} ${column.expression} ${value}`;
+                                    block = `"${column.fieldname}" ${column.expression} ${value}`;
                                     break;
                                 case `date`:
                                 case `timestamp with time zone`:
@@ -2618,7 +2643,7 @@ module.exports = {
                                         throw new Error(`Unable to apply ${column.expression} expression to ${column.fieldname} (${layerDescription.fields[key].type} type)`);
                                     }
 
-                                    block = `${column.fieldname} ${column.expression} '${column.value}'`;
+                                    block = `"${column.fieldname}" ${column.expression} '${column.value}'`;
                                     break;
                                 case `text`:
                                 case `string`:
@@ -2630,9 +2655,9 @@ module.exports = {
                                     }
 
                                     if (column.expression === 'like') {
-                                        block = `${column.fieldname} ILIKE '%${column.value}%'`;
+                                        block = `"${column.fieldname}" ILIKE '%${column.value}%'`;
                                     } else {
-                                        block = `${column.fieldname} ${column.expression} '${column.value}'`;
+                                        block = `"${column.fieldname}" ${column.expression} '${column.value}'`;
                                     }
 
                                     break;
@@ -2647,7 +2672,7 @@ module.exports = {
                                         throw new Error(`Unable to apply ${column.expression} expression to ${column.fieldname} (${layerDescription.fields[key].type} type)`);
                                     }
 
-                                    block = `${column.fieldname} ${column.expression} ${column.value}`;
+                                    block = `"${column.fieldname}" ${column.expression} ${column.value}`;
                                     break;
                                 default:
                                     console.error(`Unable to process filter with type '${layerDescription.fields[key].type}'`);
