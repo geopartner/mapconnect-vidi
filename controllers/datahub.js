@@ -151,6 +151,17 @@ const adgangsadresseQuery = `
 	FROM dar_datahub.vw_adgangsadresser_geom
 `;
 
+const jordstykkeAdresseQuery = `
+SELECT gid, samletfastejendomlokalid, 
+arealberegningsmetode, arealtype, 
+brugsretsareal, matrikelnummer, 
+ejerlavskode, ejerlavsnavn, kommunekode, 
+registreretareal, vejareal, vejarealberegningsstatus, 
+fredskov_areal, adresser
+	FROM dar_datahub.vw_jordstykke_adresse
+`;
+
+
 const queryJordstykker = async (req, res, next) => {
   // This endpoint tries to mimics the DAWA endpoint, but uses the datahub instead
 
@@ -399,6 +410,49 @@ const queryAdgangsadresseByadrguid = async (req, res, next) => {
     res.status(500).json({ error: error });
   }
 };
+
+
+const queryJordstykkeadresse = async (req, res, next) => {
+  // This endpoint queries jordstykkeadresse by ejerlavkode and matrikelnummer and returns jordstykke records, incl adresse information
+
+
+  // build the query
+  var sql = jordstykkeadresseQuery;
+
+  //console.log(req.params);
+
+  // Get the path parameters from the request
+  var ejerlavkode = req.params.ejerlavkode;
+  var matrikelnummer = req.params.matr;
+
+  // if ejerlavkode and matrikelnummer are given in path, use them as filter
+  if (ejerlavkode && matrikelnummer) {
+    sql +=
+      " WHERE ejerlavkode = '" +
+      ejerlavkode +
+      "' AND matrikelnummer = '" +
+      matrikelnummer +
+      "' ";
+  }
+
+  // Return the result of the query from datahub
+  try {
+    const result = await queryDatahub(sql);
+
+    // if no result, or result.success is false, return error
+    if (!result || !result._success) {
+      return res.status(500).json({ error: result._message, q: sql });
+    }
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error });
+  }
+};
+
+
+
+router.get("/api/datahub/jordstykkeadresse/:ejerlavkode/:matr", queryJordstykkeadresse);
 
 router.get("/api/datahub/adgangsadresse/:adrguid", queryAdgangsadresseByadrguid);
 
