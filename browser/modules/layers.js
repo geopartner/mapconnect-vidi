@@ -324,6 +324,7 @@ module.exports = {
                             let canvasHasData = false;
                             if ((window.vidiConfig.mode & NO_VISIBILITY_CHECK) === 0) {
                                 if (!tiled) {
+                                    console.log(e.target.id, e.target._bufferCanvas)
                                     // Single tiles layers are canvas, so it can be used directly
                                     if (e.target.id && e.target._bufferCanvas) {
                                         try {
@@ -333,6 +334,10 @@ module.exports = {
                                         } catch (e) {
                                             canvasHasData = true; // In case of Internet Explorer
                                         }
+                                    }
+                                    // BUG: Due to changes in screenshot (singletile -> <img>), canvasHasData broke = no infoClick possible for single tile layers
+                                    else {
+                                        canvasHasData = true; // No canvas available, assume data
                                     }
                                 } else {
                                     // For tiled layer we loop through images and turn them into canvas
