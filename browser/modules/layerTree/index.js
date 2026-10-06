@@ -3219,7 +3219,7 @@ module.exports = {
                     } = _self.checkIfLayerIsActive(forcedState, precheckedLayers, child.layer);
                     _self.createLayerRecord(child.layer, container, layerIsActive, activeLayerName, subgroup.id);
                 } else if (child.type === GROUP_CHILD_TYPE_GROUP) {
-                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel);
+                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel, initiallyClosed, fullPath);
                 } else {
                     throw new Error(`Invalid layer group`);
                 }
@@ -4345,8 +4345,12 @@ module.exports = {
                     return false;
                 }).length;
                 activeLayersInSubGroups += activeLayers.filter(e => JSON.parse(metaDataKeys[layerTreeUtils.stripPrefix(e)].meta)?.vidi_sub_group?.match(re) && metaDataKeys[layerTreeUtils.stripPrefix(e)].layergroup === layerGroup).length;
-                const searchPath = `[data-gc2-group-id="${layerGroup}"]` + ' ' + split.map(e => `[data-gc2-subgroup-id="${e}"]`).join(' ') + ` [data-gc2-subgroup-name="${split[split.length - 1]}"]`;
-                const el = document.querySelector(searchPath);
+                //const searchPath = `[data-gc2-group-id="${layerGroup}"]` + ' ' + split.map(e => `[data-gc2-subgroup-id="${e}"]`).join(' ') + ` [data-gc2-subgroup-name="${split[split.length - 1]}"]`;
+                //const el = document.querySelector(searchPath);
+
+                const fullPath = split.join('|');
+                const el = document.querySelector(`[data-gc2-group-id="${layerGroup}"] [data-gc2-subgroup-path="${fullPath}"] input[type="checkbox"]`);
+
                 if (el) {
                     el.indeterminate = activeLayersInSubGroups > 0 && !(activeLayersInSubGroups === layersInSubGroups);
                     el.checked = activeLayersInSubGroups > 0;

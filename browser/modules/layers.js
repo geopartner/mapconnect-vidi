@@ -324,7 +324,6 @@ module.exports = {
                             let canvasHasData = false;
                             if ((window.vidiConfig.mode & NO_VISIBILITY_CHECK) === 0) {
                                 if (!tiled) {
-                                    console.log(e.target.id, e.target._bufferCanvas)
                                     // Single tiles layers are canvas, so it can be used directly
                                     if (e.target.id && e.target._bufferCanvas) {
                                         try {
