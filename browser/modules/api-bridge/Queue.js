@@ -114,7 +114,8 @@ class Queue {
                 method: 'GET',
                 url: '/connection-check.ico'
             }).done((data, textStatus, jqXHR) => {
-                if (jqXHR.statusText === 'ONLINE') {
+                //console.log(`Connection check: ${jqXHR.statusText}`);
+                if (jqXHR.statusText === 'ONLINE' || jqXHR.statusText === 'OK') {
                     if (_self._online === false) {
                         _self._online = true;
 
