@@ -1,5 +1,5 @@
 /*
- * @author     Martin Høgh <mh@mapcentia.com>
+ * @author     Martin Høgh <mh@mapcentia.com>, rgb <rgb@geopartner.dk>
  * @copyright  2013-2023 MapCentia ApS
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
@@ -747,6 +747,7 @@ module.exports = module.exports = {
                         maxNativeZoom: BLmaxNativeZoom,
                         singleTile: bl?.singleTile,
                         version: bl?.version ?? '1.1.1',
+                        crossOrigin: bl?.crossOrigin,
                     });
                 } else {
                     result = cloud.get().addBaseLayer(bl.id, bl.db, {
