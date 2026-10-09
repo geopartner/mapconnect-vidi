@@ -44,7 +44,7 @@ let drawControl = null;
 let nodeManager = null;
 let pipeManager = null;
 
-
+var config = require("../../../config/config.js");
 let meta;
 let sqlQuery;
 var layerTree = require("./../../../browser/modules/layerTree");
