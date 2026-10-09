@@ -205,10 +205,11 @@ module.exports = module.exports = {
      * @param {Boolean} forceReload   Specifies if the layer reload should be perfromed
      * @param {Boolean} doNotLegend   Specifies if legend should be re-generated
      * @param {Boolean} setupControls Specifies if layerTree controls should be setup
+     * @param {Object}  failedBefore  Specifies if layer loading previously failed (used in recursive init() calling)
      *
      * @returns {Promise}
      */
-    enableRasterTile: (gc2Id, forceReload, doNotLegend, setupControls) => {
+    enableRasterTile: (gc2Id, forceReload, doNotLegend, setupControls, failedBefore) => {
         if (LOG) console.log(`switchLayer: enableRasterTile ${gc2Id}`);
         return new Promise((resolve, reject) => {
             // Only one layer at a time, so using the raster tile layer identifier
@@ -257,27 +258,32 @@ module.exports = module.exports = {
                     console.warn(`Unable to add layer ${gc2Id}, trying to get meta for it`);
                 }
 
-                _self.loadMissingMeta(gc2Id).then(() => {
-                    // Trying to recreate the layer tree with updated meta and switch layer again
-                    layerTree.create().then(() => {
-                        // All layers are guaranteed to exist in meta
-                        let currentLayers = layers.getLayers();
-                        if (currentLayers && Array.isArray(currentLayers)) {
-                            layers.getLayers().split(',').map(layerToActivate => {
-                                _self.checkLayerControl(layerToActivate, doNotLegend, setupControls);
-                            });
-                        }
-
-                        _self.init(gc2Id, true).then(() => {
-                            _self.enableCheckBoxesOnChildren(gc2Id);
-                            resolve();
-                        });
-                    });
-                }).catch(() => {
-                    console.error(`Could not add ${gc2Id} raster tile layer`);
+                if (failedBefore !== false) {
+                    console.error(`Could not add ${gc2Id} raster tile layer (recursion detected)`);
                     layers.decrementCountLoading(gc2Id);
                     resolve();
-                });
+                } else {
+                    _self.loadMissingMeta(gc2Id).then(() => {
+                        // Trying to recreate the layer tree with updated meta and switch layer again
+                        layerTree.create().then(() => {
+                            // All layers are guaranteed to exist in meta
+                            let currentLayers = layers.getLayers();
+                            if (currentLayers && Array.isArray(currentLayers)) {
+                                layers.getLayers().split(',').map(layerToActivate => {
+                                    _self.checkLayerControl(layerToActivate, doNotLegend, setupControls);
+                                });
+                            }
+                            _self.init(gc2Id, true, doNotLegend, forceReload, setupControls, { reason: 'RASTER_TILE_RETRY' }).then(() => {
+                                _self.enableCheckBoxesOnChildren(gc2Id);
+                                resolve();
+                            });
+                        });
+                    }).catch(() => {
+                        console.error(`Could not add ${gc2Id} raster tile layer`);
+                        layers.decrementCountLoading(gc2Id);
+                        resolve();
+                    });
+                }
             });
         });
     },
@@ -542,7 +548,7 @@ module.exports = module.exports = {
                 } else if (name.startsWith(LAYER.WEBGL + ':')) {
                     _self.enableWebGL(gc2Id, doNotLegend, setupControls, failedBefore).then(resolve);
                 } else {
-                    _self.enableRasterTile(gc2Id, forceReload, doNotLegend, setupControls).then(resolve);
+                    _self.enableRasterTile(gc2Id, forceReload, doNotLegend, setupControls, failedBefore).then(resolve);
                 }
                 cloud.get().map.getPane(pane).style.zIndex = sortId + 10000;
                 layers.reorderLayers();
