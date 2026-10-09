@@ -86,7 +86,7 @@ module.exports = {
 | profileid        | obj     |         | Objekt med profilid & alias                                                             |
 | forsyningsarter  | array   |         | Navnet på layeret hvor ventil-lukkeliste skal findes                                    |
 | layersOnStart    | array   |         | Liste med lag der skal tændes når modulet starter. bliver slukket når modulet slukkes   |
-| show_berorte     | boolean | `False` | Styrer om toggle for "BeIndirekte forbrugere" i brugerfladen                            |
+| show_berorte     | boolean | `False` | Styrer om toggle for "Indirekte forbrugere" i brugerfladen                            |
 | snap_distance    | number  | 1       | distance der bruges i søgningen i mod ledningsnettet                                    |
 
 
