@@ -2,6 +2,10 @@
 
 Large and breaking changes and additions made will be reflected by the date which they are deployed to production.
 
+## 2026-10-12
+- upload shape bug fixed
+
+
 ## 2026-10-01
 - new config  `show_berorte` for lukkeplan. Control displaying  toggle for including indirect customer      
 - new config `snap_distance` for lukkeplan. Control the distance when analyzing the network
