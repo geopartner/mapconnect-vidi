@@ -464,8 +464,9 @@ var gc2table = (function () {
                                         <img style='width:25px' src="${srcVal}"/>
                                      </div>`;
                             }
-                        } else if (k.dataIndex === n && (k?.restrictions && (layerClone[n] && layerClone[n] !== ''))) {
-                            // Replace the value with the corresponding alias from the restrictions array if it exists
+                        } else if (k.dataIndex === n && (k?.restrictions && (layerClone[n] !== null && layerClone[n] !== undefined && layerClone[n] !== ''))) {
+                            // Replace the value with the corresponding alias from the restrictions array if it exists.
+                            // 0 is a valid code (e.g. id 0 = "Ukendt" in a code list), so only skip null/undefined/''.
                             let restriction = k.restrictions.find(restriction => restriction.value === layerClone[n]);
                             if (restriction) {
                                 // replace value with alias

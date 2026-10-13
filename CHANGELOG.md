@@ -2,6 +2,10 @@
 
 Large and breaking changes and additions made will be reflected by the date which they are deployed to production.
 
+## Unreleased
+- feature-info table: a code-list value of 0 (e.g. "Ukendt") is now shown with its text from the field's
+  restrictions (Egenskaber `_rel` / value list) instead of "0"
+
 ## 2026-10-12
 - upload shape bug fixed
 
