@@ -121,33 +121,73 @@ const jordstykkeQuery = `
   FROM 
     matrikel_datahub.vw_jordstykke
 `;
+
 const adgangsadresseQuery = `
-SELECT gid as adrguid, 
-id_lokalid, 
-registrering_fra, 
-registreringsaktoer, 
-registrering_til, 
-geo_danmark_bygning, 
-status, 
-virkning_fra, 
-virkningsaktoer, 
-virkning_til, 
-adgangsadressebetegnelse, 
-husnummertekst, 
-vejnavn, 
-postnr, 
-navn, 
-kommuneinddeling, 
-adgangsadresseurl, 
-the_geom,
-matrikelnummer, 
-ejerlavskode, 
-kommunenavn, 
-kommunekode, 
-vejkode, 
-bfenummer,
-ejerlavsnavn
+  SELECT 
+    gid as adrguid, 
+    id_lokalid, 
+    registrering_fra, 
+    registreringsaktoer, 
+    registrering_til, 
+    geo_danmark_bygning, 
+    status, 
+    virkning_fra, 
+    virkningsaktoer, 
+    virkning_til, 
+    adgangsadressebetegnelse, 
+    husnummertekst, 
+    vejnavn, 
+    postnr, 
+    navn, 
+    kommuneinddeling, 
+    adgangsadresseurl, 
+    the_geom,
+    matrikelnummer, 
+    ejerlavskode, 
+    kommunenavn, 
+    kommunekode, 
+    vejkode, 
+    bfenummer,
+    ejerlavsnavn
 	FROM dar_datahub.vw_adgangsadresser_geom
+`;
+
+const jordstykkeAdresseQuery = `
+  SELECT
+    gid,
+    samletfastejendomlokalid,
+    arealberegningsmetode,
+    arealtype,
+    brugsretsareal,
+    matrikelnummer,
+    ejerlavskode,
+    ejerlavsnavn,
+    kommunekode,
+    registreretareal,
+    vejareal,
+    vejarealberegningsstatus,
+    fredskov_areal,
+    adrguid,
+    registrering_fra,
+    registreringsaktoer,
+    registrering_til,
+    adressebetegnelse,
+    doerbetegnelse,
+    "dør",
+    etage,
+    bygning,
+    husnummer as husnr,
+    status, virkning_fra,
+    virkningsaktoer,
+    virkning_til,
+    adgangsadressebetegnelse,
+    husnummertekst,
+    vejnavn,
+    postnummer as postnr,
+    postnrnavn,
+    kvhx
+	FROM 
+    dar_datahub.vw_jordstykke_adresse
 `;
 
 const queryJordstykker = async (req, res, next) => {
@@ -227,15 +267,15 @@ const queryJordstykkeByMatrAndElav = async (req, res, next) => {
 
   // Get the path parameters from the request
   var matr = req.params.matr;
-  var ejerlavkode = req.params.ejerlavkode;
+  var ejerlavskode = req.params.ejerlavskode;
 
-  // if matr and ejerlavkode is given in path, use it as filter
-  if (matr && ejerlavkode) {
+  // if matr and ejerlavskode is given in path, use it as filter
+  if (matr && ejerlavskode) {
     sql +=
       " WHERE matrikelnummer = '" +
       matr +
       "' AND ejerlavskode = " +
-      ejerlavkode +
+      ejerlavskode +
       " ";
   }
 
@@ -399,6 +439,49 @@ const queryAdgangsadresseByadrguid = async (req, res, next) => {
   }
 };
 
+
+const queryJordstykkeadresse = async (req, res, next) => {
+  // This endpoint queries jordstykkeadresse by ejerlavkode and matrikelnummer and returns jordstykke records, incl adresse information
+
+
+  // build the query
+  var sql = jordstykkeAdresseQuery;
+
+  //console.log(req.params);
+
+  // Get the path parameters from the request
+  var ejerlavskode = req.params.ejerlavskode;
+  var matrikelnummer = req.params.matr;
+
+  // if ejerlavskode and matrikelnummer are given in path, use them as filter
+  if (ejerlavskode && matrikelnummer) {
+    sql +=
+      " WHERE ejerlavskode = '" +
+      ejerlavskode +
+      "' AND matrikelnummer = '" +
+      matrikelnummer +
+      "' ";
+  }
+
+  // Return the result of the query from datahub
+  try {
+    const result = await queryDatahub(sql);
+
+    // if no result, or result.success is false, return error
+    if (!result || !result._success) {
+      return res.status(500).json({ error: result._message, q: sql });
+    }
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error });
+  }
+};
+
+
+
+router.get("/api/datahub/jordstykkeadresse/:ejerlavskode/:matr", queryJordstykkeadresse);
+
 router.get("/api/datahub/adgangsadresse/:adrguid", queryAdgangsadresseByadrguid);
 
 router.get("/api/datahub/jordstykker", queryJordstykker);
@@ -409,7 +492,7 @@ router.get("/api/datahub/:service/autocomplete", autocompleteSpoofer);
 router.post("/api/datahub/jordstykker/geojson", queryJordstykkeByFeatureCollection);
 
 router.get(
-  "/api/datahub/jordstykker/:ejerlavkode/:matr",
+  "/api/datahub/jordstykker/:ejerlavskode/:matr",
   queryJordstykkeByMatrAndElav
 );
 

@@ -771,6 +771,10 @@ geocloud = (function () {
                     // Insert in tile pane, so non-tiled and tiled layers can be sorted
                     // options.pane = ;
                     url = url + '&cachebust=' + Math.random();
+                    // Load the image with CORS so the canvas it is drawn into is not tainted.
+                    // A tainted canvas makes toDataURL() (screenshots) and getImageData()
+                    // (data visibility check) throw a SecurityError. Set crossOrigin: false to disable.
+                    options.crossOrigin = defaults.crossOrigin ?? 'anonymous';
                     l = new L.nonTiledLayer.wms(url, options);
                 } else {
                     l = new L.TileLayer.WMS(url, options);
@@ -2049,6 +2053,10 @@ geocloud = (function () {
             let l;
             if (conf?.singleTile) {
                 conf.pane = 'tilePane';
+                // Load the image with CORS so the canvas it is drawn into is not tainted.
+                // A tainted canvas makes toDataURL() in dom-to-image (screenshots) throw a
+                // SecurityError. Set crossOrigin: false on the base layer in config to disable.
+                conf.crossOrigin = conf.crossOrigin ?? 'anonymous';
                 l = new L.nonTiledLayer.wms(url, conf);
             } else {
                 l = new L.TileLayer.WMS(url, conf);

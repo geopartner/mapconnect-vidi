@@ -1123,10 +1123,21 @@ module.exports = {
      * @param popup {object}
      */
     makeDraggable: (popup) => {
-        const map = cloud.get().map
-        const draggable = new L.Draggable(popup._container, popup._wrapper);
-        // change cursor class
-        $(".leaflet-popup-content-wrapper").css('cursor', 'move');
+        const map = cloud.get().map;
+        
+        // Create a dedicated header element for dragging
+        const header = document.createElement('div');
+        header.className = 'leaflet-popup-drag-header';
+        header.style.cssText = 'cursor: move; padding: 8px 12px; background: var(--bs-secondary-bg-subtle); border: 1px solid var(--bs-secondary-bg-subtle);';
+        header.innerHTML = '<strong style="font-size: 12px; color: #666;"></strong>';
+        
+        // Insert header at the top of the popup content wrapper
+        const contentWrapper = popup._wrapper;
+        contentWrapper.insertBefore(header, contentWrapper.firstChild);
+        
+        // Use header as the drag handle
+        const draggable = new L.Draggable(popup._container, header);
+        
         draggable.on('dragstart', function (e) {
             //on first drag, remove the pop-up tip
             $(".leaflet-popup-tip-container").hide();

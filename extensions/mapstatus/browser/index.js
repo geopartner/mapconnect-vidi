@@ -44,7 +44,7 @@ let drawControl = null;
 let nodeManager = null;
 let pipeManager = null;
 
-
+var config = require("../../../config/config.js");
 let meta;
 let sqlQuery;
 var layerTree = require("./../../../browser/modules/layerTree");
@@ -161,7 +161,7 @@ module.exports = {
         utils.createMainTab(exId, utils.__("MapStatus", dict), utils.__("Info", dict), require('./../../../browser/modules/height')().max, "bi bi-layout-text-window");
        
         function nodeFilterFunction(feature) {
-            const allowedTypes = config.extensionConfig?.mapstatus?.knudeType || ["Brønd", "Sandfang"];
+            const allowedTypes = config?.extensionConfig?.mapstatus?.knudeType || ["Brønd", "Sandfang"];
             return allowedTypes.includes(feature.properties.knudetype);
         }
         nodeManager = new SelectedFeaturesManager(

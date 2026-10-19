@@ -1,7 +1,6 @@
 /*
- * @author     Martin Høgh <mh@mapcentia.com>
+ * @author     Martin Høgh <mh@mapcentia.com>, rgb <rgb@geopartner.dk>
  * @copyright  2013-2018 MapCentia ApS
- * @copyright  2026-     Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -254,6 +253,7 @@ module.exports = {
         "Change layer type": "Change layer type",
         "Creating download file": "Creating download file",
         "File was downloaded": "File was downloaded",
+        "No fields to export": "No fields to export",
 
         // Base layers
         "Side-by-side mode": "Side-by-side mode",

@@ -15,6 +15,70 @@
 
 </div>
 <script>
+    // Define helper functions first
+    function clearAuthData() {
+        // Clear all authentication-related data
+        localStorage.removeItem('gc2_tokens');
+        localStorage.removeItem('gc2_nonce');
+        localStorage.removeItem('gc2_selected_db');
+        localStorage.removeItem('gc2_selected_superuser');
+        localStorage.removeItem('gc2_db_param');
+        
+        // Clear authentication-related cookies
+        const cookies = document.cookie.split(';');
+        cookies.forEach(cookie => {
+            const cookieName = cookie.split('=')[0].trim();
+            if (cookieName.toLowerCase().includes('auth') || 
+                cookieName.toLowerCase().includes('token') || 
+                cookieName.toLowerCase().includes('session') ||
+                cookieName.toLowerCase().includes('oidc')) {
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
+            }
+        });
+        
+        // Clear the CodeFlow state
+        if (typeof codeFlow?.clear === 'function') {
+            codeFlow.clear();
+        }
+    }
+    
+    function showError(message) {
+        const container = document.getElementById('container');
+        container.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'container p-3';
+        
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger';
+        alert.innerHTML = `<strong>Authentication Error:</strong><br>${message}`;
+        wrap.appendChild(alert);
+        
+        const text = document.createElement('p');
+        text.textContent = 'Clearing authentication data and restarting login process...';
+        wrap.appendChild(text);
+        
+        container.appendChild(wrap);
+        
+        // Clear auth data and restart after a brief delay
+        setTimeout(() => {
+            clearAuthData();
+            // Reload to restart the login process
+            window.location.href = window.location.origin + '/openid.html';
+        }, 2000);
+    }
+    
+    function handleRefreshTokenError(error) {
+        const errorStr = error.toString().toLowerCase();
+        if (errorStr.includes('refresh token') || 
+            errorStr.includes('could not get refresh token')) {
+            console.error('Refresh token error detected. Clearing auth data and restarting login...');
+            showError('Could not get refresh token. Clearing authentication data and restarting login process...');
+            return true;
+        }
+        return false;
+    }
+
     // Deafult to GC2 OAuth2 configuration
     const DEFAULTS = {
         redirectUri: window.location.origin + '/openid.html',
@@ -199,14 +263,15 @@
 
     codeFlow.redirectHandle().then(async isSignedIn => {
         if (isSignedIn) {
-            const token = JSON.parse(localStorage.getItem('gc2_tokens') || '{}')['accessToken']
-            const nonce = localStorage.getItem('gc2_nonce')
-            const {database, superuser} = jwtDecode(token)
-            if (!database) {
-                alert(`No database set in token. Please contact the administrator.`)
-                if (typeof codeFlow.clear === 'function') codeFlow.clear()
-                return
-            }
+            try {
+                const token = JSON.parse(localStorage.getItem('gc2_tokens') || '{}')['accessToken']
+                const nonce = localStorage.getItem('gc2_nonce')
+                const {database, superuser} = jwtDecode(token)
+                if (!database) {
+                    showError(`No database set in token. Please contact the administrator.`)
+                    if (typeof codeFlow.clear === 'function') codeFlow.clear()
+                    return
+                }
             let allowedDatabases
             let databasesWithSuperuser
 
@@ -265,6 +330,13 @@
             }
 
             proceed(token, nonce, selectedDb, false)
+            } catch (tokenError) {
+                console.error('Token processing error:', tokenError);
+                if (handleRefreshTokenError(tokenError)) {
+                    return;
+                }
+                showError(`Token error: ${tokenError.message}`);
+            }
 
         } else {
             // If nonce is not set, get it from the server, so it can be used in the sign-in request
@@ -279,8 +351,13 @@
             }
         }
     }).catch(err => {
-        alert(err)
-        // location.reload()
+        console.error('OAuth flow error:', err);
+        // Check if this is a refresh token error
+        if (handleRefreshTokenError(err)) {
+            return; // handleRefreshTokenError already displays the error and handles the flow
+        }
+        // For other errors, show alert
+        showError(err.toString());
     })
     const getDatabases = () => {
         return fetch(oidcConfig.host + '/api/v2/database/search?userIdentifier=*').then(res => res.json()).then(data =>

@@ -334,6 +334,10 @@ module.exports = {
                                             canvasHasData = true; // In case of Internet Explorer
                                         }
                                     }
+                                    // BUG: Due to changes in screenshot (singletile -> <img>), canvasHasData broke = no infoClick possible for single tile layers
+                                    else {
+                                        canvasHasData = true; // No canvas available, assume data
+                                    }
                                 } else {
                                     // For tiled layer we loop through images and turn them into canvas
                                     for (const obj in e.target._tiles) {

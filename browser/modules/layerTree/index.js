@@ -1,7 +1,6 @@
 /*
  * @author     Alexander Shumilov
- * @copyright  2013-2023 MapCentia ApS
- * @copyright  2026-     Geopartner Landinspektører A/S
+ * @copyright  2013-2023 MapCentia ApS, Rene Borella <rgb@geopartner.dk>
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -47,6 +46,7 @@ import {
 import MetaSettingForm from "./MetaSettingForm";
 import Download from './Download';
 import {getResolutions} from "../crs";
+import {createRoot} from 'react-dom/client';
 import {createRoot} from 'react-dom/client';
 import config from '../../../config/config';
 
@@ -136,6 +136,32 @@ module.exports = {
             if (typeof filterComp[l] === "object") {
                 filterComp[l].setState({"arbitraryFilters": f});
             }
+        }
+
+        api.sqlFilter = (l, f) => {
+            moduleState.editorFilters[l] = [f];
+            moduleState.editorFiltersActive[l] = true;
+            _self.onApplyEditorFiltersHandler({"layerKey": l});
+            if (typeof filterComp[l] === "object") {
+                filterComp[l].setState({"editorFilters": [f]});
+                filterComp[l].setState({"editorFiltersActive": true});
+            }
+        }
+
+        api.resetFilters = (l) => {
+            const empty = {
+                    match: `any`,
+                    columns: [{
+                        fieldname: `null`,
+                        expression: `null`,
+                        value: ``
+                    }]
+                }
+            api.filter(l, empty);
+            api.sqlFilter(l, '');
+            filterComp[l].setState({"editorFiltersActive": false});
+            moduleState.editorFiltersActive[l] = false;
+            _self.onDisableArbitraryFiltersHandler(l)
         }
 
         return this;
@@ -350,9 +376,21 @@ module.exports = {
                             bootstrap.Collapse.getInstance(el)?.dispose();
                         } catch (e) {
                         }
+                        try {
+                            bootstrap.Collapse.getInstance(el)?.dispose();
+                        } catch (e) {
+                        }
                     }
                     el.replaceWith(el.cloneNode(false));
                 });
+            }
+            try {
+                vectorPopUp.off();
+            } catch (e) {
+            }
+            try {
+                vectorPopUp.closePopup();
+            } catch (e) {
             }
             try {
                 vectorPopUp.off();
@@ -2607,7 +2645,7 @@ module.exports = {
                                     if (column.value === `true`) value = `TRUE`;
                                     if (column.value === `false`) value = `FALSE`;
 
-                                    block = `${column.fieldname} ${column.expression} ${value}`;
+                                    block = `"${column.fieldname}" ${column.expression} ${value}`;
                                     break;
                                 case `date`:
                                 case `timestamp with time zone`:
@@ -2618,7 +2656,7 @@ module.exports = {
                                         throw new Error(`Unable to apply ${column.expression} expression to ${column.fieldname} (${layerDescription.fields[key].type} type)`);
                                     }
 
-                                    block = `${column.fieldname} ${column.expression} '${column.value}'`;
+                                    block = `"${column.fieldname}" ${column.expression} '${column.value}'`;
                                     break;
                                 case `text`:
                                 case `string`:
@@ -2630,9 +2668,9 @@ module.exports = {
                                     }
 
                                     if (column.expression === 'like') {
-                                        block = `${column.fieldname} ILIKE '%${column.value}%'`;
+                                        block = `"${column.fieldname}" ILIKE '%${column.value}%'`;
                                     } else {
-                                        block = `${column.fieldname} ${column.expression} '${column.value}'`;
+                                        block = `"${column.fieldname}" ${column.expression} '${column.value}'`;
                                     }
 
                                     break;
@@ -2647,7 +2685,7 @@ module.exports = {
                                         throw new Error(`Unable to apply ${column.expression} expression to ${column.fieldname} (${layerDescription.fields[key].type} type)`);
                                     }
 
-                                    block = `${column.fieldname} ${column.expression} ${column.value}`;
+                                    block = `"${column.fieldname}" ${column.expression} ${column.value}`;
                                     break;
                                 default:
                                     console.error(`Unable to process filter with type '${layerDescription.fields[key].type}'`);
@@ -3193,7 +3231,7 @@ module.exports = {
                     } = _self.checkIfLayerIsActive(forcedState, precheckedLayers, child.layer);
                     _self.createLayerRecord(child.layer, container, layerIsActive, activeLayerName, subgroup.id);
                 } else if (child.type === GROUP_CHILD_TYPE_GROUP) {
-                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel);
+                    _self.createSubgroupRecord(child, forcedState, precheckedLayers, container, newLevel, initiallyClosed, fullPath);
                 } else {
                     throw new Error(`Invalid layer group`);
                 }
@@ -3641,6 +3679,9 @@ module.exports = {
                                     ref={instance => {
                                         filterComp[layerKey] = instance
                                     }}
+                                    ref={instance => {
+                                        filterComp[layerKey] = instance
+                                    }}
                                     layer={layer}
                                     layerMeta={meta.parseLayerMeta(layerKey)}
                                     presetFilters={presetFilters}
@@ -3992,17 +4033,18 @@ module.exports = {
         const cols = [];
         let colsStr = '';
         const fieldConf = JSON.parse(metaByKey['fieldconf']);
-        const pkey = metaByKey['pkey'];
         if (fieldConf) {
             Object.entries(metaByKey.fields).forEach(([i, val]) => {
-                if ( (fieldConf?.[i]?.querable === true ||
-                    (fieldConf?.[i]?.type === 'geometry' || i === pkey))
-                    && fieldConf?.[i]?.ignore !== true
-                ) {
+                if (!fieldConf?.[i]?.not_exportable === true && fieldConf?.[i]?.ignore !== true) {
                     cols.push(i);
                 }
             });
+            if (cols.length === 0) {
+                utils.showDangerToast(__('No fields to export'), {delay: 1000, autohide: true});
+                return;
+            }
             cols.sort((a, b) => {
+                if (!fieldConf[a]?.sort_id || !fieldConf[b]?.sort_id) return 1;
                 return fieldConf[a].sort_id - fieldConf[b].sort_id;
             });
             colsStr = '"' + cols.join('","') + '"';
@@ -4319,8 +4361,12 @@ module.exports = {
                     return false;
                 }).length;
                 activeLayersInSubGroups += activeLayers.filter(e => JSON.parse(metaDataKeys[layerTreeUtils.stripPrefix(e)].meta)?.vidi_sub_group?.match(re) && metaDataKeys[layerTreeUtils.stripPrefix(e)].layergroup === layerGroup).length;
-                const searchPath = `[data-gc2-group-id="${layerGroup}"]` + ' ' + split.map(e => `[data-gc2-subgroup-id="${e}"]`).join(' ') + ` [data-gc2-subgroup-name="${split[split.length - 1]}"]`;
-                const el = document.querySelector(searchPath);
+                //const searchPath = `[data-gc2-group-id="${layerGroup}"]` + ' ' + split.map(e => `[data-gc2-subgroup-id="${e}"]`).join(' ') + ` [data-gc2-subgroup-name="${split[split.length - 1]}"]`;
+                //const el = document.querySelector(searchPath);
+
+                const fullPath = split.join('|');
+                const el = document.querySelector(`[data-gc2-group-id="${layerGroup}"] [data-gc2-subgroup-path="${fullPath}"] input[type="checkbox"]`);
+
                 if (el) {
                     el.indeterminate = activeLayersInSubGroups > 0 && !(activeLayersInSubGroups === layersInSubGroups);
                     el.checked = activeLayersInSubGroups > 0;

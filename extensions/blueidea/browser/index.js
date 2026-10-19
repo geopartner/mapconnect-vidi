@@ -234,14 +234,12 @@ const findAddressesInMatrikel = async function (feature) {
     let query = {
       ejerlavkode: feature.properties.ejerlavkode,
       matrikelnr: feature.properties.matrikelnr,
-      struktur: "flad",
     };
 
     // Send the query to the server
     let response = await $.ajax({
-      url: "https://api.dataforsyningen.dk/adresser",
-      type: "GET",
-      data: query,
+      url: "/api/datahub/jordstykkeadresse/" + feature.properties.ejerlavkode + "/" + feature.properties.matrikelnr,
+      type: "GET"
     });
 
     return response;
@@ -577,7 +575,7 @@ module.exports = {
 
         // Deactivates module
         backboneEvents.get().on(`off:${exId} reset:all`, () => {
-          console.debug("Stopping blueidea");
+          //console.debug("Stopping blueidea");
 
           // remove layersOnStart
           if (me.state.layersOnStart.length > 0) {
@@ -676,7 +674,7 @@ module.exports = {
                 config.extensionConfig.blueidea.userid,
               type: "GET",
               success: function (data) {
-                console.log("[Lukkeliste] Got user", data);
+                //console.log("[Lukkeliste] Got user", data);
 
                 // If data.profileid has values, set the first key as the selected
                 let userProfiles = [];
@@ -794,12 +792,12 @@ module.exports = {
 
       async refreshProjectLayer() {
         api.turnOff(BlueIdea.Aktive_brud_layeName);
-        console.log("Refreshing project layer off");
+        //console.log("Refreshing project layer off");
 
         await this.delay(500);
 
         api.turnOn(BlueIdea.Aktive_brud_layeName);
-        console.log("Refreshing project layer on");
+        //console.log("Refreshing project layer on");
       }
 
       listProjects = async (refresh = false) => {
@@ -847,7 +845,7 @@ module.exports = {
        */
       queryAddresses(geojson, is_wkb = false) {
         let me = this;
-        //console.debug("queryAddresses: ", geojson);
+        //console.debug("queryAddresses: ", geojson, is_wkb);
 
         // if no features in featurecollection, return
         if (!geojson.features.length) {
@@ -990,6 +988,8 @@ module.exports = {
         let me = this;
         let merged = {};
 
+        //console.debug("Merging matrikler:", results);
+
         try {
           for (let i = 0; i < results.length; i++) {
             // Guard against empty results, and results that are not featureCollections
@@ -1034,21 +1034,31 @@ module.exports = {
        */
       mergeAdresser(results) {
         let me = this;
+        //console.debug("Merging adresser:", results);
         try {
           // Merge all results into one array, keeping only kvhx
           let merged = {};
           for (let i = 0; i < results.length; i++) {
+            // Each result is a featurecollection (array of features). If the list is empty, skip it.
+            if (!results[i] || !results[i].features || results[i].features.length === 0) {
+              continue;
+            }
+
             // for each adresse in list, check if it is a kvhx, and add it to the merged list
-            for (let j = 0; j < results[i].length; j++) {
-              let feature = results[i][j];
-              if (feature.kvhx) {
-                merged[feature.kvhx] = feature;
+            for (let j = 0; j < results[i].features.length; j++) {
+              let feature = results[i].features[j];
+              //console.debug("Processing adresse feature:", feature);
+              if (feature.properties.kvhx) {
+                //console.debug("Adding adresse feature to merged list:", feature.properties.kvhx);
+                merged[feature.properties.kvhx] = feature.properties;
               }
             }
           }
+          //console.debug("Merged adresser:", merged);
           return merged;
         } catch (error) {
           console.warn(error);
+          //console.debug("Error merging adresser:", error);
           return [];
         }
       }
@@ -1527,7 +1537,7 @@ module.exports = {
           }
           // Add indirekteledninger to map
           if (data.indirekteledninger) {
-            console.debug("Got indirekteledninger:", data.indirekteledninger);
+            //console.debug("Got indirekteledninger:", data.indirekteledninger);
             me.addSelectedIndirekteLedningerToMap(data.indirekteledninger);
             me.setState({
               results_indirekteledninger: data.indirekteledninger.features,
@@ -1676,8 +1686,8 @@ module.exports = {
 
         // Merge the new adresse and matrilkel into the existing lists
         let newAdresser = Object.assign({}, me.state.results_adresser);
-        adresse.forEach((a) => {
-          newAdresser[a.kvhx] = a;
+        adresse.features.forEach((a) => {
+          newAdresser[a.properties.kvhx] = a.properties;
         });
 
         // Set the new state
@@ -1696,7 +1706,7 @@ module.exports = {
           ejerlav = sublayer.feature.properties.ejerlavkode;
         });
 
-        //console.log(matrikel, ejerlav)
+        console.log(matrikel, ejerlav)
 
         // Remove adresse from list
         let newAdresser = Object.assign({}, this.state.results_adresser);
@@ -1875,6 +1885,7 @@ module.exports = {
 
         for (let i = 0; i < matrikler.features.length; i++) {
           let feature = matrikler.features[i];
+          //console.debug("Processing feature:", feature);
           results.push(await findAddressesInMatrikel(feature));
           // Show progress per 25 features
           if (i % 25 == 0) {
@@ -1911,7 +1922,7 @@ module.exports = {
             me.state.results_adresser[
             Object.keys(me.state.results_adresser)[key]
             ];
-          // console.log(feat);
+          //console.log(feat);
           let row = [
             feat.kvhx,
             feat.vejnavn,
