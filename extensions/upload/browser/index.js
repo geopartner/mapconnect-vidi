@@ -14,7 +14,8 @@ let draw = require("../../../browser/modules/draw");
 let drawTools = require("../../../browser/modules/drawTools");
 let drawToolsGp = require("../../../browser/modules/gp/drawTools");
 import JSZip from "jszip";
-import shp from "shpjs";
+// dist build bundles a Buffer shim; lib/ needs a global Buffer (nodebuffer) that browsers lack
+import shp from "shpjs/dist/shp";
 let dict = require("./i18n");
 
 // defaults
@@ -165,54 +166,54 @@ module.exports = {
          * 
          */
 
-        function convertToLayer(buffer) {
-            // Parse the buffer as a shape-file
-            shp(buffer)
-                .then(function (geojson) {
-                    // If the file is not an array, make it an array
-                    if (!Array.isArray(geojson)) {
-                        geojson = [geojson];
+        async function convertToLayer(buffer) {
+            try {
+                // Parse the buffer as a shape-file
+                let geojson = await shp(buffer);
+
+                // If the file is not an array, make it an array
+                if (!Array.isArray(geojson)) {
+                    geojson = [geojson];
+                }
+
+                // Handle as array
+                for (const element of geojson) {
+                    // Count elements
+                    const count = countObjects(element);
+
+                    // If no features, continue 
+                    if (count == 0) {
+                        throw new Error(__("Error: No features found in file"));
                     }
 
-                    // Handle as array
-                    for (const element of geojson) {
-                        // Count elements
-                        var count = countObjects(element);
-
-                        // If no features, continue 
-                        if (count == 0) {
-                            throw new Error(__("Error: No features found in file"));
-                        }
-
-                        // If too many features, continue
-                        if (count > maxCount) {
-                            const errTxt = __("File contains") + " " + count + " " + __("objects") + ". Max: " + maxCount;
-                            throw new Error(errTxt)
-                        }
-
-                        // If we got so far, add missing properties to the layer
-                        setGeometryProperties(element);
-
-                        // Add the layer to the map
-                        //backboneEvents.get().trigger('draw:created', L.geoJSON(element));
-
-                        for (const feature of element.features) {
-                            var layergroup = L.geoJSON(feature);
-                            var layer = layergroup.getLayers()[0];
-                            cloud.get().map.fire('draw:created', {layer: layer, layerType: feature.properties.type});
-                        }
+                    // If too many features, continue
+                    if (count > maxCount) {
+                        const errTxt = __("File contains") + " " + count + " " + __("objects") + ". Max: " + maxCount;
+                        throw new Error(errTxt)
                     }
 
-                    // Done, refresh the draw
-                    backboneEvents.get().trigger(`draw:update`);
-                    // avoid control floating out of view
-                    $('#draw-content').css("margin-left", "50px");
-                    snack(__("File parsed successfully"))
-                })
-                .catch(function (err) {
-                    snack(__('Error: No features found in file'));
-                    console.error(err);
-                });
+                    // If we got so far, add missing properties to the layer
+                    setGeometryProperties(element);
+
+                    // Add the layer to the map
+                    //backboneEvents.get().trigger('draw:created', L.geoJSON(element));
+
+                    for (const feature of element.features) {
+                        const layergroup = L.geoJSON(feature);
+                        const layer = layergroup.getLayers()[0];
+                        cloud.get().map.fire('draw:created', {layer: layer, layerType: feature.properties.type});
+                    }
+                }
+
+                // Done, refresh the draw
+                backboneEvents.get().trigger(`draw:update`);
+                // avoid control floating out of view
+                $('#draw-content').css("margin-left", "50px");
+                snack(__("File parsed successfully"))
+            } catch (err) {
+                snack(__('Error: No features found in file'));
+                console.error(err);
+            }
         }
 
         /**
