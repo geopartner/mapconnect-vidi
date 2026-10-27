@@ -25,6 +25,7 @@ import {
 import _, { has } from "underscore";
 import { createRoot } from "react-dom/client";
 
+import {GEOJSON_PRECISION} from '../../../browser/modules/constants';
 
 var React = require("react");
 
