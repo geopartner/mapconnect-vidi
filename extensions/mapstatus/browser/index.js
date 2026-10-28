@@ -443,6 +443,7 @@ module.exports = {
                                     backboneEvents={backboneEvents}
                                     isReadOnly={isReadOnly}
                                     kundenavn={kundenavn}
+                                    makeSearch={_makeSearch}
                                     map={this.map}
                                     nodeManager={this.state.nodeManager}
                                     onExcel={() => { this.exportExcel(); }}
