@@ -13,6 +13,7 @@ import { getResolutions } from '../../../browser/modules/crs';
 import { booleanIntersects as turfIntersects, buffer as turfBuffer } from "@turf/turf";
 import { feature as turfFeature, point as turfPoint } from "@turf/helpers";
 import { convert as geojsonToWKT } from "terraformer-wkt-parser";
+import ExcelExportManager from '../manager/ExcelExportManager.js';
 
 const MAPSTATUS_MODULE_NAME = `mapstatus`;
 
@@ -91,7 +92,7 @@ class FeatureTableComposition extends React.Component {
         const wkt = geojsonToWKT(clickFeature.geometry)
                 
         const featuresManager = this.isPipeActive ? this.props.pipeManager : this.props.nodeManager;
-        await _makeSearch(wkt, false, featuresManager);
+        await this.props.makeSearch(wkt, false, featuresManager);
         this.forceUpdate(); 
     };
 

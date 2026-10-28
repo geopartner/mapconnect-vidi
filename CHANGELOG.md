@@ -2,6 +2,9 @@
 
 Large and breaking changes and additions made will be reflected by the date which they are deployed to production.
 
+## [2026.10.2] - 2026-10-28
+- mapstatus: Fixed map-click feature searches by passing the search callback to the feature table.
+
 ## 2026-10-12
 - upload shape bug fixed
 
@@ -1801,4 +1804,3 @@ module.exports = {
 
 ### Security
 - A lot of modules where updated.
-
