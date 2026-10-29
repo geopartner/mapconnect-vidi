@@ -11,6 +11,8 @@ import MatrikelTable from "./MatrikelTable";
 import DAWASearch from "./DAWASearch";
 import {createRoot} from "react-dom/client";
 
+import {GEOJSON_PRECISION} from '../../../browser/modules/constants';
+
 const geosagRef = React.createRef();
 
 /**
