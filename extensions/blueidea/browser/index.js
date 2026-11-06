@@ -682,6 +682,10 @@ module.exports = {
                 if (data.profileid) {
                   userProfiles = Object.keys(data.profileid);
                 }
+                const defaultProfileId = data.forsyningsarter[0]?.profileid;
+                const initialProfileId = defaultProfileId != null && userProfiles.includes(String(defaultProfileId))
+                  ? String(defaultProfileId)
+                  : (userProfiles[0] || '');
 
                 let lukkestatus = false;
                 if (data.lukkestatus && data.lukkestatus.views_exists) {
@@ -699,7 +703,7 @@ module.exports = {
                   user_db: data.db || false,
                   show_affected_consumers: config.extensionConfig.blueidea?.show_berorte ?? false,
                   snapDistance: config.extensionConfig.blueidea?.snap_distance ?? 1,
-                  selected_profileid: userProfiles[0] || '',
+                  selected_profileid: initialProfileId,
                   lukkeliste_ready: lukkestatus,
                   forsyningsart_selected: 0,
                   user_udpeg_layer: data.forsyningsarter[0]?.udpeg_layer || null,
@@ -707,6 +711,7 @@ module.exports = {
                   user_ventil_layer_key: data.forsyningsarter[0]?.ventil_layer_key || null,
                   user_ventil_layer_name_key: data.forsyningsarter[0]?.ventil_layer_name_key || null,
                   user_ventil_export: data.forsyningsarter[0]?.ventil_export || null,
+                  profileId: data.forsyningsarter[0]?.profileid || null,
                   layersOnStart: data.layersOnStart || []
                 }, () => {
                   // Callback: Setup happens AFTER state update
@@ -2003,13 +2008,21 @@ module.exports = {
         }
         cloud.get().map.off("click", me.boundHandleEditClick);
 
+        const newProfileId = this.state.project.forsyningsarter[valueIndex]?.profileid;
+        const userProfiles = this.state.user_profileid ? Object.keys(this.state.user_profileid) : [];
+        const selectedProfileId = newProfileId != null && userProfiles.includes(String(newProfileId))
+          ? String(newProfileId)
+          : this.state.selected_profileid;
+
         // set the new values based on the index in the list
         this.setState({
+          selected_profileid: selectedProfileId,
           forsyningsart_selected: valueIndex,
           user_udpeg_layer: this.state.project.forsyningsarter[valueIndex].udpeg_layer,
           user_ventil_layer: this.state.project.forsyningsarter[valueIndex].ventil_layer,
           user_ventil_layer_key: this.state.project.forsyningsarter[valueIndex].ventil_layer_key,
           user_ventil_export: this.state.project.forsyningsarter[valueIndex].ventil_export,
+          profileId: this.state.project.forsyningsarter[valueIndex]?.profileid || null,
           edit_matr: false
         });
         api.turnOn(this.state.project.forsyningsarter[valueIndex].udpeg_layer);
@@ -2217,7 +2230,7 @@ module.exports = {
         const breakHeader = s.editProject ? __("Edit project") : __("Select area");
         const openResult = Object.keys(s.results_adresser).length > 0 && !isAnalyzing;
         const hasBlueIdeaProfile = s.user_blueidea && s.user_profileid && Object.keys(s.user_profileid).length > 0;
-
+        const defaultProfileId = s.profileId || 0
         const ventilList = Array.isArray(this.state.results_ventiler)
           ? VentilModel.fromFeaturesFactory(
             this.state.results_ventiler,
@@ -2319,7 +2332,7 @@ module.exports = {
                       <select
                         className="col form-select"
                         onChange={this.setSelectedProfileid}
-                        value={s.selected_profileid}
+                        value={s.selected_profileid || String(defaultProfileId)}
                         placeholder={__("Select profile")}
                         disabled={!this.readyToBlueIdea()}
                       >
@@ -2342,6 +2355,7 @@ module.exports = {
                     {hasBlueIdeaProfile ? (
                       <button
                         onClick={() => this.sendToBlueIdea()}
+                        profileid={s.selected_profileid}
                         className="col-6 btn btn-primary"
                         disabled={!this.readyToBlueIdea()}
                         title={__("Send to blueidea")}
