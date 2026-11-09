@@ -1,6 +1,7 @@
 /*
  * @author     Alexander Shumilov
- * @copyright  2013-2026 MapCentia ApS
+ * @copyright  2013-2019 MapCentia ApS
+ * @copyright  2026 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 

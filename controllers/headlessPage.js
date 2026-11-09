@@ -1,6 +1,8 @@
 /*
- * @author     Martin Høgh <mh@mapcentia.com>
- * @copyright  2013-2026 MapCentia ApS
+ * Moved out of controllers/print.js and controllers/static.js, then reworked.
+ *
+ * @copyright  2013-2021 MapCentia ApS
+ * @copyright  2026 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
