@@ -14,6 +14,11 @@
         display: none;
     }
 
+    /* The legend's on/off checkboxes are for the screen, not for paper */
+    #legend .form-check-input {
+        display: none;
+    }
+
     #legend, #header, #date-time, #scale-box {
         -webkit-box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
         box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.12), 0 1px 6px 0 rgba(0, 0, 0, 0.12);
@@ -31,15 +36,17 @@
         <div id="print-header-logo"
              style="position: absolute;top: 0;left: 0;width: 140px;height: 100%;border-right: 1px solid;"></div>
 
-        <b id="title" style="position: absolute; top: 10px; left: 150px; white-space: nowrap"></b>
-        <p id="comment" style="position: absolute; top: 30px; left: 150px; width: 480px;"></p>
+        <!-- Title and comment stop 190px from the right, so they never run under the scale/date box -->
+        <b id="title" style="position: absolute; top: 10px; left: 150px; right: 190px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"></b>
+        <p id="comment" style="position: absolute; top: 30px; left: 150px; right: 190px; white-space: pre-line;"></p>
 
-        <div style="position: absolute; bottom: 0; right: 0; height: 100%; width: 120px">
+        <!-- Scale bar, scale and date. 180px wide so the date fits on one line below the scale -->
+        <div style="position: absolute; bottom: 0; right: 0; height: 100%; width: 180px">
             <div id="scalebar" style="position: absolute; left: 40px; top: 43px"></div>
-            <div id="scale" style="position: absolute; left: 40px; top: 60px; font-size: 0.8em;"></div>
+            <div id="scale" style="position: absolute; left: 40px; top: 64px; font-size: 0.8em;"></div>
             <div id="frame" style="position: absolute; right: 7px; top: 3px; font-size: 0.8em;">{{#showFrameNumber}}#{{printFrame}}{{/showFrameNumber}}</div>
             <div id="date-time"
-                 style="position: absolute; bottom: 0; right: 2px; font-size: 0.8em; box-shadow: none">{{printDataTime}}</div>
+                 style="position: absolute; bottom: 2px; right: 4px; font-size: 0.8em; white-space: nowrap; box-shadow: none">{{printDataTime}}</div>
         </div>
 
     </div>

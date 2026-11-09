@@ -34,8 +34,15 @@ Antallet af varme puppeteer-instaser vil have en effekt på systemets RAM forbru
 
     "puppeteerProcesses": {
         "min": 1,
-        "max": 2
+        "max": 2,
+        "acquireTimeoutMillis": 30000,
+        "maxWaitingClients": 5
     },
+
+``max`` er antallet af browsere pr. Vidi-proces. Er alle i brug, venter et print i kø.
+Køen har plads til ``maxWaitingClients`` print, og et print venter højst ``acquireTimeoutMillis`` ms.
+Er køen fuld, eller bliver ventetiden for lang, svarer Vidi med det samme med HTTP 503 (``PRINT_BUSY``),
+og brugeren får besked om at prøve igen om lidt.
 
 .. _configjs_print:
 
@@ -66,6 +73,11 @@ timeout
 ``timeout`` er en integer der angiver hvor lang tid der må gå før print-processen stopper sig selv. Det kan være nødvendigt at øge denne værdi hvis man ønsker at printe i større formater som A1 eller over. 
 
 ``timeout`` er i ms og default er 60000.
+
+Fristen gælder for hver ramme i et print, fra der er en ledig browser. Når fristen er gået, svarer Vidi
+med HTTP 504 (``PRINT_TIMEOUT``), og brugeren får en fejlbesked. Ligger Vidi bag en proxy (fx nginx),
+skal proxyens timeout (``proxy_read_timeout``) være længere end ``timeout`` plus ``acquireTimeoutMillis``.
+Ellers svarer proxyen med "504 Gateway Timeout", før Vidi selv kan nå at svare.
 
 .. _configjs_configurl:
 

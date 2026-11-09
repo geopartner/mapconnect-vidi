@@ -17,6 +17,7 @@ var serializeLayers;
 var anchor;
 var printItems = new L.FeatureGroup();
 var urlparser = require('./urlparser');
+var utils = require('./utils');
 var db = urlparser.db;
 var urlVars = urlparser.urlVars;
 var schema = urlparser.schema;
@@ -75,6 +76,24 @@ var _cleanUp = function (hard) {
 };
 
 /**
+ * The message shown when a print fails. The print server answers
+ * {success: false, code, message} (controllers/print.js); the codes are translated here.
+ *
+ * @param response A jQuery XHR from a failed request, or an Error
+ * @private
+ */
+var _printErrorMessage = function (response) {
+    const code = response?.responseJSON?.code;
+    if (code === "PRINT_BUSY") {
+        return __("The print service is busy. Try again in a moment.");
+    }
+    if (code === "PRINT_TIMEOUT" || response?.statusText === "timeout") {
+        return __("The print timed out because the map did not finish loading. Try again, or turn off layers that load slowly.");
+    }
+    return __("The print failed. Try again, and contact your administrator if it keeps failing.");
+};
+
+/**
  *
  * @type {{set: module.exports.set, init: module.exports.init, activate: module.exports.activate, print: module.exports.print, control: module.exports.control}}
  */
@@ -123,6 +142,13 @@ module.exports = {
         backboneEvents.get().on("end:print", function (response) {
             // When printing is done, show the download and open buttons
             //console.log("Response", response)
+            $("#start-print-btn").find("span").hide();
+            $(".dropdown-toggle.start-print-btn").prop("disabled", false);
+            if (!response || !response.key) {
+                // The print failed: say why instead of linking to a file that does not exist
+                utils.showDangerToast(_printErrorMessage(response), {delay: 10000, autohide: true});
+                return;
+            }
             $("#open-pdf, #open-pdf-toggle").show();
             if (response.format === "pdf") {
                 $("#download-pdf, #open-pdf").attr("href", "/tmp/print/pdf/" + response.key + ".pdf");
@@ -133,8 +159,6 @@ module.exports = {
             }
             $("#download-pdf").attr("download", response.key);
             $("#open-html").attr("href", response.uri + '&html=true');
-            $("#start-print-btn").find("span").hide();
-            $(".dropdown-toggle.start-print-btn").prop("disabled", false);
             // GeoEnviron
             // GeoEnviron
             //console.log("GEMessage:LaunchURL:" + urlparser.urlObj.protocol + "://" + urlparser.urlObj.host + "/tmp/print/pdf/" + response.key + ".pdf");
@@ -381,7 +405,6 @@ module.exports = {
         const epsg = window.vidiConfig.crs;
         const rectangle = function (initCenter, scaleObject, color, initScale, isFirst, interactive = true) {
             scale = initScale ? initScale : _getScale(scaleObject);
-            $("#select-scale").val(scale);
             if (isFirst && !sc) { // Only when print tool is activated first time and no state from project
                 let scaleIndex = scales.indexOf(scale);
                 if (scaleIndex > 1) {
@@ -391,6 +414,8 @@ module.exports = {
                 }
                 scale = scales[scaleIndex];
             }
+            // Show the scale after the adjustment above, so the field matches the printed scale
+            $("#select-scale").val(scale);
 
             // Convert center point
             const centerM = geocloud.transformPoint(initCenter.lng, initCenter.lat, "EPSG:4326", epsg);

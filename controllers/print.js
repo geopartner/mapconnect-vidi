@@ -1,7 +1,30 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>
- * @copyright  2013-2021 MapCentia ApS
+ * @copyright  2013-2026 MapCentia ApS
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
+ */
+
+/**
+ * Print: renders the Vidi map to PDF (or PNG) in a headless browser.
+ *
+ * Flow for POST /api/print:
+ * 1. The client (browser/modules/print.js) posts the print job: frames (bounds),
+ *    scale, template, title, and the whole application state.
+ * 2. For each frame we save the job as public/tmp/print/json/<key> and open
+ *    /app/<db>/<schema>/?tmpl=print.tmpl&k=<key>... in a headless browser.
+ * 3. That page loads the job from GET /api/postdata?k=<key> (browser/modules/state.js),
+ *    draws the map and logs to the console when it is ready (see headlessPage.js).
+ * 4. We save the page as public/tmp/print/pdf/<key>.pdf. Several frames are
+ *    merged into one PDF (PNGs are zipped).
+ * 5. The client gets {success: true, key, format} and links to /tmp/print/pdf/<key>.pdf.
+ *
+ * Every request gets exactly one answer. Failures answer {success: false, code, message}:
+ *   503 PRINT_BUSY     no headless browser became free
+ *   504 PRINT_TIMEOUT  the page did not become ready in time (config.print.timeout)
+ *   500 PRINT_FAILED   anything else
+ *
+ * Mapconnect: print requests are counted and timed in Prometheus (see the
+ * metrics helpers at the bottom of this file).
  */
 
 require('dotenv').config();
@@ -9,539 +32,321 @@ require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
-const headless = require('./headlessBrowserPool').pool;
-const shared = require('./gc2/shared');
+const path = require('path');
+const crypto = require('crypto');
 const PDFMerge = require('pdf-merge');
 const AdmZip = require('adm-zip');
 const config = require("../config/config.js");
+const shared = require('./gc2/shared');
 const metrics = require('../modules/metrics');
+const {withBrowser, openAndWaitUntilReady, printReadiness, sleep, sendError, maxBrowsers} = require('./headlessPage');
 
-const timeout = config?.print?.timeout || 60000; // 60 seconds
+// How long one frame may take, from the moment a browser is free until the file is saved.
+const timeout = config?.print?.timeout || 60000;
 
+// After the page says it is ready, give Leaflet a moment to paint the last tiles.
+const SETTLE_DELAY_MS = 1000;
+
+const port = process.env.PORT ? process.env.PORT : 3000;
+const PRINT_DIR = path.join(__dirname, '..', 'public', 'tmp', 'print');
+
+// Print keys are UUIDs (crypto.randomUUID). Only keys of this shape are accepted
+// by /api/postdata, so a key can never point outside PRINT_DIR.
+const KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /**
+ * Prints every frame in body.bounds.
  *
- * @type {module.exports.print|{templates, scales}}
+ * Response for one frame: {success, key, uri, format: "pdf"|"png"}.
+ * For several frames: {success, key, format: "pdf"|"zip"} for the merged file.
+ * With {png: true} and without {image: false}, the first frame is returned as PNG bytes.
  */
-router.post('/api/print', function (req, response) {
-        req.setTimeout(0); // no timeout
-        let body = req.body;
-        let outputPng = body.png === true; // Should format be PNG?
-        let returnImage = body.image === undefined ? true : body.image !== false; // Should return image if PNG is requested?
-        let count = {"n": 0}; // Must be passed as copy of a reference
-        let files = [];
-        
-        // Increment print counter with appropriate labels
-        const format = outputPng ? 'png' : 'pdf';
-        const scale = body.scale || 'unknown';
-        const template = body.tmpl || 'default';
-        const db = body.db || 'unknown';
-        
-        // Get print metrics if enabled
-        const printMetrics = metrics.isEnabled() ? metrics.getPrintMetrics() : null;
-        if (printMetrics) {
-            printMetrics.counter.inc({ scale, format, status: 'requested', template, db });
-        }
-        let poll = () => {
-            setTimeout(() => {
-                if (count.n === body.bounds.length) {
-                    console.log("Done All. Merging...");
-                    let key = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                        let r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-                        return v.toString(16);
-                    });
-                    if (!outputPng) {
-                        PDFMerge(files, {output: `${__dirname}/../public/tmp/print/pdf/${key}.pdf`})
-                            .then(() => {
-                                // Increment print counter with successful status
-                                const scale = 0;
-                                const template = 'MERGE';
-                                const db = 'MERGE';
-                                if (printMetrics) {
-                                    printMetrics.counter.inc({ scale, format: 'pdf', status: 'success', template, db });
-                                }
-                                response.send({success: true, key, "format": "pdf"});
-                            });
-                    } else {
-                        const zip = new AdmZip("");
-                        files.forEach(path => {
-                            zip.addLocalFile(path);
-                        });
-                        zip.writeZip(`${__dirname}/../public/tmp/print/png/${key}.zip`);
-                        // Increment print counter with successful status
-                        const scale = body.scale || 'unknown';
-                        const template = body.tmpl || 'default';
-                        const db = body.db || 'unknown';
-                        if (printMetrics) {
-                            printMetrics.counter.inc({ scale, format: 'zip', status: 'success', template, db });
-                        }
-                        response.send({success: true, key, "format": "zip"});
-                    }
-                } else {
-                    poll();
-                }
-            }, 1000)
-        }
-        if (body.bounds.length > 1) {
-            poll()
-        }
-        for (let i = 0; i < body.bounds.length; i++) {
-            let key = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                let r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-            if (!outputPng) {
-                files.push(`${__dirname}/../public/tmp/print/pdf/${key}.pdf`);
-            } else {
-                files.push(`${__dirname}/../public/tmp/print/png/${key}.png`);
-            }
-            print(key, body, req, response, outputPng, i, count, returnImage, body.bounds.length);
-        }
+router.post('/api/print', async function (req, response) {
+    // The render has its own deadlines (headlessPage.js), so switch off the socket timeout.
+    req.setTimeout(0);
+    const q = req.body;
+    if (!Array.isArray(q?.bounds) || q.bounds.length === 0) {
+        response.status(400).send({success: false, code: 'INVALID_PRINT_REQUEST', message: 'The print job has no frames (bounds).'});
+        return;
     }
-);
+    const outputPng = q.png === true;
+    const returnImage = q.image === undefined ? true : q.image !== false;
+    countPrint('requested', outputPng ? 'png' : 'pdf', printLabels(q));
 
+    try {
+        if (outputPng && returnImage) {
+            // The PNG bytes are the response, so only one frame can be returned.
+            const {image} = await printFrame(q, 0, 1, req, {outputPng, returnImage});
+            countPrint('success', 'png', printLabels(q));
+            sendPng(response, image);
+            return;
+        }
+
+        const frames = await mapWithConcurrency(q.bounds, maxBrowsers,
+            (bounds, frame) => printFrame(q, frame, q.bounds.length, req, {outputPng}));
+
+        if (frames.length === 1) {
+            countPrint('success', outputPng ? 'png' : 'pdf', printLabels(q));
+            response.send({success: true, key: frames[0].key, uri: frames[0].uri, format: outputPng ? 'png' : 'pdf'});
+            return;
+        }
+
+        console.log(`All ${frames.length} frames done. Merging...`);
+        const key = crypto.randomUUID();
+        const files = frames.map(frame => frame.file);
+        if (outputPng) {
+            const zip = new AdmZip();
+            files.forEach(file => zip.addLocalFile(file));
+            zip.writeZip(path.join(PRINT_DIR, 'png', `${key}.zip`));
+            countPrint('success', 'zip', printLabels(q));
+            response.send({success: true, key, format: 'zip'});
+        } else {
+            await PDFMerge(files, {output: path.join(PRINT_DIR, 'pdf', `${key}.pdf`)});
+            countPrint('success', 'pdf', MERGED_LABELS);
+            response.send({success: true, key, format: 'pdf'});
+        }
+    } catch (error) {
+        countPrint('error', outputPng ? 'png' : 'pdf', printLabels(q));
+        sendError(response, error);
+    }
+});
+
+/**
+ * Prints the first frame of the print settings saved in a state snapshot, as PNG.
+ * GET /api/print/<database>?state=<snapshot id>
+ */
 router.get('/api/print/:database', async function (req, res) {
-    const port = process.env.PORT ? process.env.PORT : 3000;
-    let uri = "http://127.0.0.1:" + port + '/api/state-snapshots/' + req.params.database + '/' + req.query.state;
-    
-    // Increment print counter for database endpoint request
-    const format = 'png'; // This endpoint always uses PNG
-    const scale = req.query.scale || 'unknown';
-    const template = req.query.tmpl || 'default';
-    const db = req.params.database || 'unknown';
-    
-    // Get print metrics if enabled
-    const printMetrics = metrics.isEnabled() ? metrics.getPrintMetrics() : null;
-    if (printMetrics) {
-        printMetrics.counter.inc({ scale, format, status: 'requested', template, db });
-    }
+    countPrint('requested', 'png', {
+        scale: req.query.scale || 'unknown',
+        template: req.query.tmpl || 'default',
+        db: req.params.database || 'unknown',
+    });
+    const uri = `http://127.0.0.1:${port}/api/state-snapshots/${encodeURIComponent(req.params.database)}/${encodeURIComponent(req.query.state || '')}`;
 
-    let responseBody;
+    let snapshot;
     try {
         const r = await fetch(uri);
-        responseBody = await r.text();
+        snapshot = (await r.json()).snapshot;
     } catch (error) {
-        shared.throwError(res, 'INVALID_OR_EMPTY_EXTERNAL_API_REPLY', {error});
+        shared.throwError(res, 'INVALID_OR_EMPTY_EXTERNAL_API_REPLY', {error: error.message});
         return;
     }
 
+    const q = snapshot?.modules?.print;
+    if (!q || !Array.isArray(q.bounds) || q.bounds.length === 0) {
+        shared.throwError(res, 'NO_PRINT_IN_SNAPSHOT');
+        return;
+    }
+    // The print page reads the layer tree from the job to know which layers to show.
+    q.state = {modules: {layerTree: snapshot.modules.layerTree}};
+
     try {
-        let parsedBody = JSON.parse(responseBody);
-        if (!'print' in parsedBody.snapshot.modules) {
-            shared.throwError(res, 'NO_PRINT_IN_SNAPSHOT');
-        }
-        let key = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            let r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-        // We need to set add necessary modules for printing
-        parsedBody.snapshot.modules.print.state = {"modules": {"layerTree": parsedBody.snapshot.modules.layerTree}};
-        return print(key, parsedBody.snapshot.modules.print, req, res, true);
-    } catch (e) {
-        console.log(e.message)
+        const {image} = await printFrame(q, 0, 1, req, {outputPng: true, returnImage: true});
+        countPrint('success', 'png', printLabels(q));
+        sendPng(res, image);
+    } catch (error) {
+        countPrint('error', 'png', printLabels(q));
+        sendError(res, error);
     }
 });
 
+/**
+ * Returns a saved print job. The headless print page calls this with its key (?k=<key>).
+ */
 router.get('/api/postdata', function (req, response) {
-    let key = req.query.k;
-    fs.readFile(__dirname + "/../public/tmp/print/json/" + key, 'utf8', function (err, data) {
+    const key = req.query.k;
+    if (typeof key !== 'string' || !KEY_PATTERN.test(key)) {
+        response.status(400).send({success: false, code: 'INVALID_PRINT_KEY', message: 'Not a valid print key.'});
+        return;
+    }
+    fs.readFile(path.join(PRINT_DIR, 'json', key), 'utf8', (err, data) => {
         if (err) {
-            response.send({success: true, error: err});
+            response.status(404).send({success: false, code: 'PRINT_JOB_NOT_FOUND', message: 'The print job does not exist.'});
             return;
         }
-
-        response.send({success: true, data: JSON.parse(data)});
+        // This runs in a callback, outside Express: an exception here would kill the process.
+        try {
+            response.send({success: true, data: JSON.parse(data)});
+        } catch (error) {
+            response.status(500).send({success: false, code: 'PRINT_JOB_INVALID', message: 'The print job could not be read.'});
+        }
     });
 });
 
-function print(key, q, req, response, outputPng = false, frame = 0, count, returnImage = true, numberOfFrames) {
-    // Get print metrics if enabled
-    const printMetrics = metrics.isEnabled() ? metrics.getPrintMetrics() : null;
-    
-    // Start timer for tracking print duration
-    let startTime;
-    const printLabels = {
-        format: outputPng ? 'png' : 'pdf',
-        template: q.tmpl || 'default',
-        db: q.db || 'unknown',
-        scale: q.scale || 'unknown'
-    };
-    if (printMetrics) {
-        startTime = Date.now();
+/**
+ * Renders one frame of a print job and records how long it took (Mapconnect metrics).
+ * A frame that never got a browser (PRINT_BUSY) took no time, so it is left out of
+ * the duration histogram; it is counted as an error by the caller.
+ *
+ * @param {object} q The print job
+ * @param {number} frame Index of the frame in q.bounds
+ * @param {number} numberOfFrames Shown on the page as "#2" when more than one
+ * @param req The client's request (for its session cookie)
+ * @param {object} options outputPng: PNG instead of PDF. returnImage: return the PNG bytes instead of saving a file.
+ * @returns {Promise<{key, uri, file}|{image}>}
+ */
+async function printFrame(q, frame, numberOfFrames, req, options) {
+    const format = options.outputPng ? 'png' : 'pdf';
+    const startTime = Date.now();
+    try {
+        const result = await renderFrame(q, frame, numberOfFrames, req, options);
+        observeFrameDuration(format, printLabels(q), startTime);
+        return result;
+    } catch (error) {
+        if (error.code !== 'PRINT_BUSY') {
+            observeFrameDuration(format, printLabels(q), startTime);
+        }
+        throw error;
     }
-    
-    fs.writeFile(__dirname + "/../public/tmp/print/json/" + key, JSON.stringify(q), async (err) => {
-        if (err) {
-            // Stop timer for file write error
-            if (printMetrics) {
-                const durationMs = Date.now() - startTime;
-                printMetrics.duration.observe(printLabels, durationMs);
-            }
-            response.send({success: true, error: err});
-            return;
-        }
+}
 
-        /*
-        // Randomly send an error - for testing
-        if (Math.random() > 0.5) {
-            response.status(500).send({
-                success: false
+/**
+ * Renders one frame of a print job. See printFrame() for the parameters.
+ */
+async function renderFrame(q, frame, numberOfFrames, req, {outputPng = false, returnImage = false}) {
+    const key = crypto.randomUUID();
+    await fs.promises.writeFile(path.join(PRINT_DIR, 'json', key), JSON.stringify(q));
+    const uri = printPageUri(q, key, frame, numberOfFrames, req);
+    const url = `http://127.0.0.1:${port}${uri}`;
+    console.log(`Printing ${url}`);
+
+    return withBrowser(timeout, async browser => {
+        if (!outputPng) {
+            const page = await openAndWaitUntilReady(browser, url, printReadiness(), {screenMedia: true});
+            console.log('App was loaded, generating PDF');
+            await sleep(SETTLE_DELAY_MS);
+            const file = path.join(PRINT_DIR, 'pdf', `${key}.pdf`);
+            await page.pdf({
+                path: file,
+                landscape: q.orientation === 'l',
+                format: q.pageSize,
+                printBackground: true,
+                // The conflict report is an HTML document and needs page margins. Maps go edge to edge.
+                margin: q.tmpl === "_conflictPrint" ? {left: '0.4cm', top: '1cm', right: '0.4cm', bottom: '1cm'} : 0,
             });
-            return;
+            return {key, uri, file};
         }
-        */
 
-        const margin = q.tmpl === "_conflictPrint" ? {left: '0.4cm', top: '1cm', right: '0.4cm', bottom: '1cm'} : 0;
-        const port = process.env.PORT ? process.env.PORT : 3000;
-        let uri = '/app/' + q.db + '/' + q.schema + '/' + (q.queryString !== "" ? q.queryString : "?") + '&frame=' + frame + '&frameN=' + numberOfFrames + '&session=' + (typeof req.cookies["connect.gc2"] !== "undefined" ? encodeURIComponent(req.cookies["connect.gc2"]) : "") + '&tmpl=' + q.tmpl + '.tmpl&l=' + q.legend + '&h=' + q.header + '&px=' + q.px + '&py=' + q.py + '&td=' + q.dateTime + '&d=' + q.date + '&k=' + key + '&t=' + q.title + '&c=' + q.comment + q.anchor;
-        let url = "http://127.0.0.1:" + port + uri;
-        console.log(`Printing ` + url);
-
-        let check = false;
-        let delay = 1000;
-        let go;
-        const func = () => {
-            headless.acquire().then(browser => {
-                    setTimeout(() => {
-                        if (headless.isBorrowedResource(browser)) {
-                            headless.destroy(browser);
-                            console.log("Destroying browser after timeout " + timeout);
-                        }
-                    }, timeout);
-                    if (!outputPng) {
-                        browser.newPage().then(async (page) => {
-                            await page.emulateMedia('screen');
-                            page.on('console', async msg => {
-                                // Log error description
-                                const args = await msg.args()
-                                for (const arg of args) {
-                                    const val = await arg.jsonValue()
-                                    // value is serializable
-                                    if (JSON.stringify(val) === JSON.stringify({}))  {
-                                        const { type, subtype, description } = arg._remoteObject
-                                        console.log(`type: ${type}, subtype: ${subtype}, description:\n ${description}`)
-                                    }
-                                }
-
-                                console.log(msg.text());
-                                if (msg.text().indexOf(`No active layers in print`) !== -1) { // Print as soon Vidi is loaded
-                                    go = true;
-                                }
-                                if (msg.text().indexOf(`Active layers in print`) !== -1) { // Wait until layers from snapshot is loaded
-                                    go = false; // Wait for overlays to load
-                                }
-                                if (
-                                    // Print as soon Vidi is done loading
-                                    (msg.text().indexOf(`Vidi is now loaded`) !== -1 && go) ||
-                                    // Wait until all overlays and basemap are loaded
-                                    (msg.text().indexOf(`Legend loaded`) !== -1 && !go)
-                                ) {
-                                    if (!check) {
-                                        check = true;
-                                        console.log('App was loaded, generating PDF');
-                                        setTimeout(() => {
-                                            page.pdf({
-                                                path: `${__dirname}/../public/tmp/print/pdf/${key}.pdf`,
-                                                landscape: (q.orientation === 'l'),
-                                                format: q.pageSize,
-                                                printBackground: true,
-                                                margin: margin
-                                            }).then(() => {
-                                                    console.log('Done #', count.n);
-                                                    if (q.bounds.length === 1) { // Only one page. No need to merge
-                                                        console.log('Only one page. No need to merge.');
-                                                        // Increment print counter for successful single page PDF
-                                                        const scale = q.scale || 'unknown';
-                                                        const template = q.tmpl || 'default';
-                                                        const db = q.db || 'unknown';
-                                                        if (printMetrics) {
-                                                            printMetrics.counter.inc({ scale, format: 'pdf', status: 'success', template, db });
-                                                        }
-                                                        response.send({success: true, key, uri, "format": "pdf"});
-                                                    }
-                                                    // Stop timer for PDF success
-                                                    if (printMetrics) {
-                                                        const durationMs = Date.now() - startTime;
-                                                        printMetrics.duration.observe(printLabels, durationMs);
-                                                    }
-                                                    headless.destroy(browser);
-                                                    count.n++;
-                                                }
-                                            ).catch(() => {
-                                                    console.log('Error while creating PDF');
-                                                    // Increment print counter for failed PDF
-                                                    const scale = q.scale || 'unknown';
-                                                    const template = q.tmpl || 'default';
-                                                    const db = q.db || 'unknown';
-                                                    if (printMetrics) {
-                                                        printMetrics.counter.inc({ scale, format: 'pdf', status: 'error', template, db });
-                                                    }
-                                                    // Stop timer for PDF error
-                                                    if (printMetrics) {
-                                                        const durationMs = Date.now() - startTime;
-                                                        printMetrics.duration.observe(printLabels, durationMs);
-                                                    }
-                                                    headless.destroy(browser);
-                                                    response.status(500).send({
-                                                        success: false
-                                                    });
-                                                }
-                                            );
-                                        }, delay);
-                                    }
-                                }
-                            });
-                            await page.goto(url);
-                        }).catch(() => {
-                            console.log('Error while creating PDF');
-                            // Stop timer for PDF error
-                            if (printMetrics) {
-                                const durationMs = Date.now() - startTime;
-                                printMetrics.duration.observe(printLabels, durationMs);
-                            }
-                            headless.destroy(browser);
-                            response.status(500).send({
-                                success: false
-                            });
-                        });
-                    } else {
-                        let width, height;
-                        browser.newPage().then(page => {
-                            let go = undefined; // Track whether to wait for legend (same logic as PDF)
-                            const check = async () => {
-                                const isWebGLSupported = await page.evaluate(() => {
-                                    const canvas = document.createElement('canvas');
-                                    return !!(window.WebGLRenderingContext && canvas.getContext('webgl'));
-                                });
-
-                                if (!isWebGLSupported) {
-                                    console.error('WebGL is not supported in this environment.');
-                                }
-                            }
-                            //check();
-
-                            const pxWidth = 795;
-                            const pxHeight = 1125;
-                            switch (q.pageSize) {
-                                case "A4":
-                                    switch (q.orientation) {
-                                        case "p":
-                                            width = pxWidth;
-                                            height = pxHeight;
-                                            break;
-                                        case "l":
-                                            width = pxHeight;
-                                            height = pxWidth;
-                                            break;
-                                    }
-                                    break;
-                                case "A3":
-                                    switch (q.orientation) {
-                                        case "p":
-                                            width = pxWidth * 1.5;
-                                            height = pxHeight * 1.5;
-                                            break;
-                                        case "l":
-                                            width = pxHeight * 1.5;
-                                            height = pxWidth * 1.5;
-                                            break;
-                                    }
-                                    break;
-                                case "A2":
-                                    switch (q.orientation) {
-                                        case "p":
-                                            width = pxWidth * 2;
-                                            height = pxHeight * 2;
-                                            break;
-                                        case "l":
-                                            width = pxHeight * 2;
-                                            height = pxWidth * 2;
-                                            break;
-                                    }
-                                    break;
-                                case "A1":
-                                    switch (q.orientation) {
-                                        case "p":
-                                            width = pxWidth * 2.5;
-                                            height = pxHeight * 2.5;
-                                            break;
-                                        case "l":
-                                            width = pxHeight * 2.5;
-                                            height = pxWidth * 2.5;
-                                            break;
-                                    }
-                                    break;
-                                case "A0":
-                                    switch (q.orientation) {
-                                        case "p":
-                                            width = pxWidth * 3;
-                                            height = pxHeight * 3;
-                                            break;
-                                        case "l":
-                                            width = pxHeight * 3;
-                                            height = pxWidth * 3;
-                                            break;
-                                    }
-                                    break;
-                                default:
-                                    width = 1500;
-                                    height = 1500;
-                                    break;
-                            }
-                            // nobody like non-integer pixel values, make sure to round them
-                            width = Math.floor(width);
-                            height = Math.floor(height);
-
-                            page.emulate({
-                                viewport: {width, height},
-                                userAgent: 'Puppeteer'
-                            }).then(() => {
-                                // Listen for page errors
-                                page.on('pageerror', error => {
-                                    console.error('PAGE ERROR (PNG):', error.message);
-                                    console.error('Stack:', error.stack);
-                                });
-                                
-                                // Listen for request failures
-                                page.on('requestfailed', request => {
-                                    console.error('REQUEST FAILED (PNG):', request.url());
-                                    console.error('Failure text:', request.failure().errorText);
-                                    console.error('Method:', request.method());
-                                    console.error('Resource type:', request.resourceType());
-                                });
-                                
-                                // Listen for responses to catch HTTP errors
-                                page.on('response', response => {
-                                    if (!response.ok()) {
-                                        console.error('HTTP ERROR (PNG):', response.status(), response.url());
-                                    }
-                                });
-                                
-                                page.on('console', msg => {
-                                    console.log(msg.text());
-                                    if (msg.text().indexOf(`No active layers in print`) !== -1) { // Print as soon Vidi is loaded
-                                        go = true;
-                                    }
-                                    if (msg.text().indexOf(`Active layers in print`) !== -1) { // Wait until layers from snapshot is loaded
-                                        go = false; // Wait for overlays to load
-                                    }
-                                    if (
-                                        // Print as soon Vidi is done loading
-                                        (msg.text().indexOf(`Vidi is now loaded`) !== -1 && go) ||
-                                        // Wait until all overlays and basemap are loaded
-                                        (msg.text().indexOf(`Legend loaded`) !== -1 && !go)
-                                    ) {
-                                        console.log('App was loaded, generating PNG');
-                                        setTimeout(() => {
-                                            page.evaluate(`$('.leaflet-top').remove();$('#loadscreen').remove();`).then(() => {
-                                                page.screenshot({
-                                                    encoding: `base64`
-                                                }).then(data => {
-                                                    let img = new Buffer.from(data, 'base64');
-
-                                                    console.log('Only one page. No need to merge.');
-                                                    if (!returnImage) {
-                                                        fs.writeFile(`${__dirname}/../public/tmp/print/png/${key}.png`, img, (err) => {
-                                                            if (q.bounds.length === 1) { // Only one page. No need to merge
-                                                                // Increment print counter for successful PNG
-                                                                const scale = q.scale || 'unknown';
-                                                                const template = q.tmpl || 'default';
-                                                                const db = q.db || 'unknown';
-                                                                if (printMetrics) {
-                                                                    printMetrics.counter.inc({ scale, format: 'png', status: 'success', template, db });
-                                                                }
-                                                                response.send({success: true, key, uri, "format": "png"});
-                                                            }
-                                                            // Stop timer for PNG success
-                                                            if (printMetrics) {
-                                                                const durationMs = Date.now() - startTime;
-                                                                printMetrics.duration.observe(printLabels, durationMs);
-                                                            }
-                                                            headless.destroy(browser);
-                                                            console.log('Done #', count.n);
-                                                            count.n++;
-                                                        })
-                                                    } else {
-                                                        response.writeHead(200, {
-                                                            'Content-Type': 'image/png',
-                                                            'Content-Length': img.length
-                                                        });
-                                                        // Increment print counter for successful direct PNG return
-                                                        const scale = q.scale || 'unknown';
-                                                        const template = q.tmpl || 'default';
-                                                        const db = q.db || 'unknown';
-                                                        if (printMetrics) {
-                                                            printMetrics.counter.inc({ scale, format: 'png', status: 'success', template, db });
-                                                        }
-                                                        // Stop timer for direct PNG return
-                                                        if (printMetrics) {
-                                                            const durationMs = Date.now() - startTime;
-                                                            printMetrics.duration.observe(printLabels, durationMs);
-                                                        }
-                                                        headless.destroy(browser);
-                                                        response.end(img);
-                                                    }
-                                                }).catch(error => {
-                                                    console.log(error);
-                                                    // Increment print counter for failed PNG
-                                                    const scale = q.scale || 'unknown';
-                                                    const template = q.tmpl || 'default';
-                                                    const db = q.db || 'unknown';
-                                                    if (printMetrics) {
-                                                        printMetrics.counter.inc({ scale, format: 'png', status: 'error', template, db });
-                                                    }
-                                                    // Stop timer for PNG error
-                                                    if (printMetrics) {
-                                                        const durationMs = Date.now() - startTime;
-                                                        printMetrics.duration.observe(printLabels, durationMs);
-                                                    }
-                                                    headless.destroy(browser);
-                                                    response.status(500);
-                                                    response.send(error);
-                                                });
-                                            }).catch(error => {
-                                                console.log('Error while creating PNG');
-                                                // Stop timer for PNG error
-                                                if (printMetrics) {
-                                                    const durationMs = Date.now() - startTime;
-                                                    printMetrics.duration.observe(printLabels, durationMs);
-                                                }
-                                                headless.destroy(browser);
-                                                response.status(500);
-                                                response.send(error);
-                                            });
-                                        }, delay);
-                                    }
-                                });
-                                page.goto(url);
-                            }).catch(error => {
-                                // Stop timer for emulate error
-                                if (printMetrics) {
-                                    const durationMs = Date.now() - startTime;
-                                    printMetrics.duration.observe(printLabels, durationMs);
-                                }
-                                headless.destroy(browser);
-                                response.status(500);
-                                response.send(error);
-                            });
-                        }).catch(error => {
-                            // Stop timer for browser newPage error
-                            if (printMetrics) {
-                                const durationMs = Date.now() - startTime;
-                                printMetrics.duration.observe(printLabels, durationMs);
-                            }
-                            headless.destroy(browser);
-                            response.status(500);
-                            response.send(error);
-                        });
-                    }
-                }
-            ).catch(error => {
-                console.log("Can't get a browser right now: ", error.message);
-                setTimeout(() => func(), 500)
-            });
+        // Mapconnect: PNG prints also wait for the layers and the legend, like PDFs,
+        // and log failed requests to help find layers that come out empty.
+        const page = await openAndWaitUntilReady(browser, url, printReadiness(), {
+            viewport: pngViewport(q.pageSize, q.orientation),
+            logNetworkErrors: true,
+        });
+        console.log('App was loaded, generating PNG');
+        await sleep(SETTLE_DELAY_MS);
+        // Hide the map controls and the loading screen
+        await page.evaluate(`$('.leaflet-top').remove();$('#loadscreen').remove();`);
+        const image = await page.screenshot();
+        if (returnImage) {
+            return {image};
         }
-        func();
+        const file = path.join(PRINT_DIR, 'png', `${key}.png`);
+        await fs.promises.writeFile(file, image);
+        return {key, uri, file};
     });
 }
+
+/**
+ * The URL of the print page for one frame. The page reads these parameters in
+ * browser/modules/init.js (template, size, dates) and state.js (job, title, comment).
+ * Title and comment arrive URI-encoded from the client.
+ */
+function printPageUri(q, key, frame, numberOfFrames, req) {
+    const session = req.cookies["connect.gc2"] !== undefined ? encodeURIComponent(req.cookies["connect.gc2"]) : "";
+    return '/app/' + q.db + '/' + q.schema + '/' + (q.queryString !== "" ? q.queryString : "?") +
+        '&frame=' + frame +
+        '&frameN=' + numberOfFrames +
+        '&session=' + session +
+        '&tmpl=' + q.tmpl + '.tmpl' +
+        '&l=' + q.legend +
+        '&h=' + q.header +
+        '&px=' + q.px +
+        '&py=' + q.py +
+        '&td=' + encodeURIComponent(q.dateTime || '') +
+        '&d=' + encodeURIComponent(q.date || '') +
+        '&k=' + key +
+        '&t=' + q.title +
+        '&c=' + q.comment +
+        q.anchor;
+}
+
+/**
+ * Viewport in pixels for PNG output. A4 portrait is 795 x 1125 px; bigger sheets scale from that.
+ */
+function pngViewport(pageSize, orientation) {
+    const scaleFromA4 = {A4: 1, A3: 1.5, A2: 2, A1: 2.5, A0: 3}[pageSize];
+    if (!scaleFromA4) {
+        return {width: 1500, height: 1500};
+    }
+    const width = Math.floor(795 * scaleFromA4);
+    const height = Math.floor(1125 * scaleFromA4);
+    return orientation === 'l' ? {width: height, height: width} : {width, height};
+}
+
+function sendPng(response, image) {
+    response.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Content-Length': image.length
+    });
+    response.end(image);
+}
+
+/**
+ * Like Promise.all(items.map(fn)), but runs at most `limit` calls at a time and starts
+ * no new call after one has failed. With limit = the pool size, the frames of one job
+ * never wait for each other in the browser pool's queue.
+ */
+async function mapWithConcurrency(items, limit, fn) {
+    const results = [];
+    let next = 0;
+    let failed = false;
+    const worker = async () => {
+        while (next < items.length && !failed) {
+            const i = next++;
+            try {
+                results[i] = await fn(items[i], i);
+            } catch (error) {
+                failed = true;
+                throw error;
+            }
+        }
+    };
+    const workers = [];
+    for (let n = 0; n < Math.min(Math.max(1, limit || 1), items.length); n++) {
+        workers.push(worker());
+    }
+    await Promise.all(workers);
+    return results;
+}
+
+// ---------------------------------------------------------------------------
+// Mapconnect: Prometheus metrics (modules/metrics). Nothing is recorded when
+// metrics are disabled.
+//
+// vidi_controllers_print_print_requests_total{scale, format, status, template, db}
+//   status "requested" when a print arrives, then "success" or "error" once per print.
+// vidi_controllers_print_duration_milliseconds{format, template, db, scale}
+//   one observation per frame that got a browser, successful or not.
+// ---------------------------------------------------------------------------
+
+// Labels for a merged multi-frame PDF, kept as before so existing dashboards still match.
+const MERGED_LABELS = {scale: 0, template: 'MERGE', db: 'MERGE'};
+
+function printLabels(q) {
+    return {scale: q.scale || 'unknown', template: q.tmpl || 'default', db: q.db || 'unknown'};
+}
+
+function countPrint(status, format, labels) {
+    if (metrics.isEnabled()) {
+        metrics.getPrintMetrics().counter.inc({...labels, format, status});
+    }
+}
+
+function observeFrameDuration(format, labels, startTime) {
+    if (metrics.isEnabled()) {
+        metrics.getPrintMetrics().duration.observe({...labels, format}, Date.now() - startTime);
+    }
+}
+
 module.exports = router;

@@ -18,6 +18,10 @@ const puppeteerProcesses = {
     // value was below cold-launch time, so the first/cold acquire failed with the
     // misleading "ResourceRequest timed out".
     acquireTimeoutMillis: config?.puppeteerProcesses?.acquireTimeoutMillis ?? 30000,
+    // How many renders may wait for a browser. More are refused at once with
+    // 503 PRINT_BUSY (headlessPage.js). Browsers that are still starting count as
+    // waiting, so a cold pool accepts maxWaitingClients renders, not max + maxWaitingClients.
+    maxWaitingClients: config?.puppeteerProcesses?.maxWaitingClients ?? 5,
 };
 
 
@@ -64,7 +68,7 @@ const pool = genericPool.createPool({
     acquireTimeoutMillis: puppeteerProcesses.acquireTimeoutMillis, // Should be bigger than it takes to start a headless browser
     evictionRunIntervalMillis: 5000,
     numTestsPerEvictionRun: 3, // Default
-    maxWaitingClients: 5,
+    maxWaitingClients: puppeteerProcesses.maxWaitingClients,
     idleTimeoutMillis: 30000
 
 })

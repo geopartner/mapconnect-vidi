@@ -185,6 +185,9 @@ module.exports = {
         "Apply default style settings for this drawing?": "Anvend standard stilindstillinger til denne tegning?",
 
         "Not a valid scale. Must be over ": "Ikke en gyldig målestok. Den skal være over ",
+        "The print service is busy. Try again in a moment.": "Udskriftstjenesten har travlt. Prøv igen om lidt.",
+        "The print timed out because the map did not finish loading. Try again, or turn off layers that load slowly.": "Udskriften tog for lang tid, fordi kortet ikke blev færdigt med at indlæse. Prøv igen, eller slå lag fra, der indlæses langsomt.",
+        "The print failed. Try again, and contact your administrator if it keeps failing.": "Udskriften fejlede. Prøv igen, og kontakt din administrator, hvis det bliver ved med at fejle.",
 
         "Languages": "Sprog",
 

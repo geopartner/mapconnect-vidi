@@ -29,6 +29,16 @@ let app = express();
 // Initialize Prometheus metrics if enabled
 metrics.initializeMetrics(app);
 
+// With metrics enabled, modules/metrics logs and counts unhandled errors. Without it,
+// nothing catches a promise rejection that no code handled, and Node ends the process.
+// A dead cluster worker drops every request it is serving, prints included, and users
+// see that as "502 Bad Gateway". So log those rejections instead.
+if (!metrics.isEnabled()) {
+    process.on('unhandledRejection', (reason) => {
+        console.error('Unhandled promise rejection:', reason);
+    });
+}
+
 
 const MAXAGE = (config.sessionMaxAge || 86400) * 1000;
 
