@@ -298,7 +298,10 @@ module.exports = {
                         $.ajax({
                             dataType: "json", method: "get", url: '/api/postdata/', data: {
                                 k: parr.join()
-                            }, scriptCharset: "utf-8", success: function (response) {
+                            }, scriptCharset: "utf-8", error: function (xhr) {
+                                // Tells the print server (controllers/headlessPage.js) to stop waiting
+                                console.error("Print failed: the print job could not be loaded (HTTP " + xhr.status + ")");
+                            }, success: function (response) {
                                 // Set base layer opacity
                                 backboneEvents.get().once(`layerTree:ready`, () => {
                                     for (const [layerKey, value] of Object.entries(response.data.state.modules.baseLayer.baseOpacity)) {
@@ -369,13 +372,12 @@ module.exports = {
                                         $("#container1").css("transform", "scale(" + scaleFactor + ")");
                                         $(".leaflet-control-scale-line").prependTo("#scalebar").css("transform", "scale(" + scaleFactor + ")");
                                         $(".leaflet-control-scale-line").prependTo("#scalebar").css("transform-origin", "left bottom 0px");
-                                        $("#scale").html("1 : " + response.data.scale);
-                                        $("#title").html(decodeURIComponent(urlVars.t));
-                                        parr = urlVars.c.split("#");
-                                        if (parr.length > 1) {
-                                            parr.pop();
-                                        }
-                                        $("#comment").html(decodeURIComponent(parr.join()));
+                                        $("#scale").text("1 : " + response.data.scale);
+                                        // urlVars are already decoded (urlparser.js), so no second decodeURIComponent:
+                                        // that threw on any "%" in the text. .text(), not .html(), so the text
+                                        // cannot inject HTML into the page the print server renders.
+                                        $("#title").text(urlVars.t || "");
+                                        $("#comment").text(urlVars.c || "");
 
                                         if (hashArr[0]) {
                                             setLayers()
@@ -538,9 +540,13 @@ module.exports = {
                                             setTimeout(() => {
                                                 layerTree.applyState(response.data.state.modules.layerTree);
                                                 backboneEvents.get().once("allDoneLoading:layers", (e) => {
-                                                    legend.init().then(function () {
+                                                    legend.init().catch(function (error) {
+                                                        // Print the map anyway: a missing legend is better than no print
+                                                        console.error("The legend could not be loaded for print", error);
+                                                    }).then(function () {
+                                                        // Tells the print server (controllers/headlessPage.js) the page is ready
                                                         console.log("Legend loaded");
-                                                    })
+                                                    });
                                                 });
                                             }, 0);
                                         });
@@ -780,11 +786,15 @@ module.exports = {
                     contentType: `application/json`,
                     data: JSON.stringify(overallData),
                     scriptCharset: `utf-8`,
+                    // The server always answers (config.print.timeout per frame), but a proxy in
+                    // between may not. Give up eventually so the print button does not spin forever.
+                    timeout: 5 * 60 * 1000,
                     success: resolve,
                     error: reject
                 });
             }).catch(error => {
                 console.error(error);
+                reject(error);
             });
         });
     },

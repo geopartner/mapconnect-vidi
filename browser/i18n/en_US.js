@@ -1,6 +1,7 @@
 /*
  * @author     Martin Høgh <mh@mapcentia.com>, rgb <rgb@geopartner.dk>
  * @copyright  2013-2018 MapCentia ApS
+ * @copyright  2026 Geopartner Landinspektører A/S
  * @license    http://www.gnu.org/licenses/#AGPL  GNU AFFERO GENERAL PUBLIC LICENSE 3
  */
 
@@ -187,6 +188,9 @@ module.exports = {
         "Apply default style settings for this drawing?": "Apply default style settings for this drawing?",
 
         "Not a valid scale. Must be over ": "Not a valid scale. Must be over ",
+        "The print service is busy. Try again in a moment.": "The print service is busy. Try again in a moment.",
+        "The print timed out because the map did not finish loading. Try again, or turn off layers that load slowly.": "The print timed out because the map did not finish loading. Try again, or turn off layers that load slowly.",
+        "The print failed. Try again, and contact your administrator if it keeps failing.": "The print failed. Try again, and contact your administrator if it keeps failing.",
 
         "Languages": "Languages",
 

@@ -2,6 +2,18 @@
 
 Large and breaking changes and additions made will be reflected by the date which they are deployed to production.
 
+## [Unreleased]
+- print: Every print now gets an answer. A map that does not load within `print.timeout` fails with 504 `PRINT_TIMEOUT`
+  instead of hanging until the proxy says "Bad Gateway". Busy print browsers answer 503 `PRINT_BUSY` at once instead of
+  retrying forever. The print dialog shows a message instead of a broken link. Same for `/api/static`.
+  The shared headless code is in `controllers/headlessPage.js`.
+- print: A `%` in the title or comment no longer makes the print hang. Title and comment are inserted as text, not HTML.
+- print: `/api/postdata` and `/api/mergePrint` only accept print keys (UUIDs), so they can no longer read files outside
+  the print folder. A failed merge answers with an error instead of never answering.
+- print: Without metrics enabled, an unhandled promise rejection is logged instead of crashing the worker.
+- print: The scale field shows the printed scale. The date no longer overlaps the scale, and the legend has no checkboxes.
+- print: New setting `puppeteerProcesses.maxWaitingClients` (default 5).
+
 ## [2026.10.2] - 2026-10-28
 - mapstatus: Fixed map-click feature searches by passing the search callback to the feature table.
 
