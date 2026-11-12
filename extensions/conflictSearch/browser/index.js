@@ -683,6 +683,12 @@ module.exports = module.exports = {
         }
         if (primitive) {
             let geom;
+
+            // Add a guard for buffer = 0 / undefinded
+            if (typeof buffer === "undefined" || buffer === 0) {
+                buffer = 1; // Set a default buffer value
+            }
+
             if (primitive.geometry.type === 'GeometryCollection') {
                 // We dissolve the buffer and turn the GeometryCollection into a MultiPolygon
                 geom = turfMultiPolygon(turDissolve(turfBuffer(primitive.geometry, buffer, {units: 'meters'})).features.map((e) => e.geometry.coordinates));
